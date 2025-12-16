@@ -1,7 +1,7 @@
 import ReactDOMServer from 'react-dom/server'
 import { createInertiaApp } from '@inertiajs/react'
 import { ReactNode } from 'react'
-import AppShell from '~/components/layouts/app_shell'
+import AppShell from '#components/layouts/app_shell'
 
 export default function render(page: any) {
   return createInertiaApp({

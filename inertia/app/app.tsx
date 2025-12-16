@@ -5,7 +5,7 @@ import { hydrateRoot } from 'react-dom/client'
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from '@adonisjs/inertia/helpers'
 import { ReactNode } from 'react'
-import AppShell from '~/components/layouts/app_shell'
+import AppShell from '#components/layouts/app_shell'
 
 import.meta.glob(['../assets/**/*'])
 

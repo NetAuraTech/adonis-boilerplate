@@ -15,6 +15,7 @@
   },
   "imports": {
     "#core/*": "./app/core/*.js",
+    "#components/*": "./inertia/components/*.jsx",
     "#controllers/*": "./app/controllers/*.js",
     "#exceptions/*": "./app/exceptions/*.js",
     "#models/*": "./app/models/*.js",
