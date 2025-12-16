@@ -15,6 +15,13 @@ public/assets
 # Build tools specific
 npm-debug.log
 yarn-error.log
+*storybook.log
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
 # Editors specific
 .fleet
