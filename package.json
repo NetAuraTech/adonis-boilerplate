@@ -8,12 +8,15 @@
     "start": "node bin/server.js",
     "build": "node ace build",
     "dev": "node ace serve --hmr",
+    "docker:start": "docker compose up -d",
+    "docker:down": "docker compose down",
     "test": "node ace test",
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit"
   },
   "imports": {
+    "#auth/*": "./app/auth/*.js",
     "#core/*": "./app/core/*.js",
     "#components/*": "./inertia/components/*.jsx",
     "#controllers/*": "./app/controllers/*.js",
