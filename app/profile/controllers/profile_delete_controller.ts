@@ -13,7 +13,7 @@ export default class ProfileDeleteController {
     const user = auth.getUserOrFail()
     const payload = await request.validateUsing(ProfileDeleteController.validator)
 
-    const isPasswordValid = await hash.verify(user.password, payload.password)
+    const isPasswordValid = await hash.verify(user.password!, payload.password)
 
     if (!isPasswordValid) {
       session.flashExcept(['password'])
