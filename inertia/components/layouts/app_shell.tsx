@@ -1,12 +1,17 @@
 import { ReactNode } from 'react'
+import { PageHeader } from '~/components/layouts/page_header'
+import { FlashMessages } from '~/components/elements/flash_messages'
 
-type Props = {
+interface AppShellProps {
   children: ReactNode
 }
 
-export default function AppShell({ children }: Props) {
-  return <div>
-    <h1>Hello, world !</h1>
+export default function AppShell(props: AppShellProps) {
+  const { children } = props
+
+  return <div id="page-wrapper">
+    <PageHeader />
+    <FlashMessages />
     {children}
   </div>
 }

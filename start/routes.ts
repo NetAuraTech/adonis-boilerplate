@@ -8,5 +8,48 @@
 */
 
 import router from '@adonisjs/core/services/router'
-router.on('/').renderInertia('home')
+import { middleware } from '#start/kernel'
 
+// region Controller imports
+const LoginController = () => import('#auth/controllers/login_controller')
+const RegisterController = () => import('#auth/controllers/register_controller')
+const LogoutController = () => import('#auth/controllers/logout_controller')
+const ForgotPasswordController = () => import('#auth/controllers/forgot_password_controller')
+const ResetPasswordController = () => import('#auth/controllers/reset_password_controller')
+const SocialController = () => import('#auth/controllers/social_controller')
+
+// endregion
+
+router.on('/').renderInertia('landing').as('landing')
+
+router
+  .group(() => {
+    router.get('/login', [LoginController, 'render']).as('auth.login')
+    router.post('/login', [LoginController, 'execute'])
+
+    router.get('/register', [RegisterController, 'render']).as('auth.register')
+    router.post('/register', [RegisterController, 'execute'])
+
+    router.get('/forgot-password', [ForgotPasswordController, 'render']).as('auth.forgot.password')
+    router.post('/forgot-password', [ForgotPasswordController, 'execute'])
+
+    router
+      .get('/reset-password/:token', [ResetPasswordController, 'render'])
+      .as('auth.reset.password')
+    router.post('/reset-password', [ResetPasswordController, 'execute'])
+
+    router.get('/oauth/:provider', [SocialController, 'redirect']).as('oauth.redirect')
+    router.get('/oauth/:provider/callback', [SocialController, 'callback']).as('oauth.callback')
+  })
+  .use(middleware.guest())
+
+router
+  .group(() => {
+    router.post('/logout', [LogoutController, 'execute']).as('auth.logout')
+
+    router.get('/oauth/define-password', [SocialController, 'render']).as('oauth.define.password')
+    router.post('/oauth/define-password', [SocialController, 'execute'])
+    router.post('/oauth/:provider/unlink', [SocialController, 'unlink']).as('oauth.unlink')
+  })
+  .prefix('/auth')
+  .use(middleware.auth())
