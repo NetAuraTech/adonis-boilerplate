@@ -36,6 +36,6 @@ export default class ResetPasswordController {
 
     session.flash('success', 'Your password has been reset successfully.')
 
-    return response.redirect().toRoute('landing')
+    return response.redirect().toRoute('profile.show')
   }
 }

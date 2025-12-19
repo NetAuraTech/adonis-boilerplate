@@ -14,7 +14,7 @@ export default function ResetPasswordPage(props: ResetPasswordPageProps) {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    form.post('/password/reset')
+    form.post('/reset-password')
   }
 
   const isPasswordValid = form.data.password.length >= 8

@@ -51,7 +51,7 @@ export default class SocialController {
         } catch (error) {
           session.flash('error', error.message)
         }
-        return response.redirect().toRoute('landing')
+        return response.redirect().toRoute('profile.show')
       }
 
       const user = await this.socialService.findOrCreateUser(allyUser, provider)
@@ -64,7 +64,7 @@ export default class SocialController {
       }
 
       session.flash('success', 'You have been successfully logged in.')
-      return response.redirect().toRoute('landing')
+      return response.redirect().toRoute('profile.show')
     } catch (error) {
       console.error('OAuth error:', error)
       session.flash('error', 'Authentication failed. Please try again.')
@@ -102,6 +102,6 @@ export default class SocialController {
     await user.save()
 
     session.flash('success', 'Your password has been set successfully.')
-    return response.redirect().toRoute('landing')
+    return response.redirect().toRoute('profile.show')
   }
 }

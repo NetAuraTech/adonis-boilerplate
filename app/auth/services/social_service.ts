@@ -29,7 +29,6 @@ export default class SocialService {
       email: allyUser.email!,
       fullName: allyUser.name || allyUser.nickName || null,
       [providerIdColumn]: allyUser.id,
-      password: string.generateRandom(32),
     })
 
     return user
@@ -63,6 +62,10 @@ export default class SocialService {
   }
 
   needsPasswordSetup(user: User): boolean {
-    return !!(user.githubId || user.googleId || user.facebookId)
+    const hasSocialAccount = !!(user.githubId || user.googleId || user.facebookId)
+
+    const hasNoPassword = !user.password
+
+    return hasSocialAccount && hasNoPassword
   }
 }
