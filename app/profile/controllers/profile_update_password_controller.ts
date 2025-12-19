@@ -14,7 +14,7 @@ export default class ProfileUpdatePasswordController {
     const user = auth.getUserOrFail()
     const payload = await request.validateUsing(ProfileUpdatePasswordController.validator)
 
-    const isPasswordValid = await hash.verify(user.password, payload.current_password)
+    const isPasswordValid = await hash.verify(user.password!, payload.current_password)
 
     if (!isPasswordValid) {
       session.flashExcept(['current_password', 'password', 'password_confirmation'])
