@@ -1,5 +1,4 @@
 import User from '#auth/models/user'
-import string from '@adonisjs/core/helpers/string'
 import type { AllyUserContract } from '@adonisjs/ally/types'
 
 export default class SocialService {
