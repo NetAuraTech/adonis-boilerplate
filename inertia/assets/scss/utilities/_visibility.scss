@@ -1,0 +1,48 @@
+@use "../abstracts" as *;
+
+@mixin visibility-utilities($prefix: "") {
+  .#{$prefix}sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .#{$prefix}not-sr-only {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+
+  .#{$prefix}opacity-0   { opacity: 0; }
+  .#{$prefix}opacity-25  { opacity: 0.25; }
+  .#{$prefix}opacity-50  { opacity: 0.5; }
+  .#{$prefix}opacity-75  { opacity: 0.75; }
+  .#{$prefix}opacity-100 { opacity: 1; }
+
+  .#{$prefix}pointer-events-none { pointer-events: none; }
+  .#{$prefix}pointer-events-auto { pointer-events: auto; }
+
+  .#{$prefix}visible   { visibility: visible; }
+  .#{$prefix}invisible { visibility: hidden; }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include visibility-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include visibility-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

@@ -1,0 +1,32 @@
+@use "../abstracts/index" as *;
+
+@mixin position-styles($prefix: "") {
+  .#{$prefix}relative { position: relative; }
+  .#{$prefix}absolute { position: absolute; }
+  .#{$prefix}fixed    { position: fixed; }
+  .#{$prefix}sticky   { position: sticky; }
+
+  .#{$prefix}top-0    { top: 0; }
+  .#{$prefix}right-0  { right: 0; }
+  .#{$prefix}bottom-0 { bottom: 0; }
+  .#{$prefix}left-0   { left: 0; }
+
+  .#{$prefix}inset-0  { inset: 0; }
+
+  .#{$prefix}z-negative { z-index: -1; }
+  .#{$prefix}z-0        { z-index: 0; }
+  .#{$prefix}z-10       { z-index: 10; }
+  .#{$prefix}z-20       { z-index: 20; }
+  .#{$prefix}z-50       { z-index: 50; }
+  .#{$prefix}z-auto     { z-index: auto; }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include position-styles();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include position-styles("#{$breakpoint-name}\\:");
+    }
+  }
+}

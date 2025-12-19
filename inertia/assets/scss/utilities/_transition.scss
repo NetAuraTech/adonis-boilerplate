@@ -1,0 +1,47 @@
+@use "../abstracts" as *;
+
+$transition-properties: (
+  "all": all,
+  "opacity": opacity,
+  "clr": color,
+  "bg": background-color,
+  "border": border-color,
+  "transform": transform,
+  "shadow": box-shadow
+);
+
+$transition-durations: (
+  "100": 100ms,
+  "200": 200ms,
+  "300": 300ms,
+  "500": 500ms,
+  "700": 700ms,
+  "1000": 1000ms
+);
+
+@mixin transition-utilities($prefix: "") {
+  @each $prop-name, $prop-value in $transition-properties {
+    @each $dur-name, $dur-value in $transition-durations {
+
+      .#{$prefix}transition\:#{$prop-name}-#{$dur-name} {
+        transition-property: $prop-value;
+        transition-duration: $dur-value;
+        transition-timing-function: ease-in-out;
+      }
+    }
+  }
+
+  .#{$prefix}ease-linear { transition-timing-function: linear; }
+  .#{$prefix}ease-in     { transition-timing-function: ease-in; }
+  .#{$prefix}ease-out    { transition-timing-function: ease-out; }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include transition-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include transition-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

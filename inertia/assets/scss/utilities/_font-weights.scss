@@ -1,0 +1,34 @@
+@use "sass:meta";
+@use "../abstracts" as *;
+
+@mixin font-weight-utilities($prefix: "") {
+  .#{$prefix}fw-regular {
+    font-weight: $font-weight-default;
+  }
+
+  .#{$prefix}fw-bold {
+    font-weight: $font-weight-bold;
+  }
+
+  @if meta.variable-exists(font-weight-medium) {
+    .#{$prefix}fw-medium {
+      font-weight: $font-weight-medium;
+    }
+  }
+
+  @if meta.variable-exists(font-weight-light) {
+    .#{$prefix}fw-light {
+      font-weight: $font-weight-light;
+    }
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include font-weight-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include font-weight-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

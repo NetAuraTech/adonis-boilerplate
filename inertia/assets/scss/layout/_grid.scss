@@ -1,0 +1,36 @@
+@use "../abstracts" as *;
+
+@mixin grid-styles($prefix: "") {
+  .#{$prefix}grid-auto-fit {
+    --min-item-size: 250px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(var(--min-item-size), 100%), 1fr));
+    position: relative;
+    z-index: 1;
+  }
+
+  .#{$prefix}grid {
+    display: grid;
+  }
+
+  .#{$prefix}grid-aside {
+    display: grid;
+    grid-template-columns: 325px 1fr;
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+
+  @if $breakpoint-name == sm {
+    @include grid-styles();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include grid-styles("#{$breakpoint-name}\\:");
+    }
+  }
+}
+@include mq(md) {
+  .grid-aside {
+    grid-template-columns: 1fr;
+  }
+}

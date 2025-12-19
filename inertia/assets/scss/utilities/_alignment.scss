@@ -1,0 +1,30 @@
+@use "../abstracts" as *;
+
+@mixin alignment-styles($prefix: "") {
+  .#{$prefix}align-items-center {
+    align-items: center;
+  }
+
+  .#{$prefix}justify-content-space-between {
+    justify-content: space-between;
+  }
+
+  .#{$prefix}justify-content-flex-end {
+    justify-content: flex-end;
+  }
+
+  .#{$prefix}justify-content-center {
+    justify-content: center;
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+
+  @if $breakpoint-name == sm {
+    @include alignment-styles();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include alignment-styles("#{$breakpoint-name}\\:");
+    }
+  }
+}

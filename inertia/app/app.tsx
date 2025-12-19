@@ -9,6 +9,8 @@ import AppShell from '#components/layouts/app_shell'
 
 import.meta.glob(['../assets/**/*'])
 
+import '../assets/scss/app.scss'
+
 const appName = import.meta.env.VITE_APP_NAME || 'AdonisJS'
 
 void createInertiaApp({

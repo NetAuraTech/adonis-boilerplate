@@ -1,0 +1,37 @@
+@use "../abstracts" as *;
+
+@mixin container-styles($prefix: "") {
+  .#{$prefix}container {
+    --padding: #{$container-min-margin-inline} * 2;
+    --max-width: #{$container-max-width};
+
+    width: min(100% - var(--padding), var(--max-width));
+    margin-inline: auto;
+
+    &[data-type="narrow"],
+    &-narrow {
+      --max-width: #{$container-max-width-narrow};
+    }
+
+    &[data-type="wide"],
+    &-wide {
+      --max-width: #{$container-max-width-wide};
+    }
+
+    &[data-type="full-bleed"],
+    &-full-bleed {
+      --max-width: 100%;
+      --padding: 0;
+    }
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include container-styles();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include container-styles("#{$breakpoint-name}\\:");
+    }
+  }
+}

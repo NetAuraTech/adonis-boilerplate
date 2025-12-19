@@ -1,0 +1,87 @@
+@use "../abstracts" as *;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+}
+
+picture,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  font-style: italic;
+  background-repeat: no-repeat;
+  background-size: cover;
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+  shape-margin: 1rem;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+}
+
+ol,
+ul {
+  list-style: none;
+
+  li[data-list="bullet"] {
+    position: relative;
+    list-style: none;
+    padding-left: 1.2em;
+  }
+
+  li[data-list="bullet"]::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-weight: bold;
+    font-size: 1.1em;
+    line-height: 1;
+  }
+}
+
+blockquote,
+q {
+  quotes: none;
+}
+
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+  content: none;
+}
+
+p:empty::before {
+    content: " ";
+    display: inline-block;
+    height: 1em;
+}
+
+footer {
+  position: relative;
+  margin-top: auto;
+}
+
+strong {
+  font-weight: bold;
+}
+
+em {
+  font-style: italic;
+}

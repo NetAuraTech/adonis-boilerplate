@@ -1,0 +1,21 @@
+@use "../abstracts" as *;
+
+@mixin aspect-ratio-utilities($prefix: "") {
+  .#{$prefix}aspect-square { aspect-ratio: 1 / 1; }
+  .#{$prefix}aspect-video  { aspect-ratio: 16 / 9; }
+  .#{$prefix}aspect-photo  { aspect-ratio: 4 / 3; }
+  .#{$prefix}aspect-cinema { aspect-ratio: 21 / 9; }
+  .#{$prefix}aspect-portrait { aspect-ratio: 9 / 16; }
+
+  .#{$prefix}aspect-auto   { aspect-ratio: auto; }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include aspect-ratio-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include aspect-ratio-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

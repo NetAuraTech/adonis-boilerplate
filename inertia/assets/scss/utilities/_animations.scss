@@ -1,0 +1,71 @@
+@use "../abstracts" as *;
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes toast-in {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes toast-out {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(10px); opacity: 0; }
+}
+
+@mixin animation-utilities($prefix: "") {
+  .#{$prefix}animation\:spin    { animation: spin 1s linear infinite; }
+  .#{$prefix}animation\:fade-in { animation: fade-in 0.5s ease-out forwards; }
+  .#{$prefix}animation\:slide-up { animation: slide-up 0.4s ease-out forwards; }
+  .#{$prefix}animation\:pulse   { animation: pulse 2s ease-in-out infinite; }
+
+  .#{$prefix}animation-duration\:fast { animation-duration: 200ms; }
+  .#{$prefix}animation-duration\:slow { animation-duration: 2s; }
+
+  .#{$prefix}animation\:none { animation: none !important; }
+
+  .#{$prefix}animation\:toast-in {
+    animation: toast-in 0.4s ease-out forwards;
+  }
+
+  .#{$prefix}animation\:toast-out {
+    animation: toast-out 0.4s ease-in forwards;
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include animation-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include animation-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="animation:"] {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

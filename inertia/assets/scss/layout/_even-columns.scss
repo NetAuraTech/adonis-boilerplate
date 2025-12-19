@@ -1,0 +1,27 @@
+@use "../abstracts" as *;
+
+@mixin layout-column-utilities($prefix: "") {
+  .#{$prefix}even-columns {
+    display: grid;
+    gap: var(--grid-gap, #{$grid-gap});
+    @if $prefix == "" {
+      @include mq(md) {
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+      }
+    } @else {
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+    }
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include layout-column-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include layout-column-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

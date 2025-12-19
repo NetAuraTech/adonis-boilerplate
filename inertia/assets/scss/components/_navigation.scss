@@ -1,0 +1,50 @@
+@use "../abstracts" as *;
+
+.nav {
+    --flex-column-gap: #{$navigation-gap};
+    list-style: none;
+    font-family: $navigation-font-family;
+    font-weight: $navigation-font-weight;
+
+
+    &:has(a:hover) {
+        a:not(:hover) {
+            opacity: .3;
+        }
+    }
+
+    a {
+        color: $navigation-color;
+        text-decoration: $navigation-link-text-decoration;
+
+        &:is(:hover, :focus, [aria-current="page"]) {
+            color: $navigation-color-hover;
+        }
+    }
+}
+
+:root:has(#theme-switcher:checked) {
+    .nav {
+        a {
+            color: $navigation-color-dark;
+
+            &:is(:hover, :focus, [aria-current="page"]) {
+                color: $navigation-color-dark-hover;
+            }
+        }
+    }
+}
+
+@if ($enable-media-query-dark-mode) {
+    @media (prefers-color-scheme: dark) {
+        .nav {
+            a {
+                color: $navigation-color-dark;
+
+                &:is(:hover, :focus, [aria-current="page"]) {
+                    color: $navigation-color-dark-hover;
+                }
+            }
+        }
+    }
+}

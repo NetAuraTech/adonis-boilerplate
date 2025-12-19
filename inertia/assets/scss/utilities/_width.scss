@@ -1,0 +1,43 @@
+@use "../abstracts" as *;
+
+@mixin dimension-styles($prefix: "") {
+  .#{$prefix}w-full        { width: 100%; }
+  .#{$prefix}w-screen      { width: 100vw; }
+  .#{$prefix}w-fit         { width: fit-content; }
+  .#{$prefix}w-min         { width: min-content; }
+  .#{$prefix}w-max         { width: max-content; }
+  .#{$prefix}w-auto        { width: auto; }
+  .#{$prefix}w-initial     { width: initial; }
+
+  @for $i from 1 through 10 {
+    .#{$prefix}w-#{$i * 10} { width: #{$i * 10%}; }
+  }
+
+  .#{$prefix}h-full        { height: 100%; }
+  .#{$prefix}h-screen      { height: 100vh; }
+  .#{$prefix}h-fit         { height: fit-content; }
+  .#{$prefix}h-auto        { height: auto; }
+
+  @for $i from 1 through 10 {
+    .#{$prefix}h-#{$i * 10} { height: #{$i * 10%}; }
+  }
+
+  .#{$prefix}max-w-full    { max-width: 100%; }
+  .#{$prefix}min-h-screen  { min-height: 100vh; }
+  .#{$prefix}min-h-full    { min-height: 100%; }
+
+  @each $size-name, $size-value in $sizes {
+    .#{$prefix}w-size-#{$size-name} { width: $size-value; }
+    .#{$prefix}h-size-#{$size-name} { height: $size-value; }
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include dimension-styles();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include dimension-styles("#{$breakpoint-name}\\:");
+    }
+  }
+}

@@ -1,0 +1,44 @@
+@use "../abstracts" as *;
+
+@mixin text-transform-utilities($prefix: "") {
+  .#{$prefix}uppercase {
+    text-transform: uppercase;
+  }
+
+  .#{$prefix}lowercase {
+    text-transform: lowercase;
+  }
+
+  .#{$prefix}capitalize {
+    text-transform: capitalize;
+  }
+
+  .#{$prefix}normal-case {
+    text-transform: none;
+  }
+
+  .#{$prefix}underline {
+    text-decoration: underline;
+  }
+
+  .#{$prefix}no-underline {
+    text-decoration: none;
+  }
+
+  .#{$prefix}capitalize-first-letter {
+    display: block;
+    &:first-letter {
+      text-transform: uppercase;
+    }
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include text-transform-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include text-transform-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

@@ -1,0 +1,43 @@
+@use "../abstracts" as *;
+
+@mixin text-utilities($prefix: "") {
+  .#{$prefix}text-center { text-align: center; }
+  .#{$prefix}text-left   { text-align: left; }
+  .#{$prefix}text-right  { text-align: right; }
+  .#{$prefix}text-justify { text-align: justify; }
+
+  .#{$prefix}text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @for $i from 1 through 4 {
+    .#{$prefix}line-clamp-#{$i} {
+      display: -webkit-box;
+      -webkit-line-clamp: $i;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  .#{$prefix}italic { font-style: italic; }
+  .#{$prefix}not-italic { font-style: normal; }
+
+  .#{$prefix}whitespace-nowrap { white-space: nowrap; }
+  .#{$prefix}whitespace-pre-line { white-space: pre-line; }
+
+  .#{$prefix}underline { text-decoration: underline; }
+  .#{$prefix}no-underline { text-decoration: none; }
+  .#{$prefix}line-through { text-decoration: line-through; }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include text-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include text-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

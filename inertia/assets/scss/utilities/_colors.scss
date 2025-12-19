@@ -1,0 +1,40 @@
+@use "../abstracts" as *;
+
+@each $color, $shade-map in $active-theme {
+  @each $shade, $value in $shade-map {
+    $variable: var(--#{$color}-#{$shade});
+
+    .clr-#{$color}-#{$shade} { color: $variable; }
+    .bg-#{$color}-#{$shade} { background-color: $variable; }
+
+    .accent-#{$color}-#{$shade} {
+      accent-color: $variable;
+    }
+
+    .hover\:clr-#{$color}-#{$shade} {
+      &:is(:hover, :focus-visible) { color: $variable; }
+    }
+
+    .hover\:bg-#{$color}-#{$shade} {
+      &:is(:hover, :focus-visible) { background-color: $variable; }
+    }
+
+    .current\:clr-#{$color}-#{$shade} {
+      &[aria-current="page"] { color: $variable; }
+    }
+
+    .current\:bg-#{$color}-#{$shade} {
+      &[aria-current="page"] { background-color: $variable; }
+    }
+
+    .border-#{$color}-#{$shade} { border-color: $variable; outline: none; }
+    .border-top-#{$color}-#{$shade} { border-top-color: $variable; outline: none; }
+    .border-left-#{$color}-#{$shade} { border-left-color: $variable; outline: none; }
+    .border-bottom-#{$color}-#{$shade} { border-bottom-color: $variable; outline: none; }
+    .border-right-#{$color}-#{$shade} { border-right-color: $variable; outline: none; }
+
+    .focus\:border-#{$color}-#{$shade} {
+      &:is(:focus, :focus-visible, :focus-within) { border-color: $variable; outline: none; }
+    }
+  }
+}

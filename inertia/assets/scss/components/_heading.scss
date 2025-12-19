@@ -1,0 +1,30 @@
+@use "sass:map";
+@use "../abstracts" as *;
+
+$heading-configs: (
+  1: (size: $heading-1-font-size, color: $heading-1-color),
+  2: (size: $heading-2-font-size, color: $heading-2-color),
+  3: (size: $heading-3-font-size, color: $heading-3-color),
+  4: (size: $heading-4-font-size, color: $heading-4-color)
+);
+
+@mixin heading-utilities($prefix: "") {
+  @each $level, $config in $heading-configs {
+    .#{$prefix}heading-#{$level} {
+      @include heading(
+          map.get($config, size),
+          map.get($config, color)
+      );
+    }
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include heading-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include heading-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

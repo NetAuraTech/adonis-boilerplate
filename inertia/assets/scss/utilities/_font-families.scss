@@ -1,0 +1,28 @@
+@use "sass:meta";
+@use "../abstracts" as *;
+
+@mixin font-family-utilities($prefix: "") {
+  .#{$prefix}ff-base {
+    font-family: $font-family-base;
+  }
+
+  .#{$prefix}ff-accent {
+    font-family: $font-family-accent;
+  }
+
+  @if meta.variable-exists(font-family-mono) {
+    .#{$prefix}ff-mono {
+      font-family: $font-family-mono;
+    }
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include font-family-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include font-family-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

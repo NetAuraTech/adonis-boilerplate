@@ -1,0 +1,44 @@
+@use "../abstracts" as *;
+
+@mixin shadow-utilities($prefix: "") {
+  .#{$prefix}box-shadow-0 {
+    box-shadow: none;
+  }
+
+  .#{$prefix}box-shadow-1 {
+    box-shadow: $box-shadow-1;
+  }
+
+  .#{$prefix}box-shadow-2 {
+    box-shadow: $box-shadow-2;
+  }
+
+  .#{$prefix}box-shadow-3 {
+    box-shadow: $box-shadow-3;
+  }
+
+  .#{$prefix}box-shadow-4 {
+    box-shadow: $box-shadow-4;
+  }
+
+  .#{$prefix}box-shadow-5 {
+    box-shadow: $box-shadow-5;
+  }
+
+  .#{$prefix}hover\:box-shadow-1 {
+    &:is(:hover, :focus-visible) { box-shadow: $box-shadow-1; }
+  }
+  .#{$prefix}hover\:box-shadow-2 {
+    &:is(:hover, :focus-visible) { box-shadow: $box-shadow-2; }
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include shadow-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include shadow-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

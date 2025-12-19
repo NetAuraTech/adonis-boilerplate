@@ -1,0 +1,86 @@
+@use "../abstracts" as *;
+
+@mixin flex-utilities($prefix: "") {
+  .#{$prefix}flex {
+    display: flex;
+  }
+
+  .#{$prefix}flex-column {
+    flex-direction: column;
+  }
+
+  .#{$prefix}flex-row {
+    flex-direction: row;
+  }
+
+  .#{$prefix}flex-wrap {
+    flex-wrap: wrap;
+  }
+
+  .#{$prefix}flex-nowrap {
+    flex-wrap: nowrap;
+  }
+
+  .#{$prefix}flex-1 {
+    flex: 1 1 0%;
+  }
+
+  .#{$prefix}flex-auto {
+    flex: 1 1 auto;
+  }
+
+  .#{$prefix}flex-grow-1 {
+    flex-grow: 1;
+  }
+
+  .#{$prefix}flex-grow-0 {
+    flex-grow: 0;
+  }
+
+  .#{$prefix}flex-shrink-1 {
+    flex-shrink: 1;
+  }
+
+  .#{$prefix}flex-shrink-0 {
+    flex-shrink: 0;
+  }
+
+  .#{$prefix}align-self-start {
+    align-self: flex-start;
+  }
+
+  .#{$prefix}align-self-center {
+    align-self: center;
+  }
+
+  .#{$prefix}align-self-end {
+    align-self: flex-end;
+  }
+
+  .#{$prefix}align-self-stretch {
+    align-self: stretch;
+  }
+
+  .#{$prefix}flex-group {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--flex-column-gap, #{$flex-group-gap});
+    row-gap: var(--flex-row-gap, calc(#{$flex-group-gap} / 2));
+    width: fit-content;
+
+    &.#{$prefix}mx-auto {
+      justify-content: center;
+      width: initial;
+    }
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include flex-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include flex-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

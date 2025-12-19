@@ -1,0 +1,65 @@
+@use "../abstracts" as *;
+
+.header {
+  z-index: 1000;
+  top: 0;
+  overflow: hidden;
+
+  &[aria-expanded=true] {
+    overflow: initial;
+  }
+
+  &__logo {
+    img {
+      width: 60px;
+      height: auto;
+      margin-right: 1rem;
+    }
+  }
+  &__nav {
+    top: 75px;
+    right: -300px;
+    bottom: 0;
+    width: 250px;
+    height: max-content;
+    opacity: 0;
+
+    &[aria-expanded=true] {
+      right: -0px;
+      opacity: 1;
+    }
+
+    @include mq(md) {
+      width: auto;
+      height: auto;
+      opacity: 1;
+      right: 0;
+      top: 0;
+    }
+  }
+
+  &__burger {
+    overflow: hidden;
+    color: $site-header-color;
+    background-color: transparent;
+
+    &[aria-expanded=true] svg {
+      translate: 3px 0;
+      rotate: 0.125turn;
+
+      .line {
+        stroke-dasharray: 60 105 60 300;
+        stroke-dashoffset: -90;
+      }
+    }
+
+    svg {
+      transition: translate 1s, rotate 1s;
+
+      .line {
+        transition: 1s;
+        stroke-dasharray: 60 31 60 300;
+      }
+    }
+  }
+}

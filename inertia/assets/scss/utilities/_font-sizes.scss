@@ -1,0 +1,25 @@
+@use "sass:map";
+@use "../abstracts" as *;
+
+@mixin typography-utilities($prefix: "") {
+  $sm-map: map.get($font-sizes, "sm");
+
+  @each $size-name, $size-value in $sm-map {
+    .#{$prefix}fs-#{$size-name} {
+      font-size: var(--fs-#{$size-name});
+    }
+  }
+
+  .#{$prefix}fw-bold { font-weight: $font-weight-bold; }
+  .#{$prefix}fw-regular { font-weight: $font-weight-default; }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include typography-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include typography-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}

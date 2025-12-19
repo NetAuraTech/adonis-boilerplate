@@ -1,0 +1,51 @@
+@use "../abstracts" as *;
+
+body {
+  font-family: $body-font-family;
+  font-weight: $body-font-weight;
+  font-size: $body-font-size;
+  color: $body-text-color;
+  background-color: $body-background-color;
+  line-height: $body-line-height;
+}
+
+.body {
+  overflow: clip;
+}
+
+a {
+  text-decoration: none;
+  color: $link-color;
+  transition: color .3s, opacity .3s;
+}
+
+a:is(:hover, :focus) {
+  color: $link-color-hover;
+}
+
+.invalid-feedback {
+  color: var(--red-300);
+}
+
+#page-wrapper {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+//ScrollBar
+::-webkit-scrollbar {
+  width: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--neutral-100);
+  padding: 1px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--neutral-800);
+  border-radius: 4px;
+}

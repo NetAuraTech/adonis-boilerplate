@@ -1,0 +1,43 @@
+@use "../abstracts" as *;
+
+@mixin spacing-utilities($prefix: "") {
+  .#{$prefix}mx-auto {
+    margin-inline: auto;
+  }
+
+  @each $size-name, $size-value in $sizes {
+    .#{$prefix}margin {
+      &-#{$size-name} { margin: $size-value; }
+      &-block-start-#{$size-name} { margin-block-start: $size-value; }
+      &-block-end-#{$size-name} { margin-block-end: $size-value; }
+      &-block-#{$size-name} { margin-block: $size-value; }
+      &-inline-start-#{$size-name} { margin-inline-start: $size-value; }
+      &-inline-end-#{$size-name} { margin-inline-end: $size-value; }
+      &-inline-#{$size-name} { margin-inline: $size-value; }
+    }
+
+    .#{$prefix}padding {
+      &-#{$size-name} { padding: $size-value; }
+      &-block-start-#{$size-name} { padding-block-start: $size-value; }
+      &-block-end-#{$size-name} { padding-block-end: $size-value; }
+      &-block-#{$size-name} { padding-block: $size-value; }
+      &-inline-start-#{$size-name} { padding-inline-start: $size-value; }
+      &-inline-end-#{$size-name} { padding-inline-end: $size-value; }
+      &-inline-#{$size-name} { padding-inline: $size-value; }
+    }
+
+    .#{$prefix}gap {
+      &-#{$size-name} { gap: $size-value; }
+    }
+  }
+}
+
+@each $breakpoint-name, $breakpoint-value in $breakpoints {
+  @if $breakpoint-name == sm {
+    @include spacing-utilities();
+  } @else {
+    @include mq($breakpoint-name) {
+      @include spacing-utilities("#{$breakpoint-name}\\:");
+    }
+  }
+}
