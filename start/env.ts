@@ -74,4 +74,14 @@ export default await Env.create(new URL('../', import.meta.url), {
   FACEBOOK_CLIENT_ID: Env.schema.string.optional(),
   FACEBOOK_CLIENT_SECRET: Env.schema.string.optional(),
   FACEBOOK_CALLBACK_URL: Env.schema.string.optional(),
+
+  /*
+  |--------------------------------------------------------------------------
+  | Redis
+  |--------------------------------------------------------------------------
+  */
+  REDIS_ENABLED: Env.schema.boolean(),
+  REDIS_HOST: Env.schema.string({ format: 'host' }),
+  REDIS_PORT: Env.schema.number(),
+  REDIS_PASSWORD: Env.schema.string.optional(),
 })
