@@ -1,0 +1,46 @@
+{
+  "title": "Mon Profil",
+  "subtitle": "Gérez les paramètres et préférences de votre compte",
+  "sections": {
+    "profile_info": {
+      "title": "Informations du Profil",
+      "subtitle": "Mettez à jour les informations de profil et l'adresse e-mail de votre compte.",
+      "full_name": "Nom complet",
+      "full_name_placeholder": "Jean Dupont",
+      "email": "Adresse e-mail",
+      "email_placeholder": "jean.dupont@example.com",
+      "locale": "Langue préférée",
+      "submit": "Enregistrer les modifications"
+    },
+    "connected_accounts": {
+      "title": "Comptes Connectés",
+      "subtitle": "Gérez vos connexions aux fournisseurs OAuth.",
+      "connected": "Connecté",
+      "not_connected": "Non connecté",
+      "unlink": "Dissocier",
+      "connect": "Connecter",
+      "confirm_unlink": "Êtes-vous sûr de vouloir dissocier votre compte {provider} ?"
+    },
+    "update_password": {
+      "title": "Mettre à jour le Mot de Passe",
+      "subtitle": "Assurez-vous que votre compte utilise un mot de passe long et aléatoire pour rester sécurisé.",
+      "current_password": "Mot de passe actuel",
+      "new_password": "Nouveau mot de passe",
+      "confirm_password": "Confirmer le mot de passe",
+      "password_help": "Pour une sécurité optimale, votre mot de passe doit comporter au moins 8 caractères.",
+      "confirmation_help": "Ressaisissez votre mot de passe pour vérifier qu'il n'y a pas d'erreurs de frappe.",
+      "submit": "Mettre à jour le mot de passe"
+    },
+    "delete_account": {
+      "title": "Supprimer le Compte",
+      "subtitle": "Une fois votre compte supprimé, toutes ses ressources et données seront définitivement supprimées.",
+      "submit": "Supprimer le compte",
+      "confirm_title": "Êtes-vous sûr de vouloir supprimer votre compte ?",
+      "confirm_subtitle": "Une fois votre compte supprimé, toutes ses ressources et données seront définitivement supprimées. Veuillez entrer votre mot de passe pour confirmer que vous souhaitez supprimer définitivement votre compte.",
+      "password": "Mot de passe",
+      "password_placeholder": "Entrez votre mot de passe pour confirmer",
+      "cancel": "Annuler",
+      "confirm_delete": "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible."
+    }
+  }
+}

@@ -13,6 +13,7 @@ const inertiaConfig = defineConfig({
    */
   sharedData: {
     currentUser: (ctx) => UserPresenter.toPublicJSON(ctx.auth?.user),
+    locale: (ctx) => ctx.i18n?.locale || ctx.auth?.user?.locale || 'en',
     errors: (ctx) => ctx.session?.flashMessages.get('errors'),
     flash: (ctx) => {
       return {

@@ -1,10 +1,12 @@
 import logo from '~/assets/logo.png'
-import { Link, usePage, router } from '@inertiajs/react' // Ajout de router ici
+import { Link, usePage, router } from '@inertiajs/react'
 import type { SharedProps } from '@adonisjs/inertia/types'
 import { NavLink } from '~/components/elements/nav_link'
-import { useState, useEffect } from 'react' // Ajout de useEffect
+import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export function PageHeader() {
+  const { t } = useTranslation('common')
   const pageProps = usePage<SharedProps>().props
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
@@ -49,30 +51,16 @@ export function PageHeader() {
         data-state={menuState}
         aria-expanded={isExpanded}
       >
-        <NavLink
-          href="/"
-          label="Home"
-          fs={600}
-        />
-        <NavLink
-          href="/about"
-          label="About"
-          fs={600}
-        />
-        <NavLink
-          href="/contact"
-          label="Contact"
-          fs={600}
-        />
+        <NavLink href="/" label={t('header.home')} fs={600} />
 
         {pageProps.currentUser ? (
-          <span className="fs-400 fw-bold">Hello, {pageProps.currentUser.fullName}</span>
+          <>
+            <span className="fs-400 fw-bold">
+              {t('header.greeting', { name: pageProps.currentUser.fullName })}
+            </span>
+          </>
         ) : (
-          <NavLink
-            href="/login"
-            label="Login"
-            fs={600}
-          />
+          <NavLink href="/login" label={t('header.login')} fs={600} />
         )}
       </nav>
 
@@ -81,7 +69,7 @@ export function PageHeader() {
         aria-controls="primary-navigation"
         aria-expanded={isExpanded}
         data-state={menuState}
-        aria-label="Menu"
+        aria-label={t('header.menu_label')}
         onClick={toggleMenu}
       >
         <svg

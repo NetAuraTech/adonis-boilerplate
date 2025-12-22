@@ -23,7 +23,6 @@
 ---
 
 ## 📁 Folder Structure
-
 ```
 app/
 ├── auth/                           # Authentication domain
@@ -40,7 +39,7 @@ app/
 ├── core/                          # Cross-cutting domain
 │   ├── exceptions/               # HttpExceptionHandler
 │   ├── helpers/                  # validator.ts, sleep.ts
-│   ├── middleware/               # auth, guest, container_bindings
+│   ├── middleware/               # auth, guest, container_bindings, detect_locale [NEW]
 │   └── models/                   # Token
 │
 config/                            # AdonisJS configuration
@@ -52,16 +51,32 @@ config/                            # AdonisJS configuration
 ├── inertia.ts                    # Inertia SSR + shared data
 ├── shield.ts                     # CSRF, XFrame, HSTS
 ├── hash.ts                       # Scrypt
+├── i18n.ts                       # i18n configuration [NEW]
 ├── logger.ts                     # Logs
 └── ...
 
 database/
 └── migrations/                    # Lucid migrations
 
+resources/                        
+├── lang/                         # Backend translations
+│   ├── en/                       # English translations
+│   │   ├── auth.json             # Authentication messages
+│   │   ├── profile.json          # Profile messages
+│   │   └── emails.json           # Email content
+│   └── fr/                       # French translations
+│       ├── auth.json
+│       ├── profile.json
+│       └── emails.json
+│
+└── views/                        # Edge templates
+    └── emails/                   # Email templates
+        └── reset_password.edge  # Password reset email
+
 inertia/
 ├── app/                          # Entry points
-│   ├── app.tsx                   # Client-side entry
-│   └── ssr.tsx                   # Server-side rendering
+│   ├── app.tsx                   # Client-side entry (with i18n setup) [UPDATED]
+│   └── ssr.tsx                   # Server-side rendering (with i18n setup) [UPDATED]
 │
 ├── assets/                       # Static assets
 │   ├── fonts/                    # Atkinson Hyperlegible
@@ -79,6 +94,21 @@ inertia/
 │   ├── forms/                   # Input, InputGroup, Label
 │   └── layouts/                 # AppShell, PageHeader
 │
+├── lib/                          # Frontend libraries
+│   └── i18n.ts                  # i18n configuration (react-i18next)
+│
+├── locales/                      # Frontend translations
+│   ├── en/                      # English translations
+│   │   ├── auth.json           # Auth pages translations
+│   │   ├── profile.json        # Profile page translations
+│   │   ├── common.json         # Common UI translations
+│   │   └── errors.json         # Error pages translations
+│   └── fr/                      # French translations
+│       ├── auth.json
+│       ├── profile.json
+│       ├── common.json
+│       └── errors.json
+│
 ├── pages/                        # Inertia pages
 │   ├── auth/                    # Login, Register, ForgotPassword, etc.
 │   ├── profile/                 # Show
@@ -93,7 +123,7 @@ inertia/
 
 start/
 ├── env.ts                        # Environment variables validation
-├── kernel.ts                     # Middleware configuration
+├── kernel.ts                     # Middleware configuration (with detect_locale) [UPDATED]
 └── routes.ts                     # Route definitions
 
 bin/
@@ -334,6 +364,7 @@ export default class SomeMiddleware {
 - `auth`: Protects authenticated routes, redirects to `/login`
 - `guest`: Blocks if authenticated, redirects to `/`
 - `silentAuth`: Checks without blocking (global, to have `currentUser` everywhere)
+- `detectUserLocale`: Detects and applies user's language (user preference > Accept-Language > default EN)
 - `container_bindings`: Binds HttpContext and Logger for DI
 
 ---
@@ -354,6 +385,9 @@ router
 router
   .group(() => {
     router.get('/profile', [ProfileController, 'render']).as('profile.show')
+    router.put('/profile', [ProfileController, 'execute'])
+    router.put('/profile/password', [ProfilePasswordController, 'execute'])
+    router.delete('/profile', [ProfileDeleteController, 'execute'])
   })
   .prefix('profile')
   .use(middleware.auth())
@@ -394,6 +428,10 @@ export function helperTwo() {}
 
 **Existing Helpers (Frontend):**
 - `oauth.ts`: `getProviderRoute()`
+
+**i18n Helpers:**
+- Backend: `ctx.i18n.t(key, params)` - Translate with interpolation
+- Frontend: `useTranslation(namespace)` - React hook for translations
 
 ---
 
@@ -619,7 +657,7 @@ lg: 65em (1040px)
 
 **User (users)**
 ```
-id, full_name, email, password,
+id, full_name, email, password, locale,
 github_id, google_id, facebook_id,
 created_at, updated_at
 ```
@@ -694,25 +732,155 @@ created_at, updated_at
 
 ---
 
-## 🌐 i18n (TO IMPLEMENT)
+## 🌐 i18n (Internationalization)
 
-### Backend
-- Package: @adonisjs/i18n
-- Languages: FR, EN
-- Detection: Accept-Language header
-- Fallback: EN
+### Stack
+- **Backend:** `@adonisjs/i18n`
+- **Frontend:** `react-i18next` + `i18next`
+- **Default language:** English (EN)
+- **Available languages:** EN, FR
+- **Fallback:** EN
 
-### Frontend
-- Package: react-i18next
-- Languages: FR, EN
-- Detection: user preference > browser > default
+### Language Detection Priority
 
-### Priority
-1. User preference (`locale` column in users)
-2. Browser header
-3. Default (EN)
+The system detects the user's language in the following order:
 
----
+1. **User preference** : `users.locale` column (if authenticated)
+2. **Accept-Language header** : Browser language detection
+3. **Default fallback** : EN
+
+### Translation Files Structure
+
+**Backend (`resources/lang/{locale}/`):**
+- `auth.json` : Authentication messages (login, register, reset, OAuth)
+- `profile.json` : Profile messages (update, password, delete, locale)
+- `emails.json` : Email content (subjects, bodies)
+- `validation.json` : VineJS validation messages (optional)
+
+**Frontend (`inertia/locales/{locale}/`):**
+- `auth.json` : Auth pages (login, register, forgot, reset, define)
+- `profile.json` : Profile page (sections, forms)
+- `common.json` : Common UI elements (header, flash, select, language)
+- `errors.json` : Error pages (404, 500)
+
+### Usage
+
+**Backend (Controllers/Services):**
+```typescript
+// In controller with HttpContext
+session.flash('success', i18n.t('auth.login.success'))
+session.flash('error', i18n.t('auth.social.linked', { provider: 'GitHub' }))
+```
+
+**Frontend (React Components):**
+```typescript
+import { useTranslation } from 'react-i18next'
+
+export default function SomePage() {
+  const { t } = useTranslation('auth')
+  
+  return {t('login.title')}  // "Welcome back!" or "Bon retour!"
+}
+```
+
+**Multiple Namespaces:**
+```typescript
+const { t } = useTranslation('auth')
+const { t: tCommon } = useTranslation('common')
+
+{t('login.title')}
+{tCommon('header.home')}
+```
+
+### Email Templates
+
+**Location:** `resources/views/emails/`
+
+Email templates use Edge with inline SCSS for email client compatibility.
+
+**Example:**
+```edge
+<!-- resources/views/emails/reset_password.edge -->
+<!DOCTYPE html>
+<html lang="{{ locale }}">
+  <body>
+    <h1>{{ appName }}</h1>
+    <p>{{ greeting }}</p>
+    <p>{{ intro }}</p>
+    <a href="{{ resetLink }}">{{ action }}</a>
+  </body>
+</html>
+```
+
+Variables are passed from the service:
+```typescript
+await mail.send((message) => {
+  message
+    .to(user.email)
+    .subject(i18n.t('emails.reset_password.subject'))
+    .htmlView('emails/reset_password', {
+      locale: user.locale || 'en',
+      greeting: i18n.t('emails.reset_password.greeting'),
+      intro: i18n.t('emails.reset_password.intro'),
+      // ... other variables
+    })
+})
+```
+
+### User Preference Management
+
+Users can change their language preference in their profile settings. The preference is stored in the `users.locale` column.
+
+**When the user updates their profile with a new locale:**
+1. The locale is saved to the database
+2. The page reloads automatically (`window.location.reload()`)
+3. The middleware detects the new locale
+4. All content (backend + frontend) is displayed in the new language
+
+### Adding a New Language
+
+To add a new language (e.g., Spanish):
+
+1. Create backend translation files in `resources/lang/es/`
+  - `auth.json`
+  - `profile.json`
+  - `emails.json`
+
+2. Create frontend translation files in `inertia/locales/es/`
+  - `auth.json`
+  - `profile.json`
+  - `common.json`
+  - `errors.json`
+
+3. Update `config/i18n.ts`:
+```typescript
+const i18nConfig = defineConfig({
+  defaultLocale: 'en',
+  supportedLocales: ['en', 'fr', 'es'],  // Add 'es'
+  // ...
+})
+```
+
+4. Update profile page language selector:
+```typescript
+options={[
+  { label: t_common('language.en'), value: 'en' },
+  { label: t_common('language.fr'), value: 'fr' },
+  { label: t_common('language.es'), value: 'es' },  // Add Spanish
+]}
+```
+
+5. Update `ProfileUpdateController` validator:
+```typescript
+locale: vine.enum(['en', 'fr', 'es']),  // Add 'es'
+```
+
+6. Add translations in `common.json` for both languages:
+```json
+"language": {
+  "es": "Español"
+}
+```
 
 ## ⚡ Cache (TO IMPLEMENT)
 
@@ -844,6 +1012,18 @@ logger.error('Error', { context })
 - ✅ Change password
 - ✅ Delete account
 - ✅ Manage OAuth providers
+
+### Internationalization (i18n)
+- ✅ Multi-language support (EN, FR)
+- ✅ Automatic language detection (user preference > browser header > default)
+- ✅ User language preference saved in database
+- ✅ Complete translations (backend + frontend)
+- ✅ Multilingual emails with Edge templates
+- ✅ VineJS validation messages support
+- ✅ Language selector in user profile
+- ✅ Automatic page reload on language change
+- ✅ Accessible (aria-labels translated)
+- ✅ o2Switch compatible
 
 ### Infrastructure
 - ✅ AdonisJS 6 + Lucid ORM

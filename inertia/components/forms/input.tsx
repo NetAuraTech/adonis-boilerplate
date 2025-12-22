@@ -1,4 +1,5 @@
 import { ChangeEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface InputProps {
   name: string
@@ -15,11 +16,27 @@ interface InputProps {
 }
 
 export function Input(props: InputProps) {
-  const { name, type, placeholder, value, checked, options, cols, rows, disabled, required, onChange, ...inputProps } = props
+  const { t } = useTranslation('common')
+  const {
+    name,
+    type,
+    placeholder,
+    value,
+    checked,
+    options,
+    cols,
+    rows,
+    disabled,
+    required,
+    onChange,
+    ...inputProps
+  } = props
 
-  const baseInputClass = "bg-neutral-100 clr-neutral-800 fs-400 padding-2 border-radius-2 border-1 border-solid border-neutral-300 focus:border-primary-400"
+  const baseInputClass =
+    'bg-neutral-100 clr-neutral-800 fs-400 padding-2 border-radius-2 border-1 border-solid border-neutral-300 focus:border-primary-400'
 
-  const checkableClass = "cursor-pointer border-1 border-solid border-neutral-400 accent-accent-500 focus:border-accent-500"
+  const checkableClass =
+    'cursor-pointer border-1 border-solid border-neutral-400 accent-accent-500 focus:border-accent-500'
 
   switch (type) {
     case 'textarea':
@@ -51,7 +68,7 @@ export function Input(props: InputProps) {
           className={`${baseInputClass} cursor-pointer`}
           {...inputProps}
         >
-          <option value="">{placeholder || 'Sélectionnez une option'}</option>
+          <option value="">{placeholder || t('select.default_placeholder')}</option>
           {options?.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}

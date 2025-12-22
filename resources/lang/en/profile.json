@@ -1,0 +1,19 @@
+{
+  "update": {
+    "success": "Your profile has been updated successfully."
+  },
+  "password": {
+    "incorrect_current": "The current password is incorrect.",
+    "success": "Your password has been updated successfully."
+  },
+  "delete": {
+    "incorrect_password": "The password is incorrect.",
+    "success": "Your account has been deleted successfully."
+  },
+  "notifications": {
+    "cleared": "Your notifications have been cleared successfully."
+  },
+  "locale": {
+    "updated": "Your language preference has been updated successfully."
+  }
+}

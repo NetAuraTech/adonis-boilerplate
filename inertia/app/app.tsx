@@ -2,10 +2,11 @@
 /// <reference path="../../config/inertia.ts" />
 
 import { hydrateRoot } from 'react-dom/client'
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp } from '@inertiajs/react'
 import { resolvePageComponent } from '@adonisjs/inertia/helpers'
 import { ReactNode } from 'react'
 import AppShell from '#components/layouts/app_shell'
+import i18n from '~/lib/i18n'
 
 import.meta.glob(['../assets/**/*'])
 
@@ -18,26 +19,24 @@ void createInertiaApp({
 
   title: (title) => `${title} - ${appName}`,
 
-  async resolve (name) {
+  async resolve(name) {
     const page = await resolvePageComponent<any>(
       `../pages/${name}.tsx`,
-      import.meta.glob('../pages/**/*.tsx'),
+      import.meta.glob('../pages/**/*.tsx')
     )
 
-    page.default.layout = page.default.layout || ((page: ReactNode) => <AppShell children={page} />)
+    page.default.layout =
+      page.default.layout || ((page: ReactNode) => <AppShell children={page} />)
 
     return page
   },
 
   setup({ el, App, props }) {
-    const applicationTree = <App {...props} />
+    const locale = String(props.initialPage.props.locale || 'en')
+    i18n.changeLanguage(locale)
 
-    //? Example to disable SSR for specific pages
-    // if(props.initialPage.component.includes('xxx')) {
-    //   createRoot(el).render(applicationTree)
-    //   return
-    // }
+    const applicationTree = <App {...props} />
 
     hydrateRoot(el, applicationTree)
   },
-});
+})

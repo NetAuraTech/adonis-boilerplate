@@ -9,7 +9,7 @@ export default class ProfileDeleteController {
     })
   )
 
-  async execute({ auth, request, response, session }: HttpContext) {
+  async execute({ auth, request, response, session, i18n }: HttpContext) {
     const user = auth.getUserOrFail()
     const payload = await request.validateUsing(ProfileDeleteController.validator)
 
@@ -17,7 +17,7 @@ export default class ProfileDeleteController {
 
     if (!isPasswordValid) {
       session.flashExcept(['password'])
-      session.flashErrors({ password: 'The password is incorrect.' })
+      session.flashErrors({ password: i18n.t('profile.delete.incorrect_password') })
       return response.redirect().back()
     }
 
@@ -25,7 +25,7 @@ export default class ProfileDeleteController {
 
     await user.delete()
 
-    session.flash('success', 'Your account has been deleted successfully.')
+    session.flash('success', i18n.t('profile.delete.success'))
 
     return response.redirect().toRoute('landing')
   }

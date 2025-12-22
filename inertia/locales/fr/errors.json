@@ -1,0 +1,9 @@
+{
+  "not_found": {
+    "title": "Page introuvable",
+    "message": "Cette page n'existe pas."
+  },
+  "server_error": {
+    "title": "Erreur Serveur"
+  }
+}

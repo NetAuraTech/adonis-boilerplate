@@ -16,27 +16,27 @@ export default class SocialController {
     })
   )
 
-  protected validateProvider(provider: string, session: any, response: any) {
+  protected validateProvider(provider: string, session: any, response: any, i18n: any) {
     if (!isProviderEnabled(provider)) {
-      session.flash('error', `${provider} authentication is not configured.`)
+      session.flash('error', i18n.t('auth.social.not_configured', { provider }))
       return response.redirect().toRoute('auth.login')
     }
     return null
   }
 
-  async redirect({ ally, params, session, response }: HttpContext) {
+  async redirect({ ally, params, session, response, i18n }: HttpContext) {
     const provider = params.provider as OAuthProvider
 
-    const validation = this.validateProvider(provider, session, response)
+    const validation = this.validateProvider(provider, session, response, i18n)
     if (validation) return validation
 
     return ally.use(provider).redirect()
   }
 
-  async callback({ ally, params, auth, response, session }: HttpContext) {
+  async callback({ ally, params, auth, response, session, i18n }: HttpContext) {
     const provider = params.provider as OAuthProvider
 
-    const validation = this.validateProvider(provider, session, response)
+    const validation = this.validateProvider(provider, session, response, i18n)
     if (validation) return validation
 
     try {
@@ -47,7 +47,7 @@ export default class SocialController {
       if (authenticatedUser) {
         try {
           await this.socialService.linkProvider(authenticatedUser, allyUser, provider)
-          session.flash('success', `Your ${provider} account has been linked successfully.`)
+          session.flash('success', i18n.t('auth.social.linked', { provider }))
         } catch (error) {
           session.flash('error', error.message)
         }
@@ -59,32 +59,32 @@ export default class SocialController {
       await auth.use('web').login(user)
 
       if (this.socialService.needsPasswordSetup(user)) {
-        session.flash('info', 'Please set a password for your account to enable password login.')
+        session.flash('info', i18n.t('auth.social.set_password_info'))
         return response.redirect().toRoute('oauth.define.password')
       }
 
-      session.flash('success', 'You have been successfully logged in.')
+      session.flash('success', i18n.t('auth.login.success'))
       return response.redirect().toRoute('profile.show')
     } catch (error) {
       console.error('OAuth error:', error)
-      session.flash('error', 'Authentication failed. Please try again.')
+      session.flash('error', i18n.t('auth.login.failed'))
       return response.redirect().toRoute('auth.login')
     }
   }
 
-  async unlink({ auth, params, response, session }: HttpContext) {
+  async unlink({ auth, params, response, session, i18n }: HttpContext) {
     const provider = params.provider as OAuthProvider
 
-    const validation = this.validateProvider(provider, session, response)
+    const validation = this.validateProvider(provider, session, response, i18n)
     if (validation) return validation
 
     try {
       const user = auth.getUserOrFail()
       await this.socialService.unlinkProvider(user, provider)
 
-      session.flash('success', `Your ${provider} account has been unlinked.`)
+      session.flash('success', i18n.t('auth.social.unlinked', { provider }))
     } catch (error) {
-      session.flash('error', 'Failed to unlink account.')
+      session.flash('error', i18n.t('auth.social.unlink_failed'))
     }
 
     return response.redirect().back()
@@ -94,14 +94,14 @@ export default class SocialController {
     return inertia.render('auth/define_password')
   }
 
-  async execute({ auth, request, response, session }: HttpContext) {
+  async execute({ auth, request, response, session, i18n }: HttpContext) {
     const user = auth.getUserOrFail()
     const payload = await request.validateUsing(SocialController.definePasswordValidator)
 
     user.password = payload.password
     await user.save()
 
-    session.flash('success', 'Your password has been set successfully.')
+    session.flash('success', i18n.t('auth.social.password_defined'))
     return response.redirect().toRoute('profile.show')
   }
 }

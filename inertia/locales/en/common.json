@@ -1,0 +1,19 @@
+{
+  "header": {
+    "home": "Home",
+    "greeting": "Hello, {name}",
+    "login": "Login",
+    "menu_label": "Menu"
+  },
+  "flash": {
+    "close_label": "Close"
+  },
+  "select": {
+    "default_placeholder": "Select an option"
+  },
+  "language": {
+    "selector_label": "Language",
+    "en": "English",
+    "fr": "Français"
+  }
+}

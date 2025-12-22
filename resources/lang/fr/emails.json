@@ -1,0 +1,11 @@
+{
+  "reset_password": {
+    "subject": "Réinitialisez votre mot de passe",
+    "greeting": "Bonjour,",
+    "intro": "Vous recevez cet e-mail car nous avons reçu une demande de réinitialisation de mot de passe pour votre compte.",
+    "action": "Réinitialiser le mot de passe",
+    "outro": "Si vous n'avez pas demandé de réinitialisation de mot de passe, aucune action supplémentaire n'est requise.",
+    "expiry": "Ce lien de réinitialisation expirera dans {hours} heure.|Ce lien de réinitialisation expirera dans {hours} heures.",
+    "footer": "Si vous rencontrez des difficultés pour cliquer sur le bouton, copiez et collez l'URL ci-dessous dans votre navigateur web :"
+  }
+}

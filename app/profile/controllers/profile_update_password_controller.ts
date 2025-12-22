@@ -10,7 +10,7 @@ export default class ProfileUpdatePasswordController {
     })
   )
 
-  async execute({ auth, request, response, session }: HttpContext) {
+  async execute({ auth, request, response, session, i18n }: HttpContext) {
     const user = auth.getUserOrFail()
     const payload = await request.validateUsing(ProfileUpdatePasswordController.validator)
 
@@ -18,14 +18,14 @@ export default class ProfileUpdatePasswordController {
 
     if (!isPasswordValid) {
       session.flashExcept(['current_password', 'password', 'password_confirmation'])
-      session.flashErrors({ current_password: 'The current password is incorrect.' })
+      session.flashErrors({ current_password: i18n.t('profile.password.incorrect_current') })
       return response.redirect().back()
     }
 
     user.password = payload.password
     await user.save()
 
-    session.flash('success', 'Your password has been updated successfully.')
+    session.flash('success', i18n.t('profile.password.success'))
 
     return response.redirect().toRoute('profile.show')
   }

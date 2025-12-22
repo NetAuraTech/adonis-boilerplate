@@ -9,15 +9,15 @@ export default class LoginController {
     })
   }
 
-  async execute({ auth, request, response, session }: HttpContext) {
+  async execute({ auth, request, response, session, i18n }: HttpContext) {
     const { email, password } = request.only(['email', 'password'])
 
     try {
       const user = await User.verifyCredentials(email, password)
       await auth.use('web').login(user, !!request.input('remember_me'))
-      session.flash('success', 'You have been successfully logged in.')
+      session.flash('success', i18n.t('auth.login.success'))
     } catch (error) {
-      session.flash('error', 'Authentication failed. Please try again.')
+      session.flash('error', i18n.t('auth.login.failed'))
       return response.redirect().toRoute('auth.login')
     }
 

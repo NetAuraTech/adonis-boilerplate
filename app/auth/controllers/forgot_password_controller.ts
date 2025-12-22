@@ -6,11 +6,12 @@ import { inject } from '@adonisjs/core'
 @inject()
 export default class ForgotPasswordController {
   constructor(protected passwordService: PasswordService) {}
+
   render({ inertia }: HttpContext) {
     return inertia.render('auth/forgot_password')
   }
 
-  async execute({ request, response, session }: HttpContext) {
+  async execute({ request, response, session, i18n }: HttpContext) {
     const email = request.input('email')
     const user = await User.findBy('email', email)
 
@@ -18,10 +19,7 @@ export default class ForgotPasswordController {
       await this.passwordService.sendResetPasswordLink(user)
     }
 
-    session.flash(
-      'success',
-      'If an account exists for this email, you will receive a reset link shortly.'
-    )
+    session.flash('success', i18n.t('auth.forgot_password.email_sent'))
 
     return response.redirect().toRoute('auth.login')
   }

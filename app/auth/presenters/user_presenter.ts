@@ -4,6 +4,7 @@ export interface UserPresenterData {
   id: number
   email: string
   fullName: string | null
+  locale: string | null
   githubId: string | null
   googleId: string | null
   facebookId: string | null
@@ -21,6 +22,7 @@ export class UserPresenter {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
+      locale: user.locale,
       githubId: user.githubId,
       googleId: user.googleId,
       facebookId: user.facebookId,
@@ -38,6 +40,7 @@ export class UserPresenter {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
+      locale: user.locale,
       createdAt: user.createdAt.toISO()!,
       updatedAt: user.updatedAt?.toISO() || null,
     }

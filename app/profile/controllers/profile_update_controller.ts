@@ -3,7 +3,7 @@ import vine from '@vinejs/vine'
 import { unique } from '#core/helpers/validator'
 
 export default class ProfileUpdateController {
-  async execute({ auth, request, response, session }: HttpContext) {
+  async execute({ auth, request, response, session, i18n }: HttpContext) {
     const user = auth.getUserOrFail()
 
     const validator = vine.compile(
@@ -13,6 +13,7 @@ export default class ProfileUpdateController {
           .string()
           .email()
           .unique(unique('users', 'email', { exceptId: user.id })),
+        locale: vine.enum(['en', 'fr']),
       })
     )
 
@@ -20,7 +21,7 @@ export default class ProfileUpdateController {
 
     await user.merge(payload).save()
 
-    session.flash('success', 'Your profile has been updated successfully.')
+    session.flash('success', i18n.t('profile.update.success'))
 
     return response.redirect().toRoute('profile.show')
   }

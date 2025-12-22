@@ -1,0 +1,46 @@
+{
+  "title": "My Profile",
+  "subtitle": "Manage your account settings and preferences",
+  "sections": {
+    "profile_info": {
+      "title": "Profile Information",
+      "subtitle": "Update your account's profile information and email address.",
+      "full_name": "Full Name",
+      "full_name_placeholder": "John Doe",
+      "email": "Email Address",
+      "email_placeholder": "john.doe@example.com",
+      "locale": "Preferred language",
+      "submit": "Save Changes"
+    },
+    "connected_accounts": {
+      "title": "Connected Accounts",
+      "subtitle": "Manage your OAuth provider connections.",
+      "connected": "Connected",
+      "not_connected": "Not connected",
+      "unlink": "Unlink",
+      "connect": "Connect",
+      "confirm_unlink": "Are you sure you want to unlink your {provider} account?"
+    },
+    "update_password": {
+      "title": "Update Password",
+      "subtitle": "Ensure your account is using a long, random password to stay secure.",
+      "current_password": "Current Password",
+      "new_password": "New Password",
+      "confirm_password": "Confirm Password",
+      "password_help": "For optimal security, your password must be at least 8 characters long.",
+      "confirmation_help": "Re-enter your password to verify that there are no typing errors.",
+      "submit": "Update Password"
+    },
+    "delete_account": {
+      "title": "Delete Account",
+      "subtitle": "Once your account is deleted, all of its resources and data will be permanently deleted.",
+      "submit": "Delete Account",
+      "confirm_title": "Are you sure you want to delete your account?",
+      "confirm_subtitle": "Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.",
+      "password": "Password",
+      "password_placeholder": "Enter your password to confirm",
+      "cancel": "Cancel",
+      "confirm_delete": "Are you sure you want to delete your account? This action is irreversible."
+    }
+  }
+}

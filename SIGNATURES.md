@@ -76,9 +76,14 @@ export default class SocialController {
 ### app/auth/services/password_service.ts
 ```typescript
 export default class PasswordService {
-  async sendResetPasswordLink(user: User): Promise<void>
-  // Generates random(64) token, expires old tokens, creates new one with 1h expiration,
-  // builds reset link, sends HTML email
+  async sendResetPasswordLink(user: User): Promise
+  // Now uses:
+  // - i18nManager to detect user's locale (user.locale || 'en')
+  // - Edge template (resources/views/emails/reset_password.edge)
+  // - Translations from resources/lang/{locale}/emails.json
+  // - Generates random(64) token, expires old tokens
+  // - Creates new token with 1h expiration
+  // - Builds reset link and sends multilingual email
 }
 ```
 
@@ -134,6 +139,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   
   @column({ serializeAs: null })
   declare password: string | null
+
+  @column()
+  declare locale: string | null
   
   @column()
   declare githubId: string | null
@@ -168,6 +176,7 @@ export interface UserPresenterData {
   id: number
   email: string
   fullName: string | null
+  locale: string | null  // NEW
   githubId: string | null
   googleId: string | null
   facebookId: string | null
@@ -177,14 +186,15 @@ export interface UserPresenterData {
 
 export class UserPresenter {
   static toJSON(user: User | undefined | null): UserPresenterData | null
-  // Returns all user data (for owner/admin)
-  
+  // Returns all user data including locale (for owner/admin)
+
   static toPublicJSON(user: User | undefined | null)
-  // Returns only id, email, fullName, dates (no OAuth IDs)
-  
+  // Returns id, email, fullName, locale, dates (no OAuth IDs)
+  // locale is public as it's just a preference
+
   static hasLinkedProviders(user: User): boolean
   // Returns true if at least one OAuth provider linked
-  
+
   static getLinkedProviders(user: User): { github: boolean, google: boolean, facebook: boolean }
   // Returns object with each provider's state
 }
@@ -233,9 +243,15 @@ export default class ProfileShowController {
 ### app/profile/controllers/profile_update_controller.ts
 ```typescript
 export default class ProfileUpdateController {
-  async execute({ auth, request, response, session }: HttpContext)
-  // Dynamic validator with exceptId
-  // Updates fullName and email
+  async execute({ auth, request, response, session, i18n }: HttpContext)
+  // Dynamic validator with exceptId and locale validation
+  // Updates fullName, email, AND locale (NEW)
+  // If locale changes, triggers page reload on frontend
+  
+  // Validator includes:
+  // - fullName: optional, min 2, max 255
+  // - email: required, unique (except current user)
+  // - locale: required, enum(['en', 'fr'])  // NEW
 }
 ```
 
@@ -358,6 +374,37 @@ export default class ContainerBindingsMiddleware {
 }
 ```
 
+### app/core/middleware/detect_user_locale_middleware.ts
+```typescript
+import { I18n } from '@adonisjs/i18n'
+import i18nManager from '@adonisjs/i18n/services/main'
+import type { NextFn } from '@adonisjs/core/types/http'
+import { type HttpContext, RequestValidator } from '@adonisjs/core/http'
+
+export default class DetectUserLocaleMiddleware {
+  static {
+    RequestValidator.messagesProvider = (ctx) => {
+      return ctx.i18n.createMessagesProvider()
+    }
+  }
+
+  protected getRequestLocale(ctx: HttpContext): string
+  // Detects user locale with priority:
+  // 1. ctx.auth.user?.locale (if authenticated)
+  // 2. Accept-Language header (via i18nManager.getSupportedLocaleFor)
+  // 3. Default locale (via i18nManager.defaultLocale)
+
+  async handle(ctx: HttpContext, next: NextFn)
+  // Sets ctx.i18n, binds I18n to container, shares with Edge
+}
+
+declare module '@adonisjs/core/http' {
+  export interface HttpContext {
+    i18n: I18n
+  }
+}
+```
+
 ---
 
 ## 🗃️ CORE - Helpers
@@ -427,6 +474,60 @@ export default class CreateUser extends BaseCommand {
   
   async run()
   // Creates user with email and password "password"
+}
+```
+
+---
+
+## ⚛️ REACT - Entry Points
+
+### inertia/app/app.tsx (Client-side)
+```typescript
+void createInertiaApp({
+  progress: { color: '#5468FF' },
+  title: (title) => `${title} - ${appName}`,
+  
+  async resolve(name) {
+    const page = await resolvePageComponent(...)
+    page.default.layout = page.default.layout || ((page) => <AppShell children={page} />)
+    return page
+  },
+  
+  setup({ el, App, props }) {
+    // Set i18n locale from page props (NEW)
+    const locale = String(props.initialPage.props.locale || 'en')
+    i18n.changeLanguage(locale)
+    
+    const applicationTree = <App {...props} />
+    hydrateRoot(el, applicationTree)
+  },
+})
+```
+
+### inertia/app/ssr.tsx (Server-side)
+```typescript
+export default function render(page: any) {
+  return createInertiaApp({
+    page,
+    render: ReactDOMServer.renderToString,
+    
+    resolve: (name) => {
+      const pages = import.meta.glob('../pages/**/*.tsx', { eager: true })
+      const pageModule = pages[`../pages/${name}.tsx`]
+      if (pageModule.default.layout === undefined) {
+        pageModule.default.layout = (page) => <AppShell children={page} />
+      }
+      return pageModule
+    },
+    
+    setup: ({ App, props }) => {
+      // Set i18n locale from page props for SSR (NEW)
+      const locale = String(page.props.locale || 'en')
+      i18n.changeLanguage(locale)
+      
+      return <App {...props} />
+    },
+  })
 }
 ```
 
@@ -655,8 +756,10 @@ const dbConfig = defineConfig({
 ```typescript
 const inertiaConfig = defineConfig({
   rootView: 'inertia_layout',
+
   sharedData: {
     currentUser: (ctx) => UserPresenter.toPublicJSON(ctx.auth?.user),
+    locale: (ctx) => ctx.i18n?.locale || ctx.auth?.user?.locale || 'en',
     errors: (ctx) => ctx.session?.flashMessages.get('errors'),
     flash: (ctx) => ({
       success: ctx.session?.flashMessages.get('success'),
@@ -665,6 +768,7 @@ const inertiaConfig = defineConfig({
       info: ctx.session?.flashMessages.get('info'),
     }),
   },
+
   ssr: {
     enabled: true,
     entrypoint: 'inertia/app/ssr.tsx',
@@ -717,6 +821,31 @@ const hashConfig = defineConfig({
 })
 ```
 
+### config/i18n.ts
+```typescript
+import { defineConfig } from '@adonisjs/i18n'
+
+const i18nConfig = defineConfig({
+  defaultLocale: 'en',
+  supportedLocales: ['en', 'fr'],
+  fallbackLocales: {
+    'fr-*': 'fr',
+    'en-*': 'en',
+  },
+  loaders: [
+    () => import('@adonisjs/i18n/loaders/fs')({
+      location: new URL('./resources/lang', import.meta.url),
+    }),
+  ],
+})
+
+export default i18nConfig
+
+declare module '@adonisjs/i18n/types' {
+  export interface I18nTranslations {}
+}
+```
+
 ### config/session.ts
 ```typescript
 const sessionConfig = defineConfig({
@@ -729,6 +858,139 @@ const sessionConfig = defineConfig({
   stores: {
     cookie: stores.cookie(),
   },
+})
+```
+
+---
+
+## 🌐 TRANSLATIONS STRUCTURE
+
+### Backend Translations (resources/lang/)
+```
+resources/lang/
+├── en/
+│   ├── auth.json           # Authentication messages
+│   │   ├── login.*         # Login success/failed
+│   │   ├── register.*      # Registration messages
+│   │   ├── forgot_password.* # Password reset flow
+│   │   ├── reset_password.*  # Token validation, success
+│   │   └── social.*        # OAuth messages (linked, unlinked, etc.)
+│   │
+│   ├── profile.json        # Profile management messages
+│   │   ├── update.*        # Profile update success
+│   │   ├── password.*      # Password change messages
+│   │   ├── delete.*        # Account deletion
+│   │   ├── notifications.* # Notifications cleared
+│   │   └── locale.*        # Language preference updated (NEW)
+│   │
+│   └── emails.json         # Email content
+│       └── reset_password.* # Subject, greeting, intro, action, outro, expiry, footer
+│
+└── fr/
+    ├── auth.json
+    ├── profile.json
+    └── emails.json
+```
+
+**Usage in Backend:**
+```typescript
+// In controllers
+session.flash('success', i18n.t('auth.login.success'))
+session.flash('error', i18n.t('auth.social.linked', { provider: 'GitHub' }))
+
+// In services (emails)
+const subject = i18n.t('emails.reset_password.subject')
+const greeting = i18n.t('emails.reset_password.greeting')
+```
+
+### Frontend Translations (inertia/locales/)
+```
+inertia/locales/
+├── en/
+│   ├── auth.json           # Auth pages translations
+│   │   ├── login.*         # Title, subtitle, fields, buttons
+│   │   ├── register.*      # Registration form
+│   │   ├── forgot_password.* # Forgot password page
+│   │   ├── reset_password.*  # Reset password page
+│   │   └── define_password.* # OAuth password definition
+│   │
+│   ├── profile.json        # Profile page translations
+│   │   └── sections.*      # profile_info, connected_accounts, update_password, delete_account
+│   │
+│   ├── common.json         # Common UI elements
+│   │   ├── header.*        # Navigation, greeting, menu
+│   │   ├── flash.*         # Toast close label
+│   │   ├── select.*        # Default placeholder
+│   │   └── language.*      # Language names (en, fr)
+│   │
+│   └── errors.json         # Error pages
+│       ├── not_found.*     # 404 page
+│       └── server_error.*  # 500 page
+│
+└── fr/
+    ├── auth.json
+    ├── profile.json
+    ├── common.json
+    └── errors.json
+```
+
+**Usage in Frontend:**
+```typescript
+// Single namespace
+import { useTranslation } from 'react-i18next'
+
+const { t } = useTranslation('auth')
+<h1>{t('login.title')}</h1>  // "Welcome back!" or "Bon retour!"
+
+// Multiple namespaces
+const { t } = useTranslation('auth')
+const { t: tCommon } = useTranslation('common')
+
+<h1>{t('login.title')}</h1>
+<span>{tCommon('header.home')}</span>
+```
+
+### Frontend Library Configuration (inertia/lib/i18n.ts)
+```typescript
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+
+// Imports all translation files from inertia/locales/
+// Configures namespaces: ['auth', 'profile', 'common', 'errors']
+// Sets fallback locale: 'en'
+// Initializes react-i18next
+
+export default i18n
+```
+
+### Email Templates (resources/views/emails/)
+```
+resources/views/emails/
+└── reset_password.edge     # Password reset email template
+    ├── Uses inline SCSS for email client compatibility
+    ├── Responsive design (max-width: 600px)
+    ├── Gradient header (primary → accent)
+    ├── Dynamic translations from resources/lang/{locale}/emails.json
+    └── Variables: locale, appName, greeting, intro, action, outro, expiry, footer, resetLink
+```
+
+**Example usage in service:**
+```typescript
+await mail.send((message) => {
+  message
+    .to(user.email)
+    .subject(i18n.t('emails.reset_password.subject'))
+    .htmlView('emails/reset_password', {
+      locale: user.locale || 'en',
+      appName: Env.get('APP_NAME'),
+      greeting: i18n.t('emails.reset_password.greeting'),
+      intro: i18n.t('emails.reset_password.intro'),
+      action: i18n.t('emails.reset_password.action'),
+      outro: i18n.t('emails.reset_password.outro'),
+      expiry: i18n.t('emails.reset_password.expiry', { hours: 1 }),
+      footer: i18n.t('emails.reset_password.footer'),
+      resetLink,
+    })
 })
 ```
 
@@ -787,6 +1049,27 @@ async up() {
     table.string('google_id').nullable().unique()
     table.string('facebook_id').nullable().unique()
   })
+}
+```
+
+### 1766268717077_add_locale_to_users_table.ts
+```typescript
+import { BaseSchema } from '@adonisjs/lucid/schema'
+
+export default class extends BaseSchema {
+  protected tableName = 'users'
+
+  async up() {
+    this.schema.alterTable(this.tableName, (table) => {
+      table.string('locale', 5).nullable()
+    })
+  }
+
+  async down() {
+    this.schema.alterTable(this.tableName, (table) => {
+      table.dropColumn('locale')
+    })
+  }
 }
 ```
 

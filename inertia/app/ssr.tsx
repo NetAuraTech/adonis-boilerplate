@@ -2,6 +2,7 @@ import ReactDOMServer from 'react-dom/server'
 import { createInertiaApp } from '@inertiajs/react'
 import { ReactNode } from 'react'
 import AppShell from '#components/layouts/app_shell'
+import i18n from '~/lib/i18n'
 
 export default function render(page: any) {
   return createInertiaApp({
@@ -9,14 +10,20 @@ export default function render(page: any) {
     render: ReactDOMServer.renderToString,
     resolve: (name) => {
       const pages = import.meta.glob('../pages/**/*.tsx', { eager: true })
-      const page: any = pages[`../pages/${name}.tsx`]
+      const pageModule: any = pages[`../pages/${name}.tsx`]
 
-      if (page.default.layout === undefined) {
-        page.default.layout = (page: ReactNode) => <AppShell children={page} />
+      if (pageModule.default.layout === undefined) {
+        pageModule.default.layout = (page: ReactNode) => <AppShell children={page} />
       }
 
-      return page
+      return pageModule
     },
-    setup: ({ App, props }) => <App {...props} />,
+    setup: ({ App, props }) => {
+      // Set i18n locale from page props
+      const locale = String(props.initialPage.props.locale || 'en')
+      i18n.changeLanguage(locale)
+
+      return <App {...props} />
+    },
   })
 }
