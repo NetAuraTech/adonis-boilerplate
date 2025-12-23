@@ -320,6 +320,44 @@ export function resetRedisCheck()
 
 ---
 
+## 🗃️ CORE - Exceptions
+
+### app/core/exceptions/too_many_requests_exception.ts
+```typescript
+export default class TooManyRequestsException extends Exception {
+  static status = 429
+  static code = 'E_TOO_MANY_REQUESTS'
+  
+  constructor(message: string, public retryAfter?: number)
+  // Custom exception for rate limiting
+  // Includes Retry-After header support
+  // Handles both Inertia (redirect) and API (JSON) responses
+  
+  async handle(error: this, ctx: HttpContext)
+  // For Inertia: Redirects back with flash error
+  // For API: Returns 429 JSON with retryAfter
+}
+```
+
+### app/core/exceptions/handler.ts
+```typescript
+export default class HttpExceptionHandler extends ExceptionHandler {
+  protected debug = !app.inProduction
+  protected renderStatusPages = app.inProduction
+  
+  protected statusPages: Record = {
+    '404': (error, { inertia }) => inertia.render('errors/not_found', { error }),
+    '429': (error, { inertia }) => inertia.render('errors/too_many_requests', { error }),
+    '500..599': (error, { inertia }) => inertia.render('errors/server_error', { error }),
+  }
+  
+  async handle(error: unknown, ctx: HttpContext)
+  async report(error: unknown, ctx: HttpContext)
+}
+```
+
+---
+
 ## 👤 PROFILE - Controllers
 
 ### app/profile/controllers/profile_show_controller.ts
@@ -492,6 +530,30 @@ declare module '@adonisjs/core/http' {
   export interface HttpContext {
     i18n: I18n
   }
+}
+```
+
+### app/core/middleware/throttle_middleware.ts
+```typescript
+export interface ThrottleOptions {
+  max: number                                 // Maximum requests allowed
+  window: number                              // Time window in seconds
+  keyGenerator?: (ctx: HttpContext) => string // Custom key generator
+}
+
+@inject()
+export default class ThrottleMiddleware {
+  constructor(protected rateLimitService: RateLimitService)
+  
+  async handle(ctx: HttpContext, next: NextFn, options?: ThrottleOptions)
+  // Checks rate limit using RateLimitService
+  // For Inertia requests: Redirects back with flash error
+  // For API requests: Throws TooManyRequestsException
+  // Adds rate limit headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+  // Logs rate limit violations
+  
+  private generateKey(ctx: HttpContext): string
+  // Generates rate limit key: "throttle:{route}:{ip}"
 }
 ```
 
@@ -994,6 +1056,10 @@ resources/lang/
 │   │   ├── reset_password.*  # Token validation, success
 │   │   └── social.*        # OAuth messages (linked, unlinked, etc.)
 │   │
+│   ├──errors.json         # Error messages (NEW)
+│   │   ├── too_many_requests   # Rate limit error with {minutes} placeholder
+│   │   └── rate_limit_exceeded # Generic rate limit message
+│   │
 │   ├── profile.json        # Profile management messages
 │   │   ├── update.*        # Profile update success
 │   │   ├── password.*      # Password change messages
@@ -1007,6 +1073,7 @@ resources/lang/
 └── fr/
     ├── auth.json
     ├── profile.json
+    ├──errors.json 
     └── emails.json
 ```
 
@@ -1276,7 +1343,7 @@ server.errorHandler(() => import('#core/exceptions/handler'))
 
 server.use([
   container_bindings,
-  static,
+  static_files,
   cors,
   vite,
   inertia,
@@ -1288,20 +1355,50 @@ router.use([
   shield,
   initialize_auth,
   silent_auth,
+  detect_locale,
 ])
 
 export const middleware = router.named({
   guest: () => import('#core/middleware/guest_middleware'),
   auth: () => import('#core/middleware/auth_middleware'),
+  throttle: () => import('#core/middleware/throttle_middleware'),
 })
 ```
 
 ### start/routes.ts
 ```typescript
 // Structure:
-router.group(() => {
-  // Auth routes (login, register, forgot, reset)
-}).use(middleware.guest())
+router
+  .group(() => {
+    // Login
+    router.get('/login', [LoginController, 'render']).as('auth.login')
+    router
+      .post('/login', [LoginController, 'execute'])
+      .use(middleware.throttle({ max: 5, window: 900 }))  // 5 attempts / 15min
+
+    // Register
+    router.get('/register', [RegisterController, 'render']).as('auth.register')
+    router
+      .post('/register', [RegisterController, 'execute'])
+      .use(middleware.throttle({ max: 3, window: 3600 }))  // 3 registrations / 1h
+
+    // Forgot Password
+    router
+      .get('/forgot-password', [ForgotPasswordController, 'render'])
+      .as('auth.forgot_password')
+    router
+      .post('/forgot-password', [ForgotPasswordController, 'execute'])
+      .use(middleware.throttle({ max: 3, window: 3600 }))  // 3 requests / 1h
+
+    // Reset Password
+    router
+      .get('/reset-password/:token', [ResetPasswordController, 'render'])
+      .as('auth.reset_password')
+    router
+      .post('/reset-password', [ResetPasswordController, 'execute'])
+      .use(middleware.throttle({ max: 3, window: 900 }))  // 3 attempts / 15min
+  })
+  .use(middleware.guest())
 
 router.group(() => {
   // Authenticated routes (logout, define-password, unlink)

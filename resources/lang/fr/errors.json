@@ -1,0 +1,4 @@
+{
+  "too_many_requests": "Trop de requêtes. Veuillez réessayer dans {minutes} minute(s).",
+  "rate_limit_exceeded": "Limite de taux dépassée. Veuillez ralentir."
+}

@@ -694,6 +694,40 @@ created_at, updated_at
 - `auth`: Protects routes, redirects to `/login` if not authenticated
 - `guest`: Blocks if authenticated, redirects to `/`
 - `silentAuth`: Checks without blocking (applied globally)
+- `throttle` - Rate limiting with automatic fallback (Redis → Database)
+
+**Throttle Middleware Options:**
+```typescript
+interface ThrottleOptions {
+  max: number        // Maximum requests allowed
+  window: number     // Time window in seconds
+  keyGenerator?: (ctx: HttpContext) => string  // Custom key (default: route + IP)
+}
+```
+
+### Security Features
+
+#### Rate Limiting
+- Protects against brute force attacks
+- Applied on all authentication endpoints
+- Automatic fallback (Redis → Database)
+- Returns user-friendly error messages
+- Logs suspicious activity
+
+#### CSRF Protection
+- Enabled via Shield middleware
+- Applied on all POST, PUT, PATCH, DELETE requests
+- Token validation automatic
+
+#### XSS Protection
+- Input sanitization via VineJS validators
+- Output escaping in templates
+- Content Security Policy (CSP) ready
+
+#### Password Security
+- Scrypt hashing (cost: 16384)
+- Minimum 8 characters
+- Confirmation required on registration/change
 
 ### OAuth (Ally)
 - **Providers:** GitHub, Google, Facebook
@@ -1097,11 +1131,25 @@ logger.error('Error', { context })
 ### Infrastructure
 - ✅ AdonisJS 6 + Lucid ORM
 - ✅ Inertia + React + SSR
-- ✅ Vite
+- ✅ Vite build system
 - ✅ VineJS validation
 - ✅ Shield (CSRF, XFrame, HSTS)
 - ✅ Mail (SMTP)
 - ✅ Ally (OAuth)
+- ✅ Redis with automatic fallback (Memory/Database)
+- ✅ Cache service (Redis → Memory)
+- ✅ Rate limiting service (Redis → Database)
+- ✅ Session management (Redis → Cookie)
+
+### Security
+- ✅ Rate limiting on auth routes (brute force protection)
+- ✅ CSRF protection on all forms
+- ✅ Password hashing (Scrypt)
+- ✅ Session-based authentication
+- ✅ Remember me tokens
+- ✅ Secure password reset flow
+- ✅ OAuth security validations
+- ✅ Logging of suspicious activities
 
 ### UI/UX
 - ✅ Complete SCSS design system

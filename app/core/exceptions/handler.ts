@@ -22,6 +22,7 @@ export default class HttpExceptionHandler extends ExceptionHandler {
    */
   protected statusPages: Record<StatusPageRange, StatusPageRenderer> = {
     '404': (error, { inertia }) => inertia.render('errors/not_found', { error }),
+    '429': (error, { inertia }) => inertia.render('errors/too_many_requests', { error }),
     '500..599': (error, { inertia }) => inertia.render('errors/server_error', { error }),
   }
 

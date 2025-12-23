@@ -32,18 +32,26 @@ router.on('/').renderInertia('landing').as('landing')
 router
   .group(() => {
     router.get('/login', [LoginController, 'render']).as('auth.login')
-    router.post('/login', [LoginController, 'execute'])
+    router
+      .post('/login', [LoginController, 'execute'])
+      .use(middleware.throttle({ max: 5, window: 900 }))
 
     router.get('/register', [RegisterController, 'render']).as('auth.register')
-    router.post('/register', [RegisterController, 'execute'])
+    router
+      .post('/register', [RegisterController, 'execute'])
+      .use(middleware.throttle({ max: 3, window: 3600 }))
 
-    router.get('/forgot-password', [ForgotPasswordController, 'render']).as('auth.forgot.password')
-    router.post('/forgot-password', [ForgotPasswordController, 'execute'])
+    router.get('/forgot-password', [ForgotPasswordController, 'render']).as('auth.forgot_password')
+    router
+      .post('/forgot-password', [ForgotPasswordController, 'execute'])
+      .use(middleware.throttle({ max: 3, window: 3600 }))
 
     router
       .get('/reset-password/:token', [ResetPasswordController, 'render'])
-      .as('auth.reset.password')
-    router.post('/reset-password', [ResetPasswordController, 'execute'])
+      .as('auth.reset_password')
+    router
+      .post('/reset-password', [ResetPasswordController, 'execute'])
+      .use(middleware.throttle({ max: 3, window: 900 }))
   })
   .use(middleware.guest())
 

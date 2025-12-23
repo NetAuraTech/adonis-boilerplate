@@ -1,0 +1,4 @@
+{
+  "too_many_requests": "Too many requests. Please try again in {minutes} minute(s).",
+  "rate_limit_exceeded": "Rate limit exceeded. Please slow down."
+}
