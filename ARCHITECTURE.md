@@ -882,17 +882,86 @@ locale: vine.enum(['en', 'fr', 'es']),  // Add 'es'
 }
 ```
 
-## ⚡ Cache (TO IMPLEMENT)
+## ⚡ Cache & Redis
 
 ### Stack
-- **Primary:** Redis
-- **Fallback:** Memory cache if Redis unavailable
-- **Package:** @adonisjs/redis
+- **Package:** @adonisjs/redis + ioredis
+- **Primary:** Redis (if available)
+- **Fallback:** Memory cache (development) or Database (production)
+- **Auto-detection:** Automatic Redis availability detection
 
-### Use Cases
-- Sessions (with cookie fallback)
-- Query cache (users, roles, permissions)
-- Rate limiting
+### CacheService
+
+Centralized service with automatic fallback:
+```typescript
+import CacheService from '#core/services/cache_service'
+
+const cache = new CacheService()
+
+// Basic operations
+await cache.get('key')
+await cache.set('key', value, ttlSeconds)
+await cache.delete('key')
+await cache.has('key')
+await cache.flush()
+
+// Numerical operations
+await cache.increment('counter', 1, ttlSeconds)
+await cache.decrement('counter', 1, ttlSeconds)
+
+// Multiple operations
+await cache.getMany(['key1', 'key2'])
+await cache.setMany(new Map([['key1', value1], ['key2', value2]]), ttlSeconds)
+```
+
+### RateLimitService
+
+Rate limiting service with automatic fallback:
+```typescript
+import RateLimitService from '#core/services/rate_limit_service'
+
+const limit = new RateLimitService()
+
+const result = await limiter.attempt('login:192.168.1.1', 5, 900) // 5 attempts / 15min
+
+if (!result.allowed) { 
+// Rate limit reached 
+console.log(`Retry after ${result.retryAfter}s`)
+}
+```
+
+### Sessions with Redis
+
+Sessions use Redis if available; otherwise, they fall back to cookies:
+
+- **Redis enabled:** Sessions shared between instances, automatic TTL, automatic cleanup
+- **Redis disabled:** Sessions in cookies (automatic fallback)
+
+### Configuration
+```env
+REDIS_ENABLED=false # true to enable Redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_PASSWORD=
+```
+
+### Helpers
+```typescript
+import { isRedisAvailable, getRedisConnection } from '#core/helpers/redis'
+
+if (await isRedisAvailable()) {
+const redis = await getRedisConnection()
+await redis.ping()
+
+}
+```
+
+### Cleanup
+```bash
+# Clean up expired rate limits (to be configured via cron)
+node ace cleanup:rate-limits
+```
+
 
 ---
 
@@ -1042,6 +1111,15 @@ logger.error('Error', { context })
 - ✅ Complete auth pages
 - ✅ Complete profile page
 - ✅ Real-time visual validation
+
+### Cache & Redis
+- ✅ Redis configuration with retry strategy
+- ✅ Cache Service with automatic fallback (Redis → Memory)
+- ✅ Rate Limit Service with fallback (Redis → Database)
+- ✅ Sessions stored in Redis (with fallback cookies)
+- ✅ Automatic Redis availability detection
+- ✅ Cleanup command for expired rate limits
+- ✅ o2Switch compatible (graceful degradation)
 
 ---
 

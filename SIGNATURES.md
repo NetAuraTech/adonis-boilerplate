@@ -230,6 +230,96 @@ export function getProviderConfig(provider: OAuthProviderName): OAuthProviderCon
 
 ---
 
+## 🗃️ CORE - Services
+
+### app/core/services/cache_service.ts
+```typescript
+export default class CacheService {
+  async get(key: string): Promise
+  async set(key: string, value: any, ttlSeconds?: number): Promise
+  async delete(key: string): Promise
+  async has(key: string): Promise
+  async flush(): Promise
+  async increment(key: string, value: number, ttlSeconds?: number): Promise
+  async decrement(key: string, value: number, ttlSeconds?: number): Promise
+  async getMany(keys: string[]): Promise<Map>
+  async setMany(entries: Map, ttlSeconds?: number): Promise
+  // Uses Redis if available, falls back to Memory cache
+}
+```
+
+### app/core/services/rate_limit_service.ts
+```typescript
+export interface RateLimitResult {
+  allowed: boolean
+  remaining: number
+  resetAt: DateTime
+  retryAfter?: number
+}
+
+export default class RateLimitService {
+  async attempt(key: string, maxAttempts: number, decaySeconds: number): Promise
+  // Checks if request is allowed, uses Redis if available, falls back to Database
+  
+  async reset(key: string): Promise
+  // Resets rate limit for a key
+  
+  async remaining(key: string, maxAttempts: number): Promise
+  // Gets remaining attempts
+  
+  async clear(): Promise
+  // Clears all rate limits (useful for tests)
+}
+```
+
+---
+
+## 🗃️ CORE - Models
+
+### app/core/models/rate_limit.ts
+```typescript
+export default class RateLimit extends BaseModel {
+  @column({ isPrimary: true })
+  declare id: number
+  
+  @column()
+  declare key: string
+  
+  @column()
+  declare hits: number
+  
+  @column.dateTime()
+  declare resetAt: DateTime
+  
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  
+  static async cleanExpired(): Promise
+  // Deletes expired rate limit entries
+}
+```
+
+---
+
+## 🗃️ CORE - Helpers
+
+### app/core/helpers/redis.ts
+```typescript
+export async function isRedisAvailable(): Promise
+// Checks if Redis is available and connected (cached result)
+
+export async function getRedisConnection()
+// Returns Redis connection if available, throws error otherwise
+
+export function resetRedisCheck()
+// Resets availability check (useful for tests)
+```
+
+---
+
 ## 👤 PROFILE - Controllers
 
 ### app/profile/controllers/profile_show_controller.ts
@@ -476,6 +566,16 @@ export default class CreateUser extends BaseCommand {
   // Creates user with email and password "password"
 }
 ```
+
+### commands/cleanup_rate_limits.ts
+```typescript
+export default class CleanupRateLimits extends BaseCommand {
+  static commandName = 'cleanup:rate-limits'
+  static description = 'Clean expired rate limit entries from database'
+
+  async run()
+  // Calls RateLimit.cleanExpired()
+}
 
 ---
 
@@ -790,6 +890,21 @@ const mailConfig = defineConfig({
 })
 ```
 
+### config/redis.ts
+```typescript
+const redisConfig = defineConfig({
+  connection: env.get('REDIS_ENABLED') ? 'main' : 'local',
+  connections: {
+    main: {
+      host, port, password, db: 0,
+      retryStrategy: (times) => times > 3 ? null : Math.min(times * 50, 2000),
+      lazyConnect: true,
+    },
+    local: { /* fallback config */ },
+  },
+})
+```
+
 ### config/shield.ts
 ```typescript
 const shieldConfig = defineConfig({
@@ -857,6 +972,9 @@ const sessionConfig = defineConfig({
   store: env.get('SESSION_DRIVER'),  // 'cookie' or 'redis'
   stores: {
     cookie: stores.cookie(),
+    redis: stores.redis({
+      connection: 'main',
+    }),
   },
 })
 ```
@@ -1070,6 +1188,21 @@ export default class extends BaseSchema {
       table.dropColumn('locale')
     })
   }
+}
+```
+
+### 1766446092430_create_rate_limits_table.ts
+```typescript
+async up() {
+  this.schema.createTable('rate_limits', (table) => {
+    table.increments('id')
+    table.string('key', 255).notNullable().unique()
+    table.integer('hits').notNullable().defaultTo(0)
+    table.timestamp('reset_at').notNullable()
+    table.timestamp('created_at')
+    table.timestamp('updated_at')
+    table.index('reset_at')
+  })
 }
 ```
 
