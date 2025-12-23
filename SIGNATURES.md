@@ -44,9 +44,31 @@ export default class ForgotPasswordController {
 ### app/auth/controllers/reset_password_controller.ts
 ```typescript
 export default class ResetPasswordController {
-  static validator = vine.compile(...)
-  async render({ inertia, params, session, response }: HttpContext)
-  async execute({ request, response, session, auth }: HttpContext)
+  static validator = vine.compile(
+    vine.object({
+      token: vine.string(),
+      password: vine.string().minLength(8).confirmed(),
+    })
+  )
+
+  async render({ inertia, params, session, response, i18n }: HttpContext)
+  // Displays password reset form
+  // Verifies token validity before showing form
+  // Redirects to forgot-password if token invalid/expired/exceeded attempts
+
+  async execute({ request, response, session, auth, i18n }: HttpContext)
+  // Resets user password
+  // CRITICAL FLOW:
+  // 1. Increments attempts counter BEFORE any validation
+  // 2. Checks if max attempts exceeded (3) → redirect if exceeded
+  // 3. Validates form data (VineJS)
+  // 4. Verifies token and gets associated user
+  // 5. Updates password and expires all tokens
+  // 6. Logs in user and redirects to profile
+
+  // Logging:
+  // - All attempts logged with masked token + IP
+  // - Distinguishes between invalid token and exceeded attempts
 }
 ```
 
@@ -77,13 +99,20 @@ export default class SocialController {
 ```typescript
 export default class PasswordService {
   async sendResetPasswordLink(user: User): Promise
-  // Now uses:
-  // - i18nManager to detect user's locale (user.locale || 'en')
-  // - Edge template (resources/views/emails/reset_password.edge)
-  // - Translations from resources/lang/{locale}/emails.json
-  // - Generates random(64) token, expires old tokens
-  // - Creates new token with 1h expiration
-  // - Builds reset link and sends multilingual email
+  // Generates secure token, hashes it, and sends reset email
+  // Flow:
+  // 1. Expires all existing PASSWORD_RESET tokens for user
+  // 2. Generates cryptographically secure random token (128 hex chars)
+  // 3. Hashes token with Scrypt before storing in database
+  // 4. Creates new Token with attempts=0, expiresAt=+1h
+  // 5. Sends email with PLAIN token (not hashed) in reset link
+  // 6. Email content in user's locale (i18n support)
+
+  // Security notes:
+  // - Plain token only sent via email, never stored
+  // - Hashed token stored in database
+  // - Token expires after 1 hour
+  // - Maximum 3 submission attempts per token
 }
 ```
 
@@ -318,6 +347,21 @@ export function resetRedisCheck()
 // Resets availability check (useful for tests)
 ```
 
+### app/core/helpers/crypto.ts
+```typescript
+export function randomBytes(length: number): string
+// Generates cryptographically secure random string (hex)
+
+export function generateToken(bytes: number = 64): string
+// Generates secure token (default: 128 hex chars)
+// Used for password reset tokens
+
+export function maskToken(token: string, visibleChars: number = 10): string
+// Masks token for logging (shows only first N characters)
+// Example: "a3f2e9c8d1***"
+// Prevents token leakage in logs
+```
+
 ---
 
 ## 🗃️ CORE - Exceptions
@@ -420,37 +464,54 @@ export default class ProfileCleanNotificationsController {
 export default class Token extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
-  
+
   @column()
   declare public userId: number | null
-  
+
   @column()
-  declare public type: string  // 'PASSWORD_RESET', etc.
-  
+  declare public type: string
+
   @column()
   declare public token: string
-  
+  // Token is HASHED (Scrypt) before storage for security
+
+  @column()
+  declare public attempts: number
+  // Counter for submission attempts (default: 0)
+
   @column.dateTime()
   declare expiresAt: DateTime | null
-  
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
-  
+
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
-  
+
   @belongsTo(() => User)
   declare public user: BelongsTo<typeof User>
-  
+
+  // Constants
+  static readonly MAX_RESET_ATTEMPTS = 3
+
   // Static methods
-  public static async expirePasswordResetTokens(user: User): Promise<void>
-  // Sets expiresAt to now for all user's PASSWORD_RESET tokens
-  
-  public static async getPasswordResetUser(token: string): Promise<User | undefined>
-  // Returns user associated with valid token
-  
-  public static async verify(token: string): Promise<boolean>
-  // Verifies if token exists and is not expired
+  static async expirePasswordResetTokens(user: User): Promise<void>
+  // Expires all PASSWORD_RESET tokens for a user
+
+  static async getPasswordResetUser(plainToken: string): Promise<User | undefined>
+  // Finds user by verifying hashed token
+  // Returns undefined if token invalid, expired, or attempts exceeded
+  // Uses hash.verify() to compare plain token with hashed token in DB
+
+  static async verify(plainToken: string): Promise<boolean>
+  // Verifies token is valid, not expired, and has not exceeded max attempts
+
+  static async incrementAttempts(plainToken: string): Promise<void>
+  // Increments attempts counter for a token
+  // CRITICAL: Called BEFORE validation to prevent brute force
+
+  static async hasExceededAttempts(plainToken: string): Promise<boolean>
+  // Checks if token has reached or exceeded MAX_RESET_ATTEMPTS
 }
 ```
 
@@ -1053,7 +1114,11 @@ resources/lang/
 │   │   ├── login.*         # Login success/failed
 │   │   ├── register.*      # Registration messages
 │   │   ├── forgot_password.* # Password reset flow
-│   │   ├── reset_password.*  # Token validation, success
+│   │   ├── reset_password.*  # Token validation, success (UPDATED)
+│   │   │   ├── success           # "Your password has been reset successfully."
+│   │   │   ├── invalid_token     # "Invalid or expired password reset link."
+│   │   │   ├── max_attempts_exceeded  # "This link has been used too many times..." (NEW)
+│   │   │   └── failed            # "Failed to reset password. Please try again."
 │   │   └── social.*        # OAuth messages (linked, unlinked, etc.)
 │   │
 │   ├──errors.json         # Error messages (NEW)
@@ -1269,6 +1334,36 @@ async up() {
     table.timestamp('created_at')
     table.timestamp('updated_at')
     table.index('reset_at')
+  })
+}
+```
+
+### 1766503909953_add_attempts_to_tokens_table.ts
+```typescript
+async up() {
+  this.schema.alterTable('tokens', (table) => {
+    table.integer('attempts').notNullable().defaultTo(0)
+  })
+}
+
+async down() {
+  this.schema.alterTable('tokens', (table) => {
+    table.dropColumn('attempts')
+  })
+}
+```
+
+### 1766504715515_alter_tokens_add_longer_hashes_table.ts
+```typescript
+async up() {
+  this.schema.alterTable('tokens', (table) => {
+    table.string('token', 255).notNullable().alter()
+  })
+}
+
+async down() {
+  this.schema.alterTable('tokens', (table) => {
+    table.string('token', 64).notNullable().alter()
   })
 }
 ```

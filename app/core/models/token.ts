@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
-import User from '#auth/models/user'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import User from '#auth/models/user'
+import hash from '@adonisjs/core/services/hash'
 
 export default class Token extends BaseModel {
   @column({ isPrimary: true })
@@ -16,6 +17,9 @@ export default class Token extends BaseModel {
   @column()
   declare public token: string
 
+  @column()
+  declare public attempts: number
+
   @column.dateTime()
   declare expiresAt: DateTime | null
 
@@ -28,29 +32,98 @@ export default class Token extends BaseModel {
   @belongsTo(() => User)
   declare public user: BelongsTo<typeof User>
 
-  public static async expirePasswordResetTokens(user: User) {
-    await user.related('passwordResetTokens').query().update({
-      expiresAt: DateTime.now(),
-    })
+  /**
+   * Maximum attempts allowed for password reset tokens
+   */
+  static readonly MAX_RESET_ATTEMPTS = 3
+
+  /**
+   * Expire all password reset tokens for a user
+   */
+  public static async expirePasswordResetTokens(user: User): Promise<void> {
+    await this.query()
+      .where('user_id', user.id)
+      .where('type', 'PASSWORD_RESET')
+      .update({ expiresAt: DateTime.now() })
   }
 
-  public static async getPasswordResetUser(token: string) {
-    const record = await Token.query()
+  /**
+   * Get user associated with a valid password reset token
+   * Verifies:
+   * - Token exists and matches (hashed comparison)
+   * - Token is not expired
+   * - Token has not exceeded max attempts
+   */
+  public static async getPasswordResetUser(plainToken: string): Promise<User | undefined> {
+    const tokens = await this.query()
+      .where('type', 'PASSWORD_RESET')
+      .where('expires_at', '>', DateTime.now().toSQL()!)
       .preload('user')
-      .where('token', token)
-      .where('expiresAt', '>', DateTime.now().toSQL())
-      .orderBy('createdAt', 'desc')
-      .first()
 
-    return record?.user
+    for (const token of tokens) {
+      const matches = await hash.verify(token.token, plainToken)
+      if (matches) {
+        if (token.attempts >= this.MAX_RESET_ATTEMPTS) {
+          return undefined
+        }
+        return token.user
+      }
+    }
+
+    return undefined
   }
 
-  public static async verify(token: string) {
-    const record = await Token.query()
-      .where('expiresAt', '>', DateTime.now().toSQL())
-      .where('token', token)
-      .first()
+  /**
+   * Verify token exists, is not expired, and has not exceeded max attempts
+   */
+  public static async verify(plainToken: string): Promise<boolean> {
+    const tokens = await this.query()
+      .where('type', 'PASSWORD_RESET')
+      .where('expires_at', '>', DateTime.now().toSQL()!)
 
-    return !!record
+    for (const token of tokens) {
+      const matches = await hash.verify(token.token, plainToken)
+      if (matches) {
+        return token.attempts < this.MAX_RESET_ATTEMPTS
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * Increment attempts counter for a token
+   */
+  public static async incrementAttempts(plainToken: string): Promise<void> {
+    const tokens = await this.query()
+      .where('type', 'PASSWORD_RESET')
+      .where('expires_at', '>', DateTime.now().toSQL()!)
+
+    for (const token of tokens) {
+      const matches = await hash.verify(token.token, plainToken)
+      if (matches) {
+        token.attempts += 1
+        await token.save()
+        return
+      }
+    }
+  }
+
+  /**
+   * Check if token has exceeded max attempts
+   */
+  public static async hasExceededAttempts(plainToken: string): Promise<boolean> {
+    const tokens = await this.query()
+      .where('type', 'PASSWORD_RESET')
+      .where('expires_at', '>', DateTime.now().toSQL()!)
+
+    for (const token of tokens) {
+      const matches = await hash.verify(token.token, plainToken)
+      if (matches) {
+        return token.attempts >= this.MAX_RESET_ATTEMPTS
+      }
+    }
+
+    return false
   }
 }

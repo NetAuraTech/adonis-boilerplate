@@ -425,6 +425,8 @@ export function helperTwo() {}
 **Existing Helpers (Backend):**
 - `validator.ts`: `unique()`, `exists()`, `query()`
 - `sleep.ts`: `sleep(time)`
+- `redis.ts`: `isRedisAvailable()`, `getRedisConnection()`, `resetRedisCheck()`
+- `crypto.ts`: `generateToken()`, `randomBytes()`, `maskToken()`
 
 **Existing Helpers (Frontend):**
 - `oauth.ts`: `getProviderRoute()`
@@ -432,6 +434,17 @@ export function helperTwo() {}
 **i18n Helpers:**
 - Backend: `ctx.i18n.t(key, params)` - Translate with interpolation
 - Frontend: `useTranslation(namespace)` - React hook for translations
+
+**Crypto Helpers:**
+```typescript
+import { generateToken, maskToken } from '#core/helpers/crypto'
+
+// Generate cryptographically secure token (default: 64 bytes = 128 hex)
+const token = generateToken()  // "a3f2e9c8..."
+
+// Mask token for logging (show only first 10 characters)
+const masked = maskToken(token)  // "a3f2e9c8***"
+```
 
 ---
 
@@ -728,6 +741,50 @@ interface ThrottleOptions {
 - Scrypt hashing (cost: 16384)
 - Minimum 8 characters
 - Confirmation required on registration/change
+
+#### Password Reset Security
+
+**Token Security:**
+- Tokens are hashed (Scrypt) before storage in database
+- Plain tokens only sent via email, never stored
+- 128 hex characters (64 bytes) cryptographically secure random generation
+
+**Attempt Limiting:**
+- Maximum 3 submission attempts per token
+- Counter incremented BEFORE validation to prevent brute force
+- Automatic invalidation after 3 failed attempts
+- Applies to all form submissions (even validation errors)
+
+**Token Lifecycle:**
+- 1 hour expiration from creation
+- All previous tokens expired when new one generated
+- Automatic expiration after successful password reset
+
+**Logging:**
+- All failed attempts logged with masked token (10 first chars)
+- IP address tracked for suspicious activity
+- Distinguishes between invalid token and exceeded attempts
+
+**Combined Protection:**
+- Rate limiting: 3 requests per 15 minutes (per IP)
+- Attempt limiting: 3 submissions per token (per token)
+- Expiration: 1 hour maximum lifetime
+
+**Example Flow:**
+```typescript
+// User requests reset → Token generated and hashed
+const plainToken = generateToken()  // 128 hex chars
+const hashedToken = await hash.make(plainToken)
+await Token.create({ token: hashedToken, attempts: 0, expiresAt: +1h })
+
+// Each form submission increments attempts
+await Token.incrementAttempts(plainToken)
+
+// After 3 attempts → token invalidated
+if (attempts >= 3) {
+  // Redirect with error: "max_attempts_exceeded"
+}
+```
 
 ### OAuth (Ally)
 - **Providers:** GitHub, Google, Facebook
@@ -1147,9 +1204,13 @@ logger.error('Error', { context })
 - ✅ Password hashing (Scrypt)
 - ✅ Session-based authentication
 - ✅ Remember me tokens
-- ✅ Secure password reset flow
+- ✅ Secure password reset flow with hashed tokens
+- ✅ Attempt limiting on password reset (3 attempts per token)
+- ✅ Token expiration (1 hour)
+- ✅ Automatic token invalidation after max attempts
 - ✅ OAuth security validations
-- ✅ Logging of suspicious activities
+- ✅ Comprehensive logging of suspicious activities
+- ✅ Token masking in logs (security best practice)
 
 ### UI/UX
 - ✅ Complete SCSS design system

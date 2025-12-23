@@ -1,40 +1,44 @@
-import mail from '@adonisjs/mail/services/main'
-import { DateTime } from 'luxon'
 import User from '#auth/models/user'
-import string from '@adonisjs/core/helpers/string'
 import Token from '#core/models/token'
-import router from '@adonisjs/core/services/router'
-import Env from '#start/env'
+import mail from '@adonisjs/mail/services/main'
+import env from '#start/env'
+import { DateTime } from 'luxon'
 import i18nManager from '@adonisjs/i18n/services/main'
+import hash from '@adonisjs/core/services/hash'
+import { generateToken } from '#core/helpers/crypto'
 
 export default class PasswordService {
-  async sendResetPasswordLink(user: User) {
-    const token = string.generateRandom(64)
-
+  /**
+   * Send password reset link to user's email
+   * Token is hashed before storage for security
+   */
+  async sendResetPasswordLink(user: User): Promise<void> {
     await Token.expirePasswordResetTokens(user)
 
-    const record = await user.related('tokens').create({
-      type: 'PASSWORD_RESET',
-      expiresAt: DateTime.now().plus({ hour: 1 }),
-      token,
-    })
+    const plainToken = generateToken()
 
-    const resetLink = `${Env.get('DOMAIN')}${router.makeUrl('auth.reset.password', [record.token])}`
+    const hashedToken = await hash.make(plainToken)
+
+    await Token.create({
+      userId: user.id,
+      type: 'PASSWORD_RESET',
+      token: hashedToken,
+      attempts: 0,
+      expiresAt: DateTime.now().plus({ hours: 1 }),
+    })
 
     const locale = user.locale || 'en'
     const i18n = i18nManager.locale(locale)
 
-    const appName = Env.get('APP_NAME', 'AdonisJS')
+    const resetLink = `${env.get('DOMAIN')}/reset-password/${plainToken}`
 
     await mail.send((message) => {
       message
         .to(user.email)
-        .from(Env.get('SMTP_USERNAME', 'noreply@example.com'))
         .subject(i18n.t('emails.reset_password.subject'))
         .htmlView('emails/reset_password', {
           locale,
-          subject: i18n.t('emails.reset_password.subject'),
-          appName,
+          appName: env.get('APP_NAME'),
           greeting: i18n.t('emails.reset_password.greeting'),
           intro: i18n.t('emails.reset_password.intro'),
           action: i18n.t('emails.reset_password.action'),
