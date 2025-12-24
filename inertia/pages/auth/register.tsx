@@ -7,6 +7,8 @@ import { NavLink } from '~/components/elements/nav_link'
 import { getProviderRoute } from '~/helpers/oauth'
 import type { OAuthProvider } from '~/types/oauth'
 import { useTranslation } from 'react-i18next'
+import { useFormValidation } from '~/hooks/use_form_validation'
+import { presets } from '~/helpers/validation_rules'
 
 interface RegisterPageProps {
   providers: OAuthProvider[]
@@ -17,14 +19,20 @@ export default function RegisterPage(props: RegisterPageProps) {
   const form = useForm({ email: '', password: '', password_confirmation: '' })
   const { providers } = props
 
+  const validation = useFormValidation({
+    email: presets.email,
+    password: presets.password,
+    password_confirmation: presets.passwordConfirmation(form.data.password),
+  })
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    form.post('/register')
-  }
+    const isValid = validation.validateAll(form.data)
 
-  const isPasswordValid = form.data.password.length >= 8
-  const isConfirmValid =
-    form.data.password_confirmation === form.data.password && form.data.password !== ''
+    if (isValid) {
+      form.post('/register')
+    }
+  }
 
   return (
     <>
@@ -56,29 +64,53 @@ export default function RegisterPage(props: RegisterPageProps) {
               name="email"
               type="email"
               placeholder={t('register.email_placeholder')}
-              errorMessage={form.errors.email}
-              onChange={(event) => form.setData('email', event.target.value)}
-              required={true}
+              errorMessage={form.errors.email || validation.getValidationMessage('email')}
+              onChange={(event) => {
+                form.setData('email', event.target.value)
+                validation.handleChange('email', event.target.value)
+              }}
+              onBlur={(event) => {
+                validation.handleBlur('email', event.target.value)
+              }}
+              required
+              sanitize
             />
             <InputGroup
               label={t('register.password')}
               name="password"
               type="password"
-              errorMessage={form.errors.password}
-              onChange={(event) => form.setData('password', event.target.value)}
-              required={true}
+              errorMessage={form.errors.password || validation.getValidationMessage('password')}
+              onChange={(event) => {
+                form.setData('password', event.target.value)
+                validation.handleChange('password', event.target.value)
+              }}
+              onBlur={(event) => {
+                validation.handleBlur('password', event.target.value)
+              }}
+              required
+              sanitize={false}
               helpText={t('register.password_help')}
-              helpClassName={isPasswordValid ? 'clr-green-500' : 'clr-red-400'}
+              helpClassName={validation.getHelpClassName('password')}
             />
             <InputGroup
               label={t('register.confirmation')}
               name="password_confirmation"
               type="password"
-              errorMessage={form.errors.password_confirmation}
-              onChange={(event) => form.setData('password_confirmation', event.target.value)}
-              required={true}
+              errorMessage={
+                form.errors.password_confirmation ||
+                validation.getValidationMessage('password_confirmation')
+              }
+              onChange={(event) => {
+                form.setData('password_confirmation', event.target.value)
+                validation.handleChange('password_confirmation', event.target.value)
+              }}
+              onBlur={(event) => {
+                validation.handleBlur('password_confirmation', event.target.value)
+              }}
+              required
+              sanitize={false}
               helpText={t('register.confirmation_help')}
-              helpClassName={isConfirmValid ? 'clr-green-500' : 'clr-red-400'}
+              helpClassName={validation.getHelpClassName('password_confirmation')}
             />
             <Button loading={form.processing} fitContent>
               {t('register.submit')}

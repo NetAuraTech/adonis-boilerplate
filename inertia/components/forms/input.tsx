@@ -13,6 +13,7 @@ interface InputProps {
   disabled?: boolean
   required?: boolean
   onChange?: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void
+  onBlur?: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void
 }
 
 export function Input(props: InputProps) {
@@ -29,6 +30,7 @@ export function Input(props: InputProps) {
     disabled,
     required,
     onChange,
+    onBlur,
     ...inputProps
   } = props
 
@@ -51,6 +53,7 @@ export function Input(props: InputProps) {
           disabled={disabled}
           required={required}
           onChange={onChange as (e: ChangeEvent<HTMLTextAreaElement>) => void}
+          onBlur={onBlur}
           className={baseInputClass}
           {...inputProps}
         />
@@ -65,6 +68,7 @@ export function Input(props: InputProps) {
           disabled={disabled}
           required={required}
           onChange={onChange as (e: ChangeEvent<HTMLSelectElement>) => void}
+          onBlur={onBlur}
           className={`${baseInputClass} cursor-pointer`}
           {...inputProps}
         >
@@ -87,6 +91,7 @@ export function Input(props: InputProps) {
           disabled={disabled}
           required={required}
           onChange={onChange as (e: ChangeEvent<HTMLInputElement>) => void}
+          onBlur={onBlur}
           className={`${checkableClass} border-radius-1`}
           style={{ width: '1.25rem', height: '1.25rem' }}
           {...inputProps}
@@ -104,6 +109,7 @@ export function Input(props: InputProps) {
           disabled={disabled}
           required={required}
           onChange={onChange as (e: ChangeEvent<HTMLInputElement>) => void}
+          onBlur={onBlur}
           className={checkableClass}
           style={{ width: '1.25rem', height: '1.25rem' }}
           {...inputProps}
@@ -119,6 +125,7 @@ export function Input(props: InputProps) {
           disabled={disabled}
           required={required}
           onChange={onChange as (e: ChangeEvent<HTMLInputElement>) => void}
+          onBlur={onBlur}
           className="fs-300 clr-neutral-600 cursor-pointer
                      file:margin-inline-end-4 file:padding-block-2 file:padding-inline-4
                      file:border-radius-2 file:border-none
@@ -140,6 +147,7 @@ export function Input(props: InputProps) {
           disabled={disabled}
           required={required}
           onChange={onChange as (e: ChangeEvent<HTMLInputElement>) => void}
+          onBlur={onBlur}
           className={baseInputClass}
           {...inputProps}
         />

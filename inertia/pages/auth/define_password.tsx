@@ -4,19 +4,26 @@ import { InputGroup } from '#components/forms/input_group'
 import { Button } from '#components/elements/button'
 import { Head, useForm } from '@inertiajs/react'
 import { useTranslation } from 'react-i18next'
+import { useFormValidation } from '~/hooks/use_form_validation'
+import { presets } from '~/helpers/validation_rules'
 
 export default function DefinePasswordPage() {
   const { t } = useTranslation('auth')
   const form = useForm({ password: '', password_confirmation: '' })
 
+  const validation = useFormValidation({
+    password: presets.password,
+    password_confirmation: presets.passwordConfirmation(form.data.password),
+  })
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    form.post('/oauth/define-password')
-  }
+    const isValid = validation.validateAll(form.data)
 
-  const isPasswordValid = form.data.password.length >= 8
-  const isConfirmValid =
-    form.data.password_confirmation === form.data.password && form.data.password !== ''
+    if (isValid) {
+      form.post('/oauth/define-password')
+    }
+  }
 
   return (
     <>
@@ -47,21 +54,38 @@ export default function DefinePasswordPage() {
               label={t('define_password.password')}
               name="password"
               type="password"
-              errorMessage={form.errors.password}
-              onChange={(event) => form.setData('password', event.target.value)}
-              required={true}
+              errorMessage={form.errors.password || validation.getValidationMessage('password')}
+              onChange={(event) => {
+                form.setData('password', event.target.value)
+                validation.handleChange('password', event.target.value)
+              }}
+              onBlur={(event) => {
+                validation.handleBlur('password', event.target.value)
+              }}
+              required
+              sanitize={false}
               helpText={t('define_password.password_help')}
-              helpClassName={isPasswordValid ? 'clr-green-500' : 'clr-red-400'}
+              helpClassName={validation.getHelpClassName('password')}
             />
             <InputGroup
               label={t('define_password.confirmation')}
               name="password_confirmation"
               type="password"
-              errorMessage={form.errors.password_confirmation}
-              onChange={(event) => form.setData('password_confirmation', event.target.value)}
-              required={true}
+              errorMessage={
+                form.errors.password_confirmation ||
+                validation.getValidationMessage('password_confirmation')
+              }
+              onChange={(event) => {
+                form.setData('password_confirmation', event.target.value)
+                validation.handleChange('password_confirmation', event.target.value)
+              }}
+              onBlur={(event) => {
+                validation.handleBlur('password_confirmation', event.target.value)
+              }}
+              required
+              sanitize={false}
               helpText={t('define_password.confirmation_help')}
-              helpClassName={isConfirmValid ? 'clr-green-500' : 'clr-red-400'}
+              helpClassName={validation.getHelpClassName('password_confirmation')}
             />
             <Button loading={form.processing} fitContent>
               {t('define_password.submit')}

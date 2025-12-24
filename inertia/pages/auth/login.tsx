@@ -5,20 +5,33 @@ import { Button } from '#components/elements/button'
 import { Head, useForm } from '@inertiajs/react'
 import { NavLink } from '~/components/elements/nav_link'
 import { getProviderRoute } from '~/helpers/oauth'
-import { OAuthProvider } from '~/types/oauth'
+import type { OAuthProvider } from '~/types/oauth'
 import { useTranslation } from 'react-i18next'
+import { useFormValidation } from '~/hooks/use_form_validation'
+import { presets } from '~/helpers/validation_rules'
 
 interface LoginPageProps {
   providers: OAuthProvider[]
 }
+
 export default function LoginPage(props: LoginPageProps) {
   const { t } = useTranslation('auth')
   const form = useForm({ email: '', password: '', remember_me: false })
   const { providers } = props
 
+  const validation = useFormValidation({
+    email: presets.email,
+    password: presets.password,
+  })
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    form.post('/login')
+
+    const isValid = validation.validateAll(form.data)
+
+    if (isValid) {
+      form.post('/login')
+    }
   }
 
   return (
@@ -51,29 +64,39 @@ export default function LoginPage(props: LoginPageProps) {
               name="email"
               type="email"
               placeholder={t('login.email_placeholder')}
-              errorMessage={form.errors.email}
-              onChange={(event) => form.setData('email', event.target.value)}
-              required={true}
+              errorMessage={form.errors.email || validation.getValidationMessage('email')}
+              onChange={(event) => {
+                form.setData('email', event.target.value)
+                validation.handleChange('email', event.target.value)
+              }}
+              onBlur={(event) => {
+                validation.handleBlur('email', event.target.value)
+              }}
+              required
+              sanitize
             />
             <InputGroup
               label={t('login.password')}
               name="password"
               type="password"
-              errorMessage={form.errors.password}
-              onChange={(event) => form.setData('password', event.target.value)}
-              required={true}
+              errorMessage={form.errors.password || validation.getValidationMessage('password')}
+              onChange={(event) => {
+                form.setData('password', event.target.value)
+                validation.handleChange('password', event.target.value)
+              }}
+              onBlur={(event) => {
+                validation.handleBlur('password', event.target.value)
+              }}
+              required
+              sanitize={false}
             />
             <div className="grid gap-4 md:display-flex md:align-items-center md:justify-content-space-between">
               <InputGroup
                 label={t('login.remember_me')}
                 name="remember_me"
                 type="checkbox"
-                errorMessage={form.errors.remember_me}
-                onChange={(event) => {
-                  const target = event.target as HTMLInputElement
-                  form.setData('remember_me', target.checked)
-                }}
                 checked={form.data.remember_me}
+                onChange={(event) => form.setData('remember_me', (event.target as HTMLInputElement).checked)}
               />
               <NavLink
                 href="/forgot-password"
@@ -82,7 +105,6 @@ export default function LoginPage(props: LoginPageProps) {
                 hover_color="primary-400"
               />
             </div>
-
             <Button loading={form.processing} fitContent>
               {t('login.submit')}
             </Button>

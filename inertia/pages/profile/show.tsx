@@ -8,6 +8,8 @@ import type { SharedProps } from '@adonisjs/inertia/types'
 import { getProviderRoute } from '~/helpers/oauth'
 import { useTranslation } from 'react-i18next'
 import i18n from 'i18next'
+import { useFormValidation } from '~/hooks/use_form_validation'
+import { presets, rules } from '~/helpers/validation_rules'
 
 interface LinkedProviders {
   github: boolean
@@ -46,8 +48,27 @@ export default function ProfilePage(props: ProfilePageProps) {
 
   const unlinkForm = useForm({})
 
+  const profileValidation = useFormValidation({
+    fullName: presets.fullName,
+    email: presets.email,
+    locale: [rules.required('locale')],
+  })
+
+  const passwordValidation = useFormValidation({
+    current_password: presets.currentPassword,
+    password: presets.password,
+    password_confirmation: presets.passwordConfirmation(passwordForm.data.password),
+  })
+
+  const deleteValidation = useFormValidation({
+    password: presets.currentPassword,
+  })
+
   function handleProfileUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    const isValid = profileValidation.validateAll(profileForm.data)
+    if (!isValid) return
 
     const localeChanged = profileForm.data.locale !== pageProps.currentUser?.locale
 
@@ -56,21 +77,30 @@ export default function ProfilePage(props: ProfilePageProps) {
         if (localeChanged) {
           i18n.changeLanguage(profileForm.data.locale)
         }
-      }
+      },
     })
   }
 
   function handlePasswordUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    const isValid = passwordValidation.validateAll(passwordForm.data)
+    if (!isValid) return
+
     passwordForm.put('/profile/password', {
       onSuccess: () => {
         passwordForm.reset()
+        passwordValidation.reset()
       },
     })
   }
 
   function handleAccountDelete(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    const isValid = deleteValidation.validateAll(deleteForm.data)
+    if (!isValid) return
+
     if (confirm(t('sections.delete_account.confirm_delete'))) {
       deleteForm.delete('/profile')
     }
@@ -81,11 +111,6 @@ export default function ProfilePage(props: ProfilePageProps) {
       unlinkForm.post(`${getProviderRoute(provider)}/unlink`)
     }
   }
-
-  const isPasswordValid = passwordForm.data.password.length >= 8
-  const isConfirmValid =
-    passwordForm.data.password_confirmation === passwordForm.data.password &&
-    passwordForm.data.password !== ''
 
   return (
     <>
@@ -107,19 +132,39 @@ export default function ProfilePage(props: ProfilePageProps) {
                 type="text"
                 placeholder={t('sections.profile_info.full_name_placeholder')}
                 value={profileForm.data.fullName}
-                errorMessage={profileForm.errors.fullName}
-                onChange={(e) => profileForm.setData('fullName', e.target.value)}
+                errorMessage={
+                  profileForm.errors.fullName || profileValidation.getValidationMessage('fullName')
+                }
+                onChange={(e) => {
+                  profileForm.setData('fullName', e.target.value)
+                  profileValidation.handleChange('fullName', e.target.value)
+                }}
+                onBlur={(e) => {
+                  profileValidation.handleBlur('fullName', e.target.value)
+                }}
+                sanitize
               />
+
               <InputGroup
                 label={t('sections.profile_info.email')}
                 name="email"
                 type="email"
                 placeholder={t('sections.profile_info.email_placeholder')}
                 value={profileForm.data.email}
-                errorMessage={profileForm.errors.email}
-                onChange={(e) => profileForm.setData('email', e.target.value)}
+                errorMessage={
+                  profileForm.errors.email || profileValidation.getValidationMessage('email')
+                }
+                onChange={(e) => {
+                  profileForm.setData('email', e.target.value)
+                  profileValidation.handleChange('email', e.target.value)
+                }}
+                onBlur={(e) => {
+                  profileValidation.handleBlur('email', e.target.value)
+                }}
                 required
+                sanitize
               />
+
               <InputGroup
                 label={t_common('language.selector_label')}
                 name="locale"
@@ -127,18 +172,16 @@ export default function ProfilePage(props: ProfilePageProps) {
                 value={profileForm.data.locale}
                 errorMessage={profileForm.errors.locale}
                 options={[
-                  {
-                    label: t_common('language.en'),
-                    value: 'en'
-                  },
-                  {
-                    label: t_common('language.fr'),
-                    value: 'fr'
-                  }
+                  { label: t_common('language.en'), value: 'en' },
+                  { label: t_common('language.fr'), value: 'fr' },
                 ]}
-                onChange={(e) => profileForm.setData('locale', e.target.value)}
+                onChange={(e) => {
+                  profileForm.setData('locale', e.target.value)
+                  profileValidation.handleChange('locale', e.target.value)
+                }}
                 required
               />
+
               <Button loading={profileForm.processing} fitContent>
                 {t('sections.profile_info.submit')}
               </Button>
@@ -208,32 +251,64 @@ export default function ProfilePage(props: ProfilePageProps) {
                 name="current_password"
                 type="password"
                 value={passwordForm.data.current_password}
-                errorMessage={passwordForm.errors.current_password}
-                onChange={(e) => passwordForm.setData('current_password', e.target.value)}
+                errorMessage={
+                  passwordForm.errors.current_password ||
+                  passwordValidation.getValidationMessage('current_password')
+                }
+                onChange={(e) => {
+                  passwordForm.setData('current_password', e.target.value)
+                  passwordValidation.handleChange('current_password', e.target.value)
+                }}
+                onBlur={(e) => {
+                  passwordValidation.handleBlur('current_password', e.target.value)
+                }}
                 required
+                sanitize={false}
               />
+
               <InputGroup
                 label={t('sections.update_password.new_password')}
                 name="password"
                 type="password"
                 value={passwordForm.data.password}
-                errorMessage={passwordForm.errors.password}
-                onChange={(e) => passwordForm.setData('password', e.target.value)}
+                errorMessage={
+                  passwordForm.errors.password || passwordValidation.getValidationMessage('password')
+                }
+                onChange={(e) => {
+                  passwordForm.setData('password', e.target.value)
+                  passwordValidation.handleChange('password', e.target.value)
+                }}
+                onBlur={(e) => {
+                  passwordValidation.handleBlur('password', e.target.value)
+                }}
                 required
+                sanitize={false}
                 helpText={t('sections.update_password.password_help')}
-                helpClassName={isPasswordValid ? 'clr-green-500' : 'clr-red-400'}
+                helpClassName={passwordValidation.getHelpClassName('password')}
               />
+
               <InputGroup
                 label={t('sections.update_password.confirm_password')}
                 name="password_confirmation"
                 type="password"
                 value={passwordForm.data.password_confirmation}
-                errorMessage={passwordForm.errors.password_confirmation}
-                onChange={(e) => passwordForm.setData('password_confirmation', e.target.value)}
+                errorMessage={
+                  passwordForm.errors.password_confirmation ||
+                  passwordValidation.getValidationMessage('password_confirmation')
+                }
+                onChange={(e) => {
+                  passwordForm.setData('password_confirmation', e.target.value)
+                  passwordValidation.handleChange('password_confirmation', e.target.value)
+                }}
+                onBlur={(e) => {
+                  passwordValidation.handleBlur('password_confirmation', e.target.value)
+                }}
                 required
+                sanitize={false}
                 helpText={t('sections.update_password.confirmation_help')}
-                helpClassName={isConfirmValid ? 'clr-green-500' : 'clr-red-400'}
+                helpClassName={passwordValidation.getHelpClassName('password_confirmation')}
               />
+
               <Button loading={passwordForm.processing} fitContent>
                 {t('sections.update_password.submit')}
               </Button>
@@ -257,16 +332,27 @@ export default function ProfilePage(props: ProfilePageProps) {
                     {t('sections.delete_account.confirm_subtitle')}
                   </p>
                 </div>
+
                 <InputGroup
                   label={t('sections.delete_account.password')}
                   name="password"
                   type="password"
                   placeholder={t('sections.delete_account.password_placeholder')}
                   value={deleteForm.data.password}
-                  errorMessage={deleteForm.errors.password}
-                  onChange={(e) => deleteForm.setData('password', e.target.value)}
+                  errorMessage={
+                    deleteForm.errors.password || deleteValidation.getValidationMessage('password')
+                  }
+                  onChange={(e) => {
+                    deleteForm.setData('password', e.target.value)
+                    deleteValidation.handleChange('password', e.target.value)
+                  }}
+                  onBlur={(e) => {
+                    deleteValidation.handleBlur('password', e.target.value)
+                  }}
                   required
+                  sanitize={false}
                 />
+
                 <div className="flex gap-3">
                   <Button
                     type="button"
@@ -275,6 +361,7 @@ export default function ProfilePage(props: ProfilePageProps) {
                     onClick={() => {
                       setShowDeleteConfirm(false)
                       deleteForm.reset()
+                      deleteValidation.reset()
                     }}
                   >
                     {t('sections.delete_account.cancel')}

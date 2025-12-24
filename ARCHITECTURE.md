@@ -973,6 +973,247 @@ locale: vine.enum(['en', 'fr', 'es']),  // Add 'es'
 }
 ```
 
+## 🧹 Validation & Sanitization
+
+### Frontend Validation (Client-Side)
+
+**Real-time validation system with three states:**
+- **Pristine**: Field never touched (no indicators)
+- **Touched**: User left the field (show errors if invalid)
+- **Validated**: Actively typing (show success if valid)
+
+**Validation Hook:**
+```typescript
+import { useFormValidation } from '~/hooks/use_form_validation'
+import { presets } from '~/helpers/validation_rules'
+
+const validation = useFormValidation({
+  email: presets.email,
+  password: presets.password,
+  password_confirmation: presets.passwordConfirmation(form.data.password),
+})
+
+// In form
+<InputGroup
+  name="email"
+  errorMessage={form.errors.email || validation.getValidationMessage('email')}
+  onChange={(e) => {
+    form.setData('email', e.target.value)
+    validation.handleChange('email', e.target.value)
+  }}
+  onBlur={(e) => validation.handleBlur('email', e.target.value)}
+/>
+```
+
+**Built-in Validation Rules:**
+- `rules.required(fieldName)` - Required field
+- `rules.email()` - Email format validation
+- `rules.minLength(min, fieldName)` - Minimum length with current count
+- `rules.maxLength(max, fieldName)` - Maximum length with current count
+- `rules.matches(otherValue, otherFieldName)` - Match another field (password confirmation)
+- `rules.pattern(regex, message)` - Custom regex validation
+- `rules.custom(validator, message)` - Custom validation logic
+
+**Validation Presets:**
+```typescript
+presets.email                              // Required + email format
+presets.password                           // Required + min 8 characters
+presets.passwordConfirmation(password)     // Required + matches password
+presets.currentPassword                    // Required + min 8 characters
+presets.fullName                           // Min 2, max 255 characters
+```
+
+**Translated Messages:**
+- All validation messages support i18n
+- Uses `validation` namespace
+- Includes field names and suggestions
+- Example: "Password must be at least 8 characters (currently: 5)"
+
+### Frontend Sanitization (Client-Side)
+
+**Automatic sanitization on all inputs** (enabled by default):
+
+**Sanitization by Input Type:**
+- **Email**: `trim()` + `toLowerCase()`
+- **Text**: `stripHtmlTags()` + `trim()` + `removeMultipleSpaces()`
+- **Password**: No sanitization (preserve exact input)
+
+**Usage:**
+```typescript
+<InputGroup
+  name="fullName"
+  type="text"
+  sanitize={true}  // Default: true (can be disabled)
+/>
+
+<InputGroup
+  name="password"
+  type="password"
+  sanitize={false}  // Disable for passwords
+/>
+```
+
+**Sanitization Functions:**
+```typescript
+import { sanitize, sanitizeEmail, sanitizeText, noSanitization } from '~/helpers/sanitization'
+
+// General sanitization with options
+sanitize(value, {
+  stripHtml: true,
+  trim: true,
+  lowercase: false,
+  removeMultipleSpaces: true,
+})
+
+// Preset functions
+sanitizeEmail(email)     // trim + lowercase
+sanitizeText(text)       // strip HTML + trim + remove multiple spaces
+noSanitization(value)    // no sanitization (for passwords)
+```
+
+### Backend Validation (Server-Side)
+
+**VineJS validation with built-in sanitization:**
+
+```typescript
+import vine from '@vinejs/vine'
+import { unique } from '#core/helpers/validator'
+
+static validator = vine.compile(
+  vine.object({
+    email: vine
+      .string()
+      .trim()           // Remove whitespace
+      .toLowerCase()    // Normalize format
+      .email()
+      .unique(unique('users', 'email')),
+    
+    fullName: vine
+      .string()
+      .trim()
+      .minLength(2)
+      .maxLength(255)
+      .optional(),
+    
+    password: vine
+      .string()
+      .minLength(8)
+      .confirmed(),     // No sanitization on passwords
+  })
+)
+```
+
+**VineJS Sanitization Methods:**
+- `.trim()` - Remove leading/trailing whitespace
+- `.toLowerCase()` - Convert to lowercase
+- `.toUpperCase()` - Convert to uppercase
+- `.escape()` - Escape HTML entities
+
+**Security Principle:**
+```
+NEVER TRUST CLIENT DATA
+```
+Even with frontend sanitization, backend MUST sanitize and validate.
+Defense-in-depth approach: Frontend (UX) + Backend (Security).
+
+### Validation Flow
+
+```
+User Input
+    ↓
+Frontend Sanitization (automatic)
+    ↓
+Frontend Validation (real-time)
+    ↓ (on submit)
+Backend Sanitization (VineJS)
+    ↓
+Backend Validation (VineJS)
+    ↓
+Database
+```
+
+### Error Display Strategy
+
+**Validation Errors:**
+- Show errors only after field is **touched** (onBlur)
+- Show success indicators while **typing** if valid
+- Display translated, contextual error messages
+- Include suggestions when helpful (character count, etc.)
+
+**Visual Indicators:**
+```typescript
+helpClassName={validation.getHelpClassName('password')}
+// Returns: 'clr-green-500' if valid, 'clr-red-400' if invalid
+```
+
+**VineJS Errors:**
+- Backend validation errors override frontend errors
+- Displayed via `form.errors.fieldName`
+- Automatically translated (VineJS i18n support)
+
+### Best Practices
+
+**DO:**
+✅ Sanitize all text inputs on frontend AND backend
+✅ Validate on both client (UX) and server (security)
+✅ Use presets for common patterns
+✅ Show errors only after field is touched
+✅ Provide helpful, translated error messages
+✅ Use `.trim()` and `.toLowerCase()` on emails
+✅ Disable sanitization on passwords
+
+**DON'T:**
+❌ Trust client-side validation alone
+❌ Show errors before user has touched the field
+❌ Sanitize passwords
+❌ Use generic error messages
+❌ Forget to translate validation messages
+❌ Skip backend sanitization
+
+### Extensibility
+
+**Adding New Validation Rules:**
+```typescript
+// In validation_rules.ts
+rules.custom = (validator: (value: any) => boolean, message: string): ValidationRule => {
+  return (value: any) => {
+    const valid = validator(value)
+    return { valid, message: valid ? undefined : message }
+  }
+}
+
+// Usage
+const strongPassword = rules.custom(
+  (value) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value),
+  'Password must contain uppercase, lowercase, and number'
+)
+```
+
+**Adding New Presets:**
+```typescript
+// In validation_rules.ts
+export const presets = {
+  // ...existing presets
+  phoneNumber: [
+    rules.required('phone'),
+    rules.pattern(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format'),
+  ],
+}
+```
+
+**Adding New Sanitization:**
+```typescript
+// In sanitization.ts
+export function sanitizePhoneNumber(value: string): string {
+  return sanitize(value, {
+    stripHtml: false,
+    trim: true,
+    lowercase: false,
+    removeMultipleSpaces: false,
+  }).replace(/[^\d+]/g, '')  // Keep only digits and +
+}
+```
+
 ## ⚡ Cache & Redis
 
 ### Stack

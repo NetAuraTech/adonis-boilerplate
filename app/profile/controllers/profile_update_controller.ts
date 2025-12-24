@@ -11,6 +11,8 @@ export default class ProfileUpdateController {
         fullName: vine.string().trim().minLength(2).maxLength(255).optional(),
         email: vine
           .string()
+          .trim()
+          .toLowerCase()
           .email()
           .unique(unique('users', 'email', { exceptId: user.id })),
         locale: vine.enum(['en', 'fr']),

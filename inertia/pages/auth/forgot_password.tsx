@@ -4,14 +4,24 @@ import { InputGroup } from '#components/forms/input_group'
 import { Button } from '#components/elements/button'
 import { Head, useForm } from '@inertiajs/react'
 import { useTranslation } from 'react-i18next'
+import { useFormValidation } from '~/hooks/use_form_validation'
+import { presets } from '~/helpers/validation_rules'
 
 export default function ForgotPasswordPage() {
   const { t } = useTranslation('auth')
   const form = useForm({ email: '' })
 
+  const validation = useFormValidation({
+    email: presets.email,
+  })
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    form.post('/forgot-password')
+    const isValid = validation.validateAll(form.data)
+
+    if (isValid) {
+      form.post('/forgot-password')
+    }
   }
 
   return (
@@ -45,9 +55,16 @@ export default function ForgotPasswordPage() {
               type="email"
               placeholder={t('forgot_password.email_placeholder')}
               value={form.data.email}
-              errorMessage={form.errors.email}
-              onChange={(e) => form.setData('email', e.target.value)}
+              errorMessage={form.errors.email || validation.getValidationMessage('email')}
+              onChange={(event) => {
+                form.setData('email', event.target.value)
+                validation.handleChange('email', event.target.value)
+              }}
+              onBlur={(event) => {
+                validation.handleBlur('email', event.target.value)
+              }}
               required
+              sanitize
             />
             <div className="flex gap-3">
               <Button loading={form.processing} fitContent>

@@ -1,0 +1,14 @@
+{
+  "required": "{field} est requis",
+  "email": "Veuillez saisir une adresse email valide",
+  "min_length": "{field} doit contenir au moins {min} caractères (actuellement : {current})",
+  "max_length": "{field} doit contenir au maximum {max} caractères (actuellement : {current})",
+  "matches": "Doit correspondre à {other}",
+  "fields": {
+    "email": "Email",
+    "password": "Mot de passe",
+    "password_confirmation": "Confirmation du mot de passe",
+    "current_password": "Mot de passe actuel",
+    "full_name": "Nom complet"
+  }
+}

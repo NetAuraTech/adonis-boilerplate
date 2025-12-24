@@ -10,6 +10,12 @@ This file contains the signatures (public interfaces) of all important files in 
 ### app/auth/controllers/login_controller.ts
 ```typescript
 export default class LoginController {
+  static validator = vine.compile(
+    vine.object({
+      email: vine.string().trim().toLowerCase().email(),
+      password: vine.string(),
+      remember: vine.boolean().optional(),
+    })
   render({ inertia }: HttpContext)
   async execute({ auth, request, response, session }: HttpContext)
 }
@@ -18,7 +24,20 @@ export default class LoginController {
 ### app/auth/controllers/register_controller.ts
 ```typescript
 export default class RegisterController {
-  static validator = vine.compile(...)
+  static validator = vine.compile(
+    vine.object({
+      email: vine
+        .string()
+        .trim()
+        .toLowerCase()
+        .email()
+        .unique(unique('users', 'email')),
+      password: vine
+        .string()
+        .minLength(8)
+        .confirmed(),
+    })
+  )
   render({ inertia }: HttpContext)
   async execute({ auth, request, response }: HttpContext)
 }
@@ -35,6 +54,10 @@ export default class LogoutController {
 ```typescript
 @inject()
 export default class ForgotPasswordController {
+  static validator = vine.compile(
+    vine.object({
+      email: vine.string().trim().toLowerCase().email(),
+    })
   constructor(protected passwordService: PasswordService)
   render({ inertia }: HttpContext)
   async execute({ request, response, session }: HttpContext)
@@ -415,6 +438,23 @@ export default class ProfileShowController {
 ### app/profile/controllers/profile_update_controller.ts
 ```typescript
 export default class ProfileUpdateController {
+  const validator = vine.compile(
+    vine.object({
+      fullName: vine
+        .string()
+        .trim()                    // Remove whitespace
+        .minLength(2)
+        .maxLength(255)
+        .optional(),
+      email: vine
+        .string()
+        .trim()
+        .toLowerCase()
+        .email()
+        .unique(unique('users', 'email', { exceptId: user.id })),
+      locale: vine.enum(['en', 'fr']),
+    })
+  )
   async execute({ auth, request, response, session, i18n }: HttpContext)
   // Dynamic validator with exceptId and locale validation
   // Updates fullName, email, AND locale (NEW)
@@ -866,14 +906,21 @@ interface InputGroupProps {
   label: string
   name: string
   type: string
-  // ... all Input props
-  errorMessage?: string
-  helpText?: string
-  helpClassName?: string
+  // ... other props
+
+  sanitize?: boolean  // NEW - Enable automatic sanitization (default: true)
+  // Set to false for passwords
 }
 
 export function InputGroup(props: InputGroupProps)
-// Label + Input + Error + HelpText, inline layout for checkbox/radio
+// Automatically sanitizes input based on type:
+// - email: trim + lowercase
+// - text/textarea: strip HTML + trim + remove multiple spaces
+// - password: no sanitization (if sanitize={false})
+// 
+// Sanitization happens:
+// - On onChange (real-time)
+// - On onBlur (final cleanup)
 ```
 
 ---
@@ -908,6 +955,98 @@ export function getProviderRoute(providerName: string): string
 // Returns `/oauth/${providerName.toLowerCase()}`
 ```
 
+### inertia/helpers/validation_rules.ts
+```typescript
+export interface ValidationResult {
+  valid: boolean
+  message?: string
+}
+
+export type ValidationRule = (value: any, fieldNameKey?: string) => ValidationResult
+
+export const rules = {
+  required: (fieldNameKey?: string): ValidationRule
+  // Returns error if value is empty
+  // Translated: i18n.t('validation:required', { field: i18n.t('validation:fields.email') })
+
+  email: (): ValidationRule
+  // Validates email format with regex
+  // Translated: i18n.t('validation:email')
+
+  minLength: (min: number, fieldNameKey?: string): ValidationRule
+  // Validates minimum length with current count
+  // Translated: i18n.t('validation:min_length', { field, min, current })
+
+  maxLength: (max: number, fieldNameKey?: string): ValidationRule
+  // Validates maximum length with current count
+  // Translated: i18n.t('validation:max_length', { field, max, current })
+
+  matches: (otherValue: any, otherFieldNameKey: string): ValidationRule
+  // Checks if value matches another field
+  // Translated: i18n.t('validation:matches', { other: i18n.t('validation:fields.password') })
+
+  pattern: (regex: RegExp, customI18nKey: string): ValidationRule
+  // Custom regex validation with custom i18n key
+
+  custom: (validator: (value: any) => boolean, i18nKey: string): ValidationRule
+  // Custom validation logic with custom i18n key
+}
+
+export function validate(
+  value: any,
+  validationRules: ValidationRule[],
+  fieldNameKey?: string
+): ValidationResult
+// Validates value against multiple rules, returns first error
+
+export const presets = {
+  email: ValidationRule[]
+  // [required('email'), email()]
+
+  password: ValidationRule[]
+  // [required('password'), minLength(8, 'password')]
+
+  passwordConfirmation: (passwordToMatch: string) => ValidationRule[]
+  // [required('password_confirmation'), matches(passwordToMatch, 'password')]
+
+  fullName: ValidationRule[]
+  // [required('full_name'), minLength(2, 'full_name'), maxLength(255, 'full_name')]
+}
+
+// Usage Example with i18n namespace syntax
+i18n.t('validation:fields.email')         // "Email" / "Email"
+i18n.t('validation:fields.password')      // "Password" / "Mot de passe"
+i18n.t('validation:required', { field: 'Email' })
+// EN: "Email is required"
+// FR: "Email est requis"
+
+i18n.t('validation:min_length', { field: 'Password', min: 8, current: 5 })
+// EN: "Password must be at least 8 characters (currently: 5)"
+// FR: "Mot de passe doit contenir au moins 8 caractères (actuellement : 5)"
+```
+
+### inertia/helpers/sanitization.ts
+```typescript
+export interface SanitizationOptions {
+  stripHtml?: boolean          // Default: true
+  trim?: boolean               // Default: true
+  lowercase?: boolean          // Default: false
+  removeMultipleSpaces?: boolean  // Default: true
+}
+
+export function sanitize(value: string, options?: SanitizationOptions): string
+// General sanitization with custom options
+
+export function sanitizeEmail(value: string): string
+// Sanitize email: trim + lowercase
+
+export function sanitizeText(value: string): string
+// Sanitize text input: strip HTML + trim + remove multiple spaces
+
+export function noSanitization(value: string): string
+// No sanitization (for passwords, etc.)
+```
+
 ---
 
 ## ⚛️ REACT - Types
@@ -920,6 +1059,75 @@ export interface OAuthProvider {
   color: string
   enabled: boolean
 }
+```
+
+---
+
+## ⚛️ REACT - Hooks
+
+### inertia/hooks/use_form_validation.ts
+```typescript
+export interface FieldState {
+  touched: boolean           // Field has been touched (onBlur triggered)
+  typing: boolean           // User is currently typing
+  validation: ValidationResult  // Current validation result
+  status: 'pristine' | 'valid' | 'invalid'  // Visual state
+}
+
+export interface FormValidationConfig {
+  [fieldName: string]: ValidationRule[]
+}
+
+export function useFormValidation(config: FormValidationConfig)
+
+// Returns
+{
+  fieldStates: Record
+  // All field states
+  
+  getFieldState: (fieldName: string) => FieldState
+  // Get state for a specific field
+  
+  handleChange: (fieldName: string, value: any) => void
+  // Call on onChange - validates and updates state
+  // Shows success while typing if valid
+  // Shows errors only if already touched
+  
+  handleBlur: (fieldName: string, value: any) => void
+  // Call on onBlur - marks field as touched
+  // Validates and shows errors if invalid
+  
+  validateAll: (values: Record) => boolean
+  // Validates all fields at once (before form submit)
+  // Marks all fields as touched
+  // Returns true if all valid
+  
+  reset: () => void
+  // Resets all fields to pristine state
+  
+  getValidationMessage: (fieldName: string) => string | undefined
+  // Gets error message for a field (only if touched and invalid)
+  
+  getHelpClassName: (fieldName: string) => string
+  // Returns CSS class for help text color
+  // 'clr-green-500' if valid, 'clr-red-400' if invalid, '' if pristine
+}
+
+// Usage Example
+const validation = useFormValidation({
+  email: presets.email,
+  password: presets.password,
+})
+
+<InputGroup
+  errorMessage={form.errors.email || validation.getValidationMessage('email')}
+  onChange={(e) => {
+    form.setData('email', e.target.value)
+    validation.handleChange('email', e.target.value)
+  }}
+  onBlur={(e) => validation.handleBlur('email', e.target.value)}
+  helpClassName={validation.getHelpClassName('email')}
+/>
 ```
 
 ---
@@ -1132,14 +1340,27 @@ resources/lang/
 │   │   ├── notifications.* # Notifications cleared
 │   │   └── locale.*        # Language preference updated (NEW)
 │   │
-│   └── emails.json         # Email content
-│       └── reset_password.* # Subject, greeting, intro, action, outro, expiry, footer
+│   ├── emails.json         # Email content
+│   │   └── reset_password.* # Subject, greeting, intro, action, outro, expiry, footer
+│   └── validation.json         # NEW - Validation messages
+│       ├── required            # "{field} is required"
+│       ├── email               # "Please enter a valid email address"
+│       ├── min_length          # "{field} must be at least {min} characters (currently: {current})"
+│       ├── max_length          # "{field} must be at most {max} characters (currently: {current})"
+│       ├── matches             # "Must match {other}"
+│       └── fields              # Field name translations
+│           ├── email           # "Email"
+│           ├── password        # "Password"
+│           ├── password_confirmation  # "Password confirmation"
+│           ├── current_password       # "Current password"
+│           └── full_name              # "Full name"
 │
 └── fr/
     ├── auth.json
     ├── profile.json
     ├──errors.json 
-    └── emails.json
+    ├── emails.json
+    └── validation.json
 ```
 
 **Usage in Backend:**

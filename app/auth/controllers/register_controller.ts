@@ -7,7 +7,7 @@ import { getEnabledProviders } from '#auth/helpers/oauth'
 export default class RegisterController {
   static validator = vine.compile(
     vine.object({
-      email: vine.string().email().unique(unique('users', 'email')),
+      email: vine.string().trim().toLowerCase().email().unique(unique('users', 'email')),
       password: vine.string().minLength(8).confirmed(),
     })
   )
