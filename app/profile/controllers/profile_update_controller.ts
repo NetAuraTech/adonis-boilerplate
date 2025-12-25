@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { unique } from '#core/helpers/validator'
+import { regenerateCsrfToken } from '#core/helpers/csrf'
 
 export default class ProfileUpdateController {
   async execute({ auth, request, response, session, i18n }: HttpContext) {
@@ -23,6 +24,7 @@ export default class ProfileUpdateController {
 
     await user.merge(payload).save()
 
+    regenerateCsrfToken({ auth, request, response, session } as HttpContext)
     session.flash('success', i18n.t('profile.update.success'))
 
     return response.redirect().toRoute('profile.show')

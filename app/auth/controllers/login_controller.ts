@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import User from '#auth/models/user'
 import { getEnabledProviders } from '#auth/helpers/oauth'
 import vine from '@vinejs/vine'
+import { regenerateCsrfToken } from '#core/helpers/csrf'
 
 export default class LoginController {
   static validator = vine.compile(
@@ -24,6 +25,7 @@ export default class LoginController {
     try {
       const user = await User.verifyCredentials(payload.email, payload.password)
       await auth.use('web').login(user, payload.remember_me)
+      regenerateCsrfToken({ auth, request, response, session } as HttpContext)
       session.flash('success', i18n.t('auth.login.success'))
       return response.redirect().toRoute('profile.show')
     } catch {

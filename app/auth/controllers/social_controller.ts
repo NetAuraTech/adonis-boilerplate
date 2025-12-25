@@ -3,6 +3,7 @@ import SocialService from '#auth/services/social_service'
 import { inject } from '@adonisjs/core'
 import vine from '@vinejs/vine'
 import { isProviderEnabled } from '#config/ally'
+import { regenerateCsrfToken } from '#core/helpers/csrf'
 
 type OAuthProvider = 'github' | 'google' | 'facebook'
 
@@ -33,7 +34,7 @@ export default class SocialController {
     return ally.use(provider).redirect()
   }
 
-  async callback({ ally, params, auth, response, session, i18n }: HttpContext) {
+  async callback({ ally, params, auth, request, response, session, i18n }: HttpContext) {
     const provider = params.provider as OAuthProvider
 
     const validation = this.validateProvider(provider, session, response, i18n)
@@ -47,6 +48,7 @@ export default class SocialController {
       if (authenticatedUser) {
         try {
           await this.socialService.linkProvider(authenticatedUser, allyUser, provider)
+          regenerateCsrfToken({ auth, request, response, session } as HttpContext)
           session.flash('success', i18n.t('auth.social.linked', { provider }))
         } catch (error) {
           session.flash('error', error.message)
@@ -72,7 +74,7 @@ export default class SocialController {
     }
   }
 
-  async unlink({ auth, params, response, session, i18n }: HttpContext) {
+  async unlink({ auth, params, request, response, session, i18n }: HttpContext) {
     const provider = params.provider as OAuthProvider
 
     const validation = this.validateProvider(provider, session, response, i18n)
@@ -82,6 +84,7 @@ export default class SocialController {
       const user = auth.getUserOrFail()
       await this.socialService.unlinkProvider(user, provider)
 
+      regenerateCsrfToken({ auth, request, response, session } as HttpContext)
       session.flash('success', i18n.t('auth.social.unlinked', { provider }))
     } catch (error) {
       session.flash('error', i18n.t('auth.social.unlink_failed'))

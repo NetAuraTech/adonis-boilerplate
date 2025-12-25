@@ -5,5 +5,12 @@
   },
   "server_error": {
     "title": "Erreur Serveur"
+  },
+  "csrf_token_mismatch": {
+    "title": "Session Expirée",
+    "message": "Votre session a expiré pour des raisons de sécurité.",
+    "explanation": "Cela se produit généralement après une période d'inactivité ou si vous avez ouvert plusieurs onglets. Veuillez recharger la page pour continuer.",
+    "reload": "Recharger la Page",
+    "go_home": "Aller à l'Accueil"
   }
 }

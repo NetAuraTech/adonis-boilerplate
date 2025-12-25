@@ -1,4 +1,5 @@
 {
   "too_many_requests": "Trop de requêtes. Veuillez réessayer dans {minutes} minute(s).",
-  "rate_limit_exceeded": "Limite de taux dépassée. Veuillez ralentir."
+  "rate_limit_exceeded": "Limite de taux dépassée. Veuillez ralentir.",
+  "csrf_token_mismatch": "Votre session a expiré. Veuillez actualiser la page et réessayer."
 }
