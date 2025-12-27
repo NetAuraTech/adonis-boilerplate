@@ -37,9 +37,9 @@ app/
 │   └── controllers/               # ProfileShowController, ProfileUpdateController, etc.
 │
 ├── core/                          # Cross-cutting domain
-│   ├── exceptions/               # HttpExceptionHandler
-│   ├── helpers/                  # validator.ts, sleep.ts
-│   ├── middleware/               # auth, guest, container_bindings, detect_locale [NEW]
+│   ├── exceptions/               # HttpExceptionHandler, CsrfTokenMismatchException
+│   ├── helpers/                  # validator.ts, sleep.ts, csrf.ts
+│   ├── middleware/               # auth, guest, container_bindings, detect_locale
 │   └── models/                   # Token
 │
 config/                            # AdonisJS configuration
@@ -51,7 +51,7 @@ config/                            # AdonisJS configuration
 ├── inertia.ts                    # Inertia SSR + shared data
 ├── shield.ts                     # CSRF, XFrame, HSTS
 ├── hash.ts                       # Scrypt
-├── i18n.ts                       # i18n configuration [NEW]
+├── i18n.ts                       # i18n configuration
 ├── logger.ts                     # Logs
 └── ...
 
@@ -63,11 +63,13 @@ resources/
 │   ├── en/                       # English translations
 │   │   ├── auth.json             # Authentication messages
 │   │   ├── profile.json          # Profile messages
-│   │   └── emails.json           # Email content
+│   │   ├── emails.json           # Email content
+│   │   └── errors.json           # Error messages (CSRF, rate limit)
 │   └── fr/                       # French translations
 │       ├── auth.json
 │       ├── profile.json
-│       └── emails.json
+│       ├── emails.json
+│       └── errors.json
 │
 └── views/                        # Edge templates
     └── emails/                   # Email templates
@@ -75,8 +77,8 @@ resources/
 
 inertia/
 ├── app/                          # Entry points
-│   ├── app.tsx                   # Client-side entry (with i18n setup) [UPDATED]
-│   └── ssr.tsx                   # Server-side rendering (with i18n setup) [UPDATED]
+│   ├── app.tsx                   # Client-side entry (with i18n setup)
+│   └── ssr.tsx                   # Server-side rendering (with i18n setup)
 │
 ├── assets/                       # Static assets
 │   ├── fonts/                    # Atkinson Hyperlegible
@@ -102,28 +104,32 @@ inertia/
 │   │   ├── auth.json           # Auth pages translations
 │   │   ├── profile.json        # Profile page translations
 │   │   ├── common.json         # Common UI translations
-│   │   └── errors.json         # Error pages translations
+│   │   ├── errors.json         # Error pages translations (CSRF)
+│   │   └── validation.json     # Validation messages
 │   └── fr/                      # French translations
 │       ├── auth.json
 │       ├── profile.json
 │       ├── common.json
-│       └── errors.json
+│       ├── errors.json
+│       └── validation.json
 │
 ├── pages/                        # Inertia pages
 │   ├── auth/                    # Login, Register, ForgotPassword, etc.
 │   ├── profile/                 # Show
-│   ├── errors/                  # NotFound, ServerError
+│   ├── errors/                  # NotFound, ServerError, CsrfTokenMismatch
 │   └── landing.tsx
 │
 ├── types/                        # Frontend TypeScript types
 │   └── oauth.ts
 │
 └── helpers/                      # Frontend helpers
-    └── oauth.ts
+    ├── oauth.ts
+    ├── validation_rules.ts
+    └── sanitization.ts
 
 start/
 ├── env.ts                        # Environment variables validation
-├── kernel.ts                     # Middleware configuration (with detect_locale) [UPDATED]
+├── kernel.ts                     # Middleware configuration (with detect_locale)
 └── routes.ts                     # Route definitions
 
 bin/
@@ -427,6 +433,7 @@ export function helperTwo() {}
 - `sleep.ts`: `sleep(time)`
 - `redis.ts`: `isRedisAvailable()`, `getRedisConnection()`, `resetRedisCheck()`
 - `crypto.ts`: `generateToken()`, `randomBytes()`, `maskToken()`
+- `csrf.ts`: `regenerateCsrfToken()`, `verifyCsrfToken()`
 
 **Existing Helpers (Frontend):**
 - `oauth.ts`: `getProviderRoute()`
@@ -444,6 +451,17 @@ const token = generateToken()  // "a3f2e9c8..."
 
 // Mask token for logging (show only first 10 characters)
 const masked = maskToken(token)  // "a3f2e9c8***"
+```
+
+**CSRF Helpers:**
+```typescript
+import { regenerateCsrfToken, verifyCsrfToken } from '#core/helpers/csrf'
+
+// Regenerate CSRF token after sensitive actions
+regenerateCsrfToken(ctx)
+
+// Manually verify CSRF token (Shield does this automatically)
+const isValid = await verifyCsrfToken(ctx)
 ```
 
 ---
@@ -728,9 +746,78 @@ interface ThrottleOptions {
 - Logs suspicious activity
 
 #### CSRF Protection
-- Enabled via Shield middleware
-- Applied on all POST, PUT, PATCH, DELETE requests
-- Token validation automatic
+
+**Overview:**
+The boilerplate implements comprehensive CSRF (Cross-Site Request Forgery) protection using AdonisJS Shield with additional security measures for sensitive operations.
+
+**Automatic Protection:**
+- Enabled via Shield middleware on all POST, PUT, PATCH, DELETE requests
+- Tokens automatically validated on every mutating request
+- `enableXsrfCookie: true` provides CSRF token to frontend via cookie
+
+**Token Regeneration:**
+CSRF tokens are automatically regenerated after sensitive actions to prevent session fixation attacks:
+
+```typescript
+import { regenerateCsrfToken } from '#core/helpers/csrf'
+
+// Regenerate after sensitive actions
+regenerateCsrfToken(ctx)
+```
+
+**When to Regenerate:**
+- ✅ After login/logout
+- ✅ After password change
+- ✅ After email change
+- ✅ After OAuth linking/unlinking
+- ✅ Before account deletion
+
+**Manual Verification (Optional):**
+For extra-sensitive operations, you can manually verify CSRF tokens:
+
+```typescript
+import { verifyCsrfToken } from '#core/helpers/csrf'
+
+const isValid = await verifyCsrfToken(ctx)
+if (!isValid) {
+  // Handle invalid token
+}
+```
+
+**Error Handling:**
+Custom `CsrfTokenMismatchException` (419) provides:
+- User-friendly error pages (Inertia)
+- JSON responses (API)
+- Detailed logging (IP, URL, user agent, referer)
+- Translated error messages (EN/FR)
+
+**Frontend Integration:**
+- Shield automatically includes CSRF token in headers
+- Inertia handles token injection automatically
+- No manual token management required
+
+**Logging:**
+All CSRF violations are logged with:
+```typescript
+logger.warn('CSRF token mismatch detected', {
+  ip: request.ip(),
+  url: request.url(),
+  method: request.method(),
+  userAgent: request.header('user-agent'),
+  referer: request.header('referer'),
+})
+```
+
+**Configuration:**
+```typescript
+// config/shield.ts
+csrf: {
+  enabled: true,
+  exceptRoutes: [],  // Routes to exclude from CSRF protection
+  enableXsrfCookie: true,
+  methods: ['POST', 'PUT', 'PATCH', 'DELETE'],
+}
+```
 
 #### XSS Protection
 - Input sanitization via VineJS validators
@@ -846,13 +933,15 @@ The system detects the user's language in the following order:
 - `auth.json` : Authentication messages (login, register, reset, OAuth)
 - `profile.json` : Profile messages (update, password, delete, locale)
 - `emails.json` : Email content (subjects, bodies)
+- `errors.json` : Error messages (CSRF, rate limit)
 - `validation.json` : VineJS validation messages (optional)
 
 **Frontend (`inertia/locales/{locale}/`):**
 - `auth.json` : Auth pages (login, register, forgot, reset, define)
 - `profile.json` : Profile page (sections, forms)
 - `common.json` : Common UI elements (header, flash, select, language)
-- `errors.json` : Error pages (404, 500)
+- `errors.json` : Error pages (404, 500, CSRF)
+- `validation.json` : Frontend validation messages
 
 ### Usage
 
@@ -933,15 +1022,17 @@ Users can change their language preference in their profile settings. The prefer
 To add a new language (e.g., Spanish):
 
 1. Create backend translation files in `resources/lang/es/`
-  - `auth.json`
-  - `profile.json`
-  - `emails.json`
+- `auth.json`
+- `profile.json`
+- `emails.json`
+- `errors.json`
 
 2. Create frontend translation files in `inertia/locales/es/`
-  - `auth.json`
-  - `profile.json`
-  - `common.json`
-  - `errors.json`
+- `auth.json`
+- `profile.json`
+- `common.json`
+- `errors.json`
+- `validation.json`
 
 3. Update `config/i18n.ts`:
 ```typescript
@@ -1442,6 +1533,9 @@ logger.error('Error', { context })
 ### Security
 - ✅ Rate limiting on auth routes (brute force protection)
 - ✅ CSRF protection on all forms
+- ✅ CSRF token regeneration after sensitive actions
+- ✅ Custom CSRF exception handler with logging
+- ✅ Translated CSRF error pages (EN/FR)
 - ✅ Password hashing (Scrypt)
 - ✅ Session-based authentication
 - ✅ Remember me tokens
@@ -1461,6 +1555,7 @@ logger.error('Error', { context })
 - ✅ Complete auth pages
 - ✅ Complete profile page
 - ✅ Real-time visual validation
+- ✅ CSRF error page with reload functionality
 
 ### Cache & Redis
 - ✅ Redis configuration with retry strategy
@@ -1476,30 +1571,26 @@ logger.error('Error', { context })
 ## 🚀 To Implement (Priorities)
 
 ### High Priority
-1. Rate limiting
-2. Email verification
-3. Secure password reset tokens
-4. Role and permission system
-5. i18n (backend + frontend)
-6. Redis with fallback
-7. Queue system
-8. Database notifications
-9. Tests (setup + unit + integration)
-10. CI/CD (GitHub Actions)
+1. Email verification
+2. Role and permission system
+3. Queue system
+4. Database notifications
+5. Tests (setup + unit + integration)
+6. CI/CD (GitHub Actions)
 
 ### Medium Priority
-11. Functional dark mode
-12. Real-time notifications (SSE)
-13. Professional email templates
-14. Optional 2FA
-15. Accessibility improvements
-16. Complete documentation
+7. Functional dark mode
+8. Real-time notifications (SSE)
+9. Professional email templates
+10. Optional 2FA
+11. Accessibility improvements
+12. Complete documentation
 
 ### Low Priority
-17. User avatar
-18. Data export (GDPR)
-19. Feature flags
-20. Admin dashboard
+13. User avatar
+14. Data export (GDPR)
+15. Feature flags
+16. Admin dashboard
 
 ---
 

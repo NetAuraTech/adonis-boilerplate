@@ -14,10 +14,12 @@ export default class LoginController {
     vine.object({
       email: vine.string().trim().toLowerCase().email(),
       password: vine.string(),
-      remember: vine.boolean().optional(),
+      remember_me: vine.boolean().optional(),
     })
+  )
   render({ inertia }: HttpContext)
-  async execute({ auth, request, response, session }: HttpContext)
+  async execute({ auth, request, response, session, i18n }: HttpContext)
+  // After successful login: regenerateCsrfToken() is called
 }
 ```
 
@@ -26,16 +28,8 @@ export default class LoginController {
 export default class RegisterController {
   static validator = vine.compile(
     vine.object({
-      email: vine
-        .string()
-        .trim()
-        .toLowerCase()
-        .email()
-        .unique(unique('users', 'email')),
-      password: vine
-        .string()
-        .minLength(8)
-        .confirmed(),
+      email: vine.string().trim().toLowerCase().email().unique(unique('users', 'email')),
+      password: vine.string().minLength(8).confirmed(),
     })
   )
   render({ inertia }: HttpContext)
@@ -58,9 +52,10 @@ export default class ForgotPasswordController {
     vine.object({
       email: vine.string().trim().toLowerCase().email(),
     })
+  )
   constructor(protected passwordService: PasswordService)
   render({ inertia }: HttpContext)
-  async execute({ request, response, session }: HttpContext)
+  async execute({ request, response, session, i18n }: HttpContext)
 }
 ```
 
@@ -75,23 +70,7 @@ export default class ResetPasswordController {
   )
 
   async render({ inertia, params, session, response, i18n }: HttpContext)
-  // Displays password reset form
-  // Verifies token validity before showing form
-  // Redirects to forgot-password if token invalid/expired/exceeded attempts
-
   async execute({ request, response, session, auth, i18n }: HttpContext)
-  // Resets user password
-  // CRITICAL FLOW:
-  // 1. Increments attempts counter BEFORE any validation
-  // 2. Checks if max attempts exceeded (3) → redirect if exceeded
-  // 3. Validates form data (VineJS)
-  // 4. Verifies token and gets associated user
-  // 5. Updates password and expires all tokens
-  // 6. Logs in user and redirects to profile
-
-  // Logging:
-  // - All attempts logged with masked token + IP
-  // - Distinguishes between invalid token and exceeded attempts
 }
 ```
 
@@ -102,15 +81,18 @@ type OAuthProvider = 'github' | 'google' | 'facebook'
 @inject()
 export default class SocialController {
   constructor(protected socialService: SocialService)
-  
   static definePasswordValidator = vine.compile(...)
   
-  protected validateProvider(provider: string, session: any, response: any)
-  async redirect({ ally, params, session, response }: HttpContext)
-  async callback({ ally, params, auth, response, session }: HttpContext)
-  async unlink({ auth, params, response, session }: HttpContext)
+  protected validateProvider(provider: string, session: any, response: any, i18n: any)
+  async redirect({ ally, params, session, response, i18n }: HttpContext)
+  async callback({ ally, params, auth, request, response, session, i18n }: HttpContext)
+  // After OAuth linking: regenerateCsrfToken() is called
+  
+  async unlink({ auth, params, request, response, session, i18n }: HttpContext)
+  // After OAuth unlinking: regenerateCsrfToken() is called
+  
   render({ inertia }: HttpContext)
-  async execute({ auth, request, response, session }: HttpContext)
+  async execute({ auth, request, response, session, i18n }: HttpContext)
 }
 ```
 
@@ -121,21 +103,7 @@ export default class SocialController {
 ### app/auth/services/password_service.ts
 ```typescript
 export default class PasswordService {
-  async sendResetPasswordLink(user: User): Promise
-  // Generates secure token, hashes it, and sends reset email
-  // Flow:
-  // 1. Expires all existing PASSWORD_RESET tokens for user
-  // 2. Generates cryptographically secure random token (128 hex chars)
-  // 3. Hashes token with Scrypt before storing in database
-  // 4. Creates new Token with attempts=0, expiresAt=+1h
-  // 5. Sends email with PLAIN token (not hashed) in reset link
-  // 6. Email content in user's locale (i18n support)
-
-  // Security notes:
-  // - Plain token only sent via email, never stored
-  // - Hashed token stored in database
-  // - Token expires after 1 hour
-  // - Maximum 3 submission attempts per token
+  async sendResetPasswordLink(user: User): Promise<void>
 }
 ```
 
@@ -146,23 +114,19 @@ export default class SocialService {
     allyUser: AllyUserContract<any>,
     provider: 'github' | 'google' | 'facebook'
   ): Promise<User>
-  // Search by provider ID → by email → create if non-existent
   
   async linkProvider(
     user: User,
     allyUser: AllyUserContract<any>,
     provider: 'github' | 'google' | 'facebook'
   ): Promise<void>
-  // Checks not already linked elsewhere, links provider to user
   
   async unlinkProvider(
     user: User,
     provider: 'github' | 'google' | 'facebook'
   ): Promise<void>
-  // Sets provider ID to null
   
   needsPasswordSetup(user: User): boolean
-  // Returns true if user has OAuth but no password
 }
 ```
 
@@ -228,7 +192,7 @@ export interface UserPresenterData {
   id: number
   email: string
   fullName: string | null
-  locale: string | null  // NEW
+  locale: string | null
   githubId: string | null
   googleId: string | null
   facebookId: string | null
@@ -238,17 +202,9 @@ export interface UserPresenterData {
 
 export class UserPresenter {
   static toJSON(user: User | undefined | null): UserPresenterData | null
-  // Returns all user data including locale (for owner/admin)
-
   static toPublicJSON(user: User | undefined | null)
-  // Returns id, email, fullName, locale, dates (no OAuth IDs)
-  // locale is public as it's just a preference
-
   static hasLinkedProviders(user: User): boolean
-  // Returns true if at least one OAuth provider linked
-
   static getLinkedProviders(user: User): { github: boolean, google: boolean, facebook: boolean }
-  // Returns object with each provider's state
 }
 ```
 
@@ -262,22 +218,16 @@ export type OAuthProviderName = 'github' | 'google' | 'facebook'
 
 export interface OAuthProviderConfig {
   name: string
-  icon: string  // SVG path
+  icon: string
   color: string
   enabled: boolean
 }
 
 export const OAUTH_PROVIDERS: Record<OAuthProviderName, OAuthProviderConfig>
-// Object containing GitHub, Google, Facebook config with SVG icons
 
 export function getEnabledProviders(): OAuthProviderConfig[]
-// Returns list of enabled providers (according to env config)
-
 export function isProviderActive(provider: OAuthProviderName): boolean
-// Checks if a provider is enabled
-
 export function getProviderConfig(provider: OAuthProviderName): OAuthProviderConfig | null
-// Returns a provider's config
 ```
 
 ---
@@ -287,16 +237,15 @@ export function getProviderConfig(provider: OAuthProviderName): OAuthProviderCon
 ### app/core/services/cache_service.ts
 ```typescript
 export default class CacheService {
-  async get(key: string): Promise
-  async set(key: string, value: any, ttlSeconds?: number): Promise
-  async delete(key: string): Promise
-  async has(key: string): Promise
-  async flush(): Promise
-  async increment(key: string, value: number, ttlSeconds?: number): Promise
-  async decrement(key: string, value: number, ttlSeconds?: number): Promise
-  async getMany(keys: string[]): Promise<Map>
-  async setMany(entries: Map, ttlSeconds?: number): Promise
-  // Uses Redis if available, falls back to Memory cache
+  async get(key: string): Promise<any>
+  async set(key: string, value: any, ttlSeconds?: number): Promise<void>
+  async delete(key: string): Promise<void>
+  async has(key: string): Promise<boolean>
+  async flush(): Promise<void>
+  async increment(key: string, value: number, ttlSeconds?: number): Promise<number>
+  async decrement(key: string, value: number, ttlSeconds?: number): Promise<number>
+  async getMany(keys: string[]): Promise<Map<string, any>>
+  async setMany(entries: Map<string, any>, ttlSeconds?: number): Promise<void>
 }
 ```
 
@@ -310,17 +259,10 @@ export interface RateLimitResult {
 }
 
 export default class RateLimitService {
-  async attempt(key: string, maxAttempts: number, decaySeconds: number): Promise
-  // Checks if request is allowed, uses Redis if available, falls back to Database
-  
-  async reset(key: string): Promise
-  // Resets rate limit for a key
-  
-  async remaining(key: string, maxAttempts: number): Promise
-  // Gets remaining attempts
-  
-  async clear(): Promise
-  // Clears all rate limits (useful for tests)
+  async attempt(key: string, maxAttempts: number, decaySeconds: number): Promise<RateLimitResult>
+  async reset(key: string): Promise<void>
+  async remaining(key: string, maxAttempts: number): Promise<number>
+  async clear(): Promise<void>
 }
 ```
 
@@ -349,8 +291,47 @@ export default class RateLimit extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
   
-  static async cleanExpired(): Promise
-  // Deletes expired rate limit entries
+  static async cleanExpired(): Promise<number>
+}
+```
+
+### app/core/models/token.ts
+```typescript
+export default class Token extends BaseModel {
+  @column({ isPrimary: true })
+  declare id: number
+
+  @column()
+  declare public userId: number | null
+
+  @column()
+  declare public type: string
+
+  @column()
+  declare public token: string
+
+  @column()
+  declare public attempts: number
+
+  @column.dateTime()
+  declare expiresAt: DateTime | null
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+
+  @belongsTo(() => User)
+  declare public user: BelongsTo<typeof User>
+
+  static readonly MAX_RESET_ATTEMPTS = 3
+
+  static async expirePasswordResetTokens(user: User): Promise<void>
+  static async getPasswordResetUser(plainToken: string): Promise<User | undefined>
+  static async verify(plainToken: string): Promise<boolean>
+  static async incrementAttempts(plainToken: string): Promise<void>
+  static async hasExceededAttempts(plainToken: string): Promise<boolean>
 }
 ```
 
@@ -360,34 +341,62 @@ export default class RateLimit extends BaseModel {
 
 ### app/core/helpers/redis.ts
 ```typescript
-export async function isRedisAvailable(): Promise
-// Checks if Redis is available and connected (cached result)
-
+export async function isRedisAvailable(): Promise<boolean>
 export async function getRedisConnection()
-// Returns Redis connection if available, throws error otherwise
-
 export function resetRedisCheck()
-// Resets availability check (useful for tests)
 ```
 
 ### app/core/helpers/crypto.ts
 ```typescript
 export function randomBytes(length: number): string
-// Generates cryptographically secure random string (hex)
-
 export function generateToken(bytes: number = 64): string
-// Generates secure token (default: 128 hex chars)
-// Used for password reset tokens
-
 export function maskToken(token: string, visibleChars: number = 10): string
-// Masks token for logging (shows only first N characters)
-// Example: "a3f2e9c8d1***"
-// Prevents token leakage in logs
+```
+
+### app/core/helpers/csrf.ts
+```typescript
+export function regenerateCsrfToken(ctx: HttpContext): void
+export async function verifyCsrfToken(ctx: HttpContext): Promise<boolean>
+```
+
+### app/core/helpers/validator.ts
+```typescript
+export type DatabaseOptions = {
+  caseInsensitive?: boolean
+  exceptId?: number
+}
+
+export async function query(
+  db: Database,
+  table: string,
+  column: string,
+  value: string,
+  options?: DatabaseOptions
+): Promise<any[]>
+
+export function exists(table: string, column: string, options?: DatabaseOptions)
+export function unique(table: string, column: string, options?: DatabaseOptions)
+```
+
+### app/core/helpers/sleep.ts
+```typescript
+export function sleep(time: number): Promise<void>
 ```
 
 ---
 
 ## 🗃️ CORE - Exceptions
+
+### app/core/exceptions/csrf_token_mismatch_exception.ts
+```typescript
+export default class CsrfTokenMismatchException extends Exception {
+  static status = 419
+  static code = 'E_CSRF_TOKEN_MISMATCH'
+
+  constructor(message: string = 'CSRF token mismatch')
+  async handle(error: this, ctx: HttpContext)
+}
+```
 
 ### app/core/exceptions/too_many_requests_exception.ts
 ```typescript
@@ -396,13 +405,7 @@ export default class TooManyRequestsException extends Exception {
   static code = 'E_TOO_MANY_REQUESTS'
   
   constructor(message: string, public retryAfter?: number)
-  // Custom exception for rate limiting
-  // Includes Retry-After header support
-  // Handles both Inertia (redirect) and API (JSON) responses
-  
   async handle(error: this, ctx: HttpContext)
-  // For Inertia: Redirects back with flash error
-  // For API: Returns 429 JSON with retryAfter
 }
 ```
 
@@ -412,9 +415,9 @@ export default class HttpExceptionHandler extends ExceptionHandler {
   protected debug = !app.inProduction
   protected renderStatusPages = app.inProduction
   
-  protected statusPages: Record = {
+  protected statusPages: Record<StatusPageRange, StatusPageRenderer> = {
     '404': (error, { inertia }) => inertia.render('errors/not_found', { error }),
-    '429': (error, { inertia }) => inertia.render('errors/too_many_requests', { error }),
+    '419': (error, { inertia }) => inertia.render('errors/csrf_token_mismatch', { error }),
     '500..599': (error, { inertia }) => inertia.render('errors/server_error', { error }),
   }
   
@@ -431,127 +434,49 @@ export default class HttpExceptionHandler extends ExceptionHandler {
 ```typescript
 export default class ProfileShowController {
   async render({ auth, inertia }: HttpContext)
-  // Returns profile page with notifications, providers, linkedProviders
 }
 ```
 
 ### app/profile/controllers/profile_update_controller.ts
 ```typescript
 export default class ProfileUpdateController {
-  const validator = vine.compile(
-    vine.object({
-      fullName: vine
-        .string()
-        .trim()                    // Remove whitespace
-        .minLength(2)
-        .maxLength(255)
-        .optional(),
-      email: vine
-        .string()
-        .trim()
-        .toLowerCase()
-        .email()
-        .unique(unique('users', 'email', { exceptId: user.id })),
-      locale: vine.enum(['en', 'fr']),
-    })
-  )
   async execute({ auth, request, response, session, i18n }: HttpContext)
-  // Dynamic validator with exceptId and locale validation
-  // Updates fullName, email, AND locale (NEW)
-  // If locale changes, triggers page reload on frontend
-  
-  // Validator includes:
-  // - fullName: optional, min 2, max 255
-  // - email: required, unique (except current user)
-  // - locale: required, enum(['en', 'fr'])  // NEW
+  // Regenerates CSRF token after email or locale change
 }
 ```
 
 ### app/profile/controllers/profile_update_password_controller.ts
 ```typescript
 export default class ProfileUpdatePasswordController {
-  static validator = vine.compile(...)
+  static validator = vine.compile(
+    vine.object({
+      current_password: vine.string(),
+      password: vine.string().minLength(8).confirmed(),
+    })
+  )
   
-  async execute({ auth, request, response, session }: HttpContext)
-  // Verifies current_password, updates password
+  async execute({ auth, request, response, session, i18n }: HttpContext)
+  // Regenerates CSRF token after password change
 }
 ```
 
 ### app/profile/controllers/profile_delete_controller.ts
 ```typescript
 export default class ProfileDeleteController {
-  static validator = vine.compile(...)
+  static validator = vine.compile(
+    vine.object({
+      password: vine.string(),
+    })
+  )
   
-  async execute({ auth, request, response, session }: HttpContext)
-  // Verifies password, logout, deletes user
+  async execute({ auth, request, response, session, i18n }: HttpContext)
 }
 ```
 
 ### app/profile/controllers/profile_clean_notifications_controller.ts
 ```typescript
 export default class ProfileCleanNotificationsController {
-  async execute({ auth, response, session }: HttpContext)
-  // TODO: Delete notifications (not implemented)
-}
-```
-
----
-
-## 🗃️ CORE - Models
-
-### app/core/models/token.ts
-```typescript
-export default class Token extends BaseModel {
-  @column({ isPrimary: true })
-  declare id: number
-
-  @column()
-  declare public userId: number | null
-
-  @column()
-  declare public type: string
-
-  @column()
-  declare public token: string
-  // Token is HASHED (Scrypt) before storage for security
-
-  @column()
-  declare public attempts: number
-  // Counter for submission attempts (default: 0)
-
-  @column.dateTime()
-  declare expiresAt: DateTime | null
-
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
-
-  @belongsTo(() => User)
-  declare public user: BelongsTo<typeof User>
-
-  // Constants
-  static readonly MAX_RESET_ATTEMPTS = 3
-
-  // Static methods
-  static async expirePasswordResetTokens(user: User): Promise<void>
-  // Expires all PASSWORD_RESET tokens for a user
-
-  static async getPasswordResetUser(plainToken: string): Promise<User | undefined>
-  // Finds user by verifying hashed token
-  // Returns undefined if token invalid, expired, or attempts exceeded
-  // Uses hash.verify() to compare plain token with hashed token in DB
-
-  static async verify(plainToken: string): Promise<boolean>
-  // Verifies token is valid, not expired, and has not exceeded max attempts
-
-  static async incrementAttempts(plainToken: string): Promise<void>
-  // Increments attempts counter for a token
-  // CRITICAL: Called BEFORE validation to prevent brute force
-
-  static async hasExceededAttempts(plainToken: string): Promise<boolean>
-  // Checks if token has reached or exceeded MAX_RESET_ATTEMPTS
+  async execute({ auth, response, session, i18n }: HttpContext)
 }
 ```
 
@@ -569,7 +494,6 @@ export default class AuthMiddleware {
     next: NextFn,
     options: { guards?: (keyof Authenticators)[] } = {}
   )
-  // Authenticates or redirects to /login
 }
 ```
 
@@ -583,7 +507,6 @@ export default class GuestMiddleware {
     next: NextFn,
     options: { guards?: (keyof Authenticators)[] } = {}
   )
-  // Redirects to / if already authenticated
 }
 ```
 
@@ -591,7 +514,6 @@ export default class GuestMiddleware {
 ```typescript
 export default class SilentAuthMiddleware {
   async handle(ctx: HttpContext, next: NextFn)
-  // Checks auth without blocking (to have currentUser everywhere)
 }
 ```
 
@@ -599,17 +521,11 @@ export default class SilentAuthMiddleware {
 ```typescript
 export default class ContainerBindingsMiddleware {
   handle(ctx: HttpContext, next: NextFn)
-  // Binds HttpContext and Logger for DI
 }
 ```
 
 ### app/core/middleware/detect_user_locale_middleware.ts
 ```typescript
-import { I18n } from '@adonisjs/i18n'
-import i18nManager from '@adonisjs/i18n/services/main'
-import type { NextFn } from '@adonisjs/core/types/http'
-import { type HttpContext, RequestValidator } from '@adonisjs/core/http'
-
 export default class DetectUserLocaleMiddleware {
   static {
     RequestValidator.messagesProvider = (ctx) => {
@@ -618,13 +534,7 @@ export default class DetectUserLocaleMiddleware {
   }
 
   protected getRequestLocale(ctx: HttpContext): string
-  // Detects user locale with priority:
-  // 1. ctx.auth.user?.locale (if authenticated)
-  // 2. Accept-Language header (via i18nManager.getSupportedLocaleFor)
-  // 3. Default locale (via i18nManager.defaultLocale)
-
   async handle(ctx: HttpContext, next: NextFn)
-  // Sets ctx.i18n, binds I18n to container, shares with Edge
 }
 
 declare module '@adonisjs/core/http' {
@@ -637,9 +547,9 @@ declare module '@adonisjs/core/http' {
 ### app/core/middleware/throttle_middleware.ts
 ```typescript
 export interface ThrottleOptions {
-  max: number                                 // Maximum requests allowed
-  window: number                              // Time window in seconds
-  keyGenerator?: (ctx: HttpContext) => string // Custom key generator
+  max: number
+  window: number
+  keyGenerator?: (ctx: HttpContext) => string
 }
 
 @inject()
@@ -647,67 +557,7 @@ export default class ThrottleMiddleware {
   constructor(protected rateLimitService: RateLimitService)
   
   async handle(ctx: HttpContext, next: NextFn, options?: ThrottleOptions)
-  // Checks rate limit using RateLimitService
-  // For Inertia requests: Redirects back with flash error
-  // For API requests: Throws TooManyRequestsException
-  // Adds rate limit headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
-  // Logs rate limit violations
-  
   private generateKey(ctx: HttpContext): string
-  // Generates rate limit key: "throttle:{route}:{ip}"
-}
-```
-
----
-
-## 🗃️ CORE - Helpers
-
-### app/core/helpers/validator.ts
-```typescript
-export type DatabaseOptions = {
-  caseInsensitive?: boolean
-  exceptId?: number
-}
-
-export async function query(
-  db: Database,
-  table: string,
-  column: string,
-  value: string,
-  options?: DatabaseOptions
-): Promise<any[]>
-// Reusable query builder
-
-export function exists(table: string, column: string, options?: DatabaseOptions)
-// VineJS validator to check existence in DB
-
-export function unique(table: string, column: string, options?: DatabaseOptions)
-// VineJS validator to check uniqueness in DB (with exceptId for updates)
-```
-
-### app/core/helpers/sleep.ts
-```typescript
-export function sleep(time: number): Promise<void>
-// Promise that resolves after time ms
-```
-
----
-
-## 🗃️ CORE - Exception Handler
-
-### app/core/exceptions/handler.ts
-```typescript
-export default class HttpExceptionHandler extends ExceptionHandler {
-  protected debug = !app.inProduction
-  protected renderStatusPages = app.inProduction
-  
-  protected statusPages: Record<StatusPageRange, StatusPageRenderer> = {
-    '404': (error, { inertia }) => inertia.render('errors/not_found', { error }),
-    '500..599': (error, { inertia }) => inertia.render('errors/server_error', { error }),
-  }
-  
-  async handle(error: unknown, ctx: HttpContext)
-  async report(error: unknown, ctx: HttpContext)
 }
 ```
 
@@ -726,7 +576,6 @@ export default class CreateUser extends BaseCommand {
   declare email: string
   
   async run()
-  // Creates user with email and password "password"
 }
 ```
 
@@ -737,14 +586,14 @@ export default class CleanupRateLimits extends BaseCommand {
   static description = 'Clean expired rate limit entries from database'
 
   async run()
-  // Calls RateLimit.cleanExpired()
 }
+```
 
 ---
 
 ## ⚛️ REACT - Entry Points
 
-### inertia/app/app.tsx (Client-side)
+### inertia/app/app.tsx
 ```typescript
 void createInertiaApp({
   progress: { color: '#5468FF' },
@@ -757,7 +606,6 @@ void createInertiaApp({
   },
   
   setup({ el, App, props }) {
-    // Set i18n locale from page props (NEW)
     const locale = String(props.initialPage.props.locale || 'en')
     i18n.changeLanguage(locale)
     
@@ -767,7 +615,7 @@ void createInertiaApp({
 })
 ```
 
-### inertia/app/ssr.tsx (Server-side)
+### inertia/app/ssr.tsx
 ```typescript
 export default function render(page: any) {
   return createInertiaApp({
@@ -784,7 +632,6 @@ export default function render(page: any) {
     },
     
     setup: ({ App, props }) => {
-      // Set i18n locale from page props for SSR (NEW)
       const locale = String(page.props.locale || 'en')
       i18n.changeLanguage(locale)
       
@@ -813,7 +660,6 @@ interface ButtonProps {
 }
 
 export function Button(props: ButtonProps)
-// Universal button with variants, loading, Inertia Link and <a> support
 ```
 
 ### inertia/components/elements/nav_link.tsx
@@ -831,7 +677,6 @@ interface NavLinkProps {
 }
 
 export function NavLink(props: NavLinkProps)
-// Inertia Link with active page detection (aria-current)
 ```
 
 ### inertia/components/elements/panel.tsx
@@ -847,7 +692,6 @@ interface PanelProps {
 }
 
 export function Panel(props: PanelProps)
-// Container with optional header/footer, separators
 ```
 
 ### inertia/components/elements/flash_messages.tsx
@@ -860,8 +704,6 @@ interface FlashProps {
 }
 
 export function FlashMessages()
-// Auto-dismiss toasts 5s, entrance/exit animations, progress bar
-// Reads flash from usePage().props
 ```
 
 ---
@@ -872,7 +714,7 @@ export function FlashMessages()
 ```typescript
 interface InputProps {
   name: string
-  type: string  // text, email, password, textarea, select, checkbox, radio, file
+  type: string
   placeholder?: string
   value?: string | number
   checked?: boolean
@@ -882,10 +724,10 @@ interface InputProps {
   disabled?: boolean
   required?: boolean
   onChange?: (event: ChangeEvent<...>) => void
+  onBlur?: (event: ChangeEvent<...>) => void
 }
 
 export function Input(props: InputProps)
-// Universal input, switches by type, differentiated styles
 ```
 
 ### inertia/components/forms/label.tsx
@@ -897,7 +739,6 @@ interface LabelProps {
 }
 
 export function Label(props: LabelProps)
-// Label with red asterisk if required
 ```
 
 ### inertia/components/forms/input_group.tsx
@@ -906,21 +747,23 @@ interface InputGroupProps {
   label: string
   name: string
   type: string
-  // ... other props
-
-  sanitize?: boolean  // NEW - Enable automatic sanitization (default: true)
-  // Set to false for passwords
+  placeholder?: string
+  value?: string | number
+  checked?: boolean
+  options?: Array<{ value: string; label: string }>
+  cols?: number
+  rows?: number
+  disabled?: boolean
+  required?: boolean
+  errorMessage?: string
+  helpText?: string
+  helpClassName?: string
+  onChange?: (event: ChangeEvent<...>) => void
+  onBlur?: (event: ChangeEvent<...>) => void
+  sanitize?: boolean
 }
 
 export function InputGroup(props: InputGroupProps)
-// Automatically sanitizes input based on type:
-// - email: trim + lowercase
-// - text/textarea: strip HTML + trim + remove multiple spaces
-// - password: no sanitization (if sanitize={false})
-// 
-// Sanitization happens:
-// - On onChange (real-time)
-// - On onBlur (final cleanup)
 ```
 
 ---
@@ -934,15 +777,98 @@ interface AppShellProps {
 }
 
 export default function AppShell(props: AppShellProps)
-// Main layout: PageHeader + FlashMessages + children
 ```
 
 ### inertia/components/layouts/page_header.tsx
 ```typescript
 export function PageHeader()
-// Responsive header with logo, nav (Home, About, Contact),
-// burger menu mobile, auto-close after navigation,
-// displays "Hello {name}" if logged in
+```
+
+---
+
+## ⚛️ REACT - Pages / Errors
+
+### inertia/pages/errors/csrf_token_mismatch.tsx
+```typescript
+interface CsrfErrorProps {
+  error?: {
+    message: string
+  }
+}
+
+export default function CsrfTokenMismatch({ error }: CsrfErrorProps)
+```
+
+### inertia/pages/errors/not_found.tsx
+```typescript
+export default function NotFound()
+```
+
+### inertia/pages/errors/server_error.tsx
+```typescript
+export default function ServerError(props: { error: any })
+```
+
+---
+
+## ⚛️ REACT - Pages / Auth
+
+### inertia/pages/auth/login.tsx
+```typescript
+interface LoginPageProps {
+  providers: OAuthProvider[]
+}
+
+export default function LoginPage(props: LoginPageProps)
+```
+
+### inertia/pages/auth/register.tsx
+```typescript
+interface RegisterPageProps {
+  providers: OAuthProvider[]
+}
+
+export default function RegisterPage(props: RegisterPageProps)
+```
+
+### inertia/pages/auth/forgot_password.tsx
+```typescript
+export default function ForgotPasswordPage()
+```
+
+### inertia/pages/auth/reset_password.tsx
+```typescript
+interface ResetPasswordPageProps {
+  token: string
+}
+
+export default function ResetPasswordPage(props: ResetPasswordPageProps)
+```
+
+### inertia/pages/auth/define_password.tsx
+```typescript
+export default function DefinePasswordPage()
+```
+
+---
+
+## ⚛️ REACT - Pages / Profile
+
+### inertia/pages/profile/show.tsx
+```typescript
+interface LinkedProviders {
+  github: boolean
+  google: boolean
+  facebook: boolean
+}
+
+interface ProfilePageProps {
+  notifications: any[]
+  providers: OAuthProvider[]
+  linkedProviders: LinkedProviders
+}
+
+export default function ProfilePage(props: ProfilePageProps)
 ```
 
 ---
@@ -952,7 +878,6 @@ export function PageHeader()
 ### inertia/helpers/oauth.ts
 ```typescript
 export function getProviderRoute(providerName: string): string
-// Returns `/oauth/${providerName.toLowerCase()}`
 ```
 
 ### inertia/helpers/validation_rules.ts
@@ -966,30 +891,12 @@ export type ValidationRule = (value: any, fieldNameKey?: string) => ValidationRe
 
 export const rules = {
   required: (fieldNameKey?: string): ValidationRule
-  // Returns error if value is empty
-  // Translated: i18n.t('validation:required', { field: i18n.t('validation:fields.email') })
-
   email: (): ValidationRule
-  // Validates email format with regex
-  // Translated: i18n.t('validation:email')
-
   minLength: (min: number, fieldNameKey?: string): ValidationRule
-  // Validates minimum length with current count
-  // Translated: i18n.t('validation:min_length', { field, min, current })
-
   maxLength: (max: number, fieldNameKey?: string): ValidationRule
-  // Validates maximum length with current count
-  // Translated: i18n.t('validation:max_length', { field, max, current })
-
   matches: (otherValue: any, otherFieldNameKey: string): ValidationRule
-  // Checks if value matches another field
-  // Translated: i18n.t('validation:matches', { other: i18n.t('validation:fields.password') })
-
   pattern: (regex: RegExp, customI18nKey: string): ValidationRule
-  // Custom regex validation with custom i18n key
-
   custom: (validator: (value: any) => boolean, i18nKey: string): ValidationRule
-  // Custom validation logic with custom i18n key
 }
 
 export function validate(
@@ -997,54 +904,60 @@ export function validate(
   validationRules: ValidationRule[],
   fieldNameKey?: string
 ): ValidationResult
-// Validates value against multiple rules, returns first error
 
 export const presets = {
   email: ValidationRule[]
-  // [required('email'), email()]
-
   password: ValidationRule[]
-  // [required('password'), minLength(8, 'password')]
-
   passwordConfirmation: (passwordToMatch: string) => ValidationRule[]
-  // [required('password_confirmation'), matches(passwordToMatch, 'password')]
-
+  currentPassword: ValidationRule[]
   fullName: ValidationRule[]
-  // [required('full_name'), minLength(2, 'full_name'), maxLength(255, 'full_name')]
 }
-
-// Usage Example with i18n namespace syntax
-i18n.t('validation:fields.email')         // "Email" / "Email"
-i18n.t('validation:fields.password')      // "Password" / "Mot de passe"
-i18n.t('validation:required', { field: 'Email' })
-// EN: "Email is required"
-// FR: "Email est requis"
-
-i18n.t('validation:min_length', { field: 'Password', min: 8, current: 5 })
-// EN: "Password must be at least 8 characters (currently: 5)"
-// FR: "Mot de passe doit contenir au moins 8 caractères (actuellement : 5)"
 ```
 
 ### inertia/helpers/sanitization.ts
 ```typescript
 export interface SanitizationOptions {
-  stripHtml?: boolean          // Default: true
-  trim?: boolean               // Default: true
-  lowercase?: boolean          // Default: false
-  removeMultipleSpaces?: boolean  // Default: true
+  stripHtml?: boolean
+  trim?: boolean
+  lowercase?: boolean
+  removeMultipleSpaces?: boolean
 }
 
 export function sanitize(value: string, options?: SanitizationOptions): string
-// General sanitization with custom options
-
 export function sanitizeEmail(value: string): string
-// Sanitize email: trim + lowercase
-
 export function sanitizeText(value: string): string
-// Sanitize text input: strip HTML + trim + remove multiple spaces
-
 export function noSanitization(value: string): string
-// No sanitization (for passwords, etc.)
+```
+
+---
+
+## ⚛️ REACT - Hooks
+
+### inertia/hooks/use_form_validation.ts
+```typescript
+export interface FieldState {
+  touched: boolean
+  typing: boolean
+  validation: ValidationResult
+  status: 'pristine' | 'valid' | 'invalid'
+}
+
+export interface FormValidationConfig {
+  [fieldName: string]: ValidationRule[]
+}
+
+export function useFormValidation(config: FormValidationConfig) {
+  return {
+    fieldStates: Record<string, FieldState>
+    getFieldState: (fieldName: string) => FieldState
+    handleChange: (fieldName: string, value: any) => void
+    handleBlur: (fieldName: string, value: any) => void
+    validateAll: (values: Record<string, any>) => boolean
+    reset: () => void
+    getValidationMessage: (fieldName: string) => string | undefined
+    getHelpClassName: (fieldName: string) => string
+  }
+}
 ```
 
 ---
@@ -1063,71 +976,18 @@ export interface OAuthProvider {
 
 ---
 
-## ⚛️ REACT - Hooks
+## ⚛️ REACT - Lib
 
-### inertia/hooks/use_form_validation.ts
+### inertia/lib/i18n.ts
 ```typescript
-export interface FieldState {
-  touched: boolean           // Field has been touched (onBlur triggered)
-  typing: boolean           // User is currently typing
-  validation: ValidationResult  // Current validation result
-  status: 'pristine' | 'valid' | 'invalid'  // Visual state
-}
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
 
-export interface FormValidationConfig {
-  [fieldName: string]: ValidationRule[]
-}
+// Configures i18n for React
+// Namespaces: ['auth', 'profile', 'common', 'errors', 'validation']
+// Default locale: 'en'
 
-export function useFormValidation(config: FormValidationConfig)
-
-// Returns
-{
-  fieldStates: Record
-  // All field states
-  
-  getFieldState: (fieldName: string) => FieldState
-  // Get state for a specific field
-  
-  handleChange: (fieldName: string, value: any) => void
-  // Call on onChange - validates and updates state
-  // Shows success while typing if valid
-  // Shows errors only if already touched
-  
-  handleBlur: (fieldName: string, value: any) => void
-  // Call on onBlur - marks field as touched
-  // Validates and shows errors if invalid
-  
-  validateAll: (values: Record) => boolean
-  // Validates all fields at once (before form submit)
-  // Marks all fields as touched
-  // Returns true if all valid
-  
-  reset: () => void
-  // Resets all fields to pristine state
-  
-  getValidationMessage: (fieldName: string) => string | undefined
-  // Gets error message for a field (only if touched and invalid)
-  
-  getHelpClassName: (fieldName: string) => string
-  // Returns CSS class for help text color
-  // 'clr-green-500' if valid, 'clr-red-400' if invalid, '' if pristine
-}
-
-// Usage Example
-const validation = useFormValidation({
-  email: presets.email,
-  password: presets.password,
-})
-
-<InputGroup
-  errorMessage={form.errors.email || validation.getValidationMessage('email')}
-  onChange={(e) => {
-    form.setData('email', e.target.value)
-    validation.handleChange('email', e.target.value)
-  }}
-  onBlur={(e) => validation.handleBlur('email', e.target.value)}
-  helpClassName={validation.getHelpClassName('email')}
-/>
+export default i18n
 ```
 
 ---
@@ -1158,11 +1018,8 @@ const allyConfig = defineConfig({
 })
 
 function isProviderConfigured(clientId?: string, clientSecret?: string): boolean
-// Checks if client ID/secret are present and !== "dummy"
 
 export const enabledProviders: Array<'github' | 'google' | 'facebook'>
-// List of enabled providers (filtered by env config)
-
 export function isProviderEnabled(provider: string): boolean
 ```
 
@@ -1215,7 +1072,6 @@ const mailConfig = defineConfig({
     smtp: transports.smtp({
       host: env.get('SMTP_HOST'),
       port: env.get('SMTP_PORT'),
-      // auth: { type: 'login', user, pass } (commented)
     }),
   },
 })
@@ -1269,8 +1125,6 @@ const hashConfig = defineConfig({
 
 ### config/i18n.ts
 ```typescript
-import { defineConfig } from '@adonisjs/i18n'
-
 const i18nConfig = defineConfig({
   defaultLocale: 'en',
   supportedLocales: ['en', 'fr'],
@@ -1279,17 +1133,11 @@ const i18nConfig = defineConfig({
     'en-*': 'en',
   },
   loaders: [
-    () => import('@adonisjs/i18n/loaders/fs')({
-      location: new URL('./resources/lang', import.meta.url),
+    loaders.fs({
+      location: app.languageFilesPath(),
     }),
   ],
 })
-
-export default i18nConfig
-
-declare module '@adonisjs/i18n/types' {
-  export interface I18nTranslations {}
-}
 ```
 
 ### config/session.ts
@@ -1300,7 +1148,7 @@ const sessionConfig = defineConfig({
   clearWithBrowser: false,
   age: '2h',
   cookie: { path: '/', httpOnly: true, secure: app.inProduction, sameSite: 'lax' },
-  store: env.get('SESSION_DRIVER'),  // 'cookie' or 'redis'
+  store: env.get('SESSION_DRIVER'),
   stores: {
     cookie: stores.cookie(),
     redis: stores.redis({
@@ -1312,221 +1160,100 @@ const sessionConfig = defineConfig({
 
 ---
 
-## 🌐 TRANSLATIONS STRUCTURE
-
-### Backend Translations (resources/lang/)
-```
-resources/lang/
-├── en/
-│   ├── auth.json           # Authentication messages
-│   │   ├── login.*         # Login success/failed
-│   │   ├── register.*      # Registration messages
-│   │   ├── forgot_password.* # Password reset flow
-│   │   ├── reset_password.*  # Token validation, success (UPDATED)
-│   │   │   ├── success           # "Your password has been reset successfully."
-│   │   │   ├── invalid_token     # "Invalid or expired password reset link."
-│   │   │   ├── max_attempts_exceeded  # "This link has been used too many times..." (NEW)
-│   │   │   └── failed            # "Failed to reset password. Please try again."
-│   │   └── social.*        # OAuth messages (linked, unlinked, etc.)
-│   │
-│   ├──errors.json         # Error messages (NEW)
-│   │   ├── too_many_requests   # Rate limit error with {minutes} placeholder
-│   │   └── rate_limit_exceeded # Generic rate limit message
-│   │
-│   ├── profile.json        # Profile management messages
-│   │   ├── update.*        # Profile update success
-│   │   ├── password.*      # Password change messages
-│   │   ├── delete.*        # Account deletion
-│   │   ├── notifications.* # Notifications cleared
-│   │   └── locale.*        # Language preference updated (NEW)
-│   │
-│   ├── emails.json         # Email content
-│   │   └── reset_password.* # Subject, greeting, intro, action, outro, expiry, footer
-│   └── validation.json         # NEW - Validation messages
-│       ├── required            # "{field} is required"
-│       ├── email               # "Please enter a valid email address"
-│       ├── min_length          # "{field} must be at least {min} characters (currently: {current})"
-│       ├── max_length          # "{field} must be at most {max} characters (currently: {current})"
-│       ├── matches             # "Must match {other}"
-│       └── fields              # Field name translations
-│           ├── email           # "Email"
-│           ├── password        # "Password"
-│           ├── password_confirmation  # "Password confirmation"
-│           ├── current_password       # "Current password"
-│           └── full_name              # "Full name"
-│
-└── fr/
-    ├── auth.json
-    ├── profile.json
-    ├──errors.json 
-    ├── emails.json
-    └── validation.json
-```
-
-**Usage in Backend:**
-```typescript
-// In controllers
-session.flash('success', i18n.t('auth.login.success'))
-session.flash('error', i18n.t('auth.social.linked', { provider: 'GitHub' }))
-
-// In services (emails)
-const subject = i18n.t('emails.reset_password.subject')
-const greeting = i18n.t('emails.reset_password.greeting')
-```
-
-### Frontend Translations (inertia/locales/)
-```
-inertia/locales/
-├── en/
-│   ├── auth.json           # Auth pages translations
-│   │   ├── login.*         # Title, subtitle, fields, buttons
-│   │   ├── register.*      # Registration form
-│   │   ├── forgot_password.* # Forgot password page
-│   │   ├── reset_password.*  # Reset password page
-│   │   └── define_password.* # OAuth password definition
-│   │
-│   ├── profile.json        # Profile page translations
-│   │   └── sections.*      # profile_info, connected_accounts, update_password, delete_account
-│   │
-│   ├── common.json         # Common UI elements
-│   │   ├── header.*        # Navigation, greeting, menu
-│   │   ├── flash.*         # Toast close label
-│   │   ├── select.*        # Default placeholder
-│   │   └── language.*      # Language names (en, fr)
-│   │
-│   └── errors.json         # Error pages
-│       ├── not_found.*     # 404 page
-│       └── server_error.*  # 500 page
-│
-└── fr/
-    ├── auth.json
-    ├── profile.json
-    ├── common.json
-    └── errors.json
-```
-
-**Usage in Frontend:**
-```typescript
-// Single namespace
-import { useTranslation } from 'react-i18next'
-
-const { t } = useTranslation('auth')
-<h1>{t('login.title')}</h1>  // "Welcome back!" or "Bon retour!"
-
-// Multiple namespaces
-const { t } = useTranslation('auth')
-const { t: tCommon } = useTranslation('common')
-
-<h1>{t('login.title')}</h1>
-<span>{tCommon('header.home')}</span>
-```
-
-### Frontend Library Configuration (inertia/lib/i18n.ts)
-```typescript
-import i18n from 'i18next'
-import { initReactI18next } from 'react-i18next'
-
-// Imports all translation files from inertia/locales/
-// Configures namespaces: ['auth', 'profile', 'common', 'errors']
-// Sets fallback locale: 'en'
-// Initializes react-i18next
-
-export default i18n
-```
-
-### Email Templates (resources/views/emails/)
-```
-resources/views/emails/
-└── reset_password.edge     # Password reset email template
-    ├── Uses inline SCSS for email client compatibility
-    ├── Responsive design (max-width: 600px)
-    ├── Gradient header (primary → accent)
-    ├── Dynamic translations from resources/lang/{locale}/emails.json
-    └── Variables: locale, appName, greeting, intro, action, outro, expiry, footer, resetLink
-```
-
-**Example usage in service:**
-```typescript
-await mail.send((message) => {
-  message
-    .to(user.email)
-    .subject(i18n.t('emails.reset_password.subject'))
-    .htmlView('emails/reset_password', {
-      locale: user.locale || 'en',
-      appName: Env.get('APP_NAME'),
-      greeting: i18n.t('emails.reset_password.greeting'),
-      intro: i18n.t('emails.reset_password.intro'),
-      action: i18n.t('emails.reset_password.action'),
-      outro: i18n.t('emails.reset_password.outro'),
-      expiry: i18n.t('emails.reset_password.expiry', { hours: 1 }),
-      footer: i18n.t('emails.reset_password.footer'),
-      resetLink,
-    })
-})
-```
-
----
-
 ## 🗄️ DATABASE - Migrations
 
 ### 1765907203210_create_users_table.ts
 ```typescript
-async up() {
-  this.schema.createTable('users', (table) => {
-    table.increments('id').notNullable()
-    table.string('full_name').nullable()
-    table.string('email', 254).notNullable().unique()
-    table.string('password').nullable()
-    table.timestamp('created_at').notNullable()
-    table.timestamp('updated_at').nullable()
-  })
+export default class extends BaseSchema {
+  protected tableName = 'users'
+
+  async up() {
+    this.schema.createTable(this.tableName, (table) => {
+      table.increments('id').notNullable()
+      table.string('full_name').nullable()
+      table.string('email', 254).notNullable().unique()
+      table.string('password').nullable()
+      table.timestamp('created_at').notNullable()
+      table.timestamp('updated_at').nullable()
+    })
+  }
+
+  async down() {
+    this.schema.dropTable(this.tableName)
+  }
 }
 ```
 
 ### 1765989606897_create_remember_me_tokens_table.ts
 ```typescript
-async up() {
-  this.schema.createTable('remember_me_tokens', (table) => {
-    table.increments()
-    table.integer('tokenable_id').unsigned().references('id').inTable('users').onDelete('CASCADE')
-    table.string('hash').notNullable().unique()
-    table.timestamp('created_at').notNullable()
-    table.timestamp('updated_at').notNullable()
-    table.timestamp('expires_at').notNullable()
-  })
+export default class extends BaseSchema {
+  protected tableName = 'remember_me_tokens'
+
+  async up() {
+    this.schema.createTable(this.tableName, (table) => {
+      table.increments()
+      table.integer('tokenable_id').unsigned().references('id').inTable('users').onDelete('CASCADE')
+      table.string('hash').notNullable().unique()
+      table.timestamp('created_at').notNullable()
+      table.timestamp('updated_at').notNullable()
+      table.timestamp('expires_at').notNullable()
+    })
+  }
+
+  async down() {
+    this.schema.dropTable(this.tableName)
+  }
 }
 ```
 
 ### 1766017009920_create_tokens_table.ts
 ```typescript
-async up() {
-  this.schema.createTable('tokens', (table) => {
-    table.increments('id')
-    table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE')
-    table.string('type').notNullable()
-    table.string('token', 64).notNullable()
-    table.timestamp('expires_at')
-    table.timestamp('created_at')
-    table.timestamp('updated_at')
-  })
+export default class extends BaseSchema {
+  protected tableName = 'tokens'
+
+  async up() {
+    this.schema.createTable(this.tableName, (table) => {
+      table.increments('id')
+      table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE')
+      table.string('type').notNullable()
+      table.string('token', 64).notNullable()
+      table.timestamp('expires_at')
+      table.timestamp('created_at')
+      table.timestamp('updated_at')
+    })
+  }
+
+  async down() {
+    this.schema.dropTable(this.tableName)
+  }
 }
 ```
 
 ### 1766157032668_add_oauth_columns_to_users_table.ts
 ```typescript
-async up() {
-  this.schema.alterTable('users', (table) => {
-    table.string('github_id').nullable().unique()
-    table.string('google_id').nullable().unique()
-    table.string('facebook_id').nullable().unique()
-  })
+export default class extends BaseSchema {
+  protected tableName = 'users'
+
+  async up() {
+    this.schema.alterTable(this.tableName, (table) => {
+      table.string('github_id').nullable().unique()
+      table.string('google_id').nullable().unique()
+      table.string('facebook_id').nullable().unique()
+    })
+  }
+
+  async down() {
+    this.schema.alterTable(this.tableName, (table) => {
+      table.dropColumn('github_id')
+      table.dropColumn('google_id')
+      table.dropColumn('facebook_id')
+    })
+  }
 }
 ```
 
 ### 1766268717077_add_locale_to_users_table.ts
 ```typescript
-import { BaseSchema } from '@adonisjs/lucid/schema'
-
 export default class extends BaseSchema {
   protected tableName = 'users'
 
@@ -1546,90 +1273,407 @@ export default class extends BaseSchema {
 
 ### 1766446092430_create_rate_limits_table.ts
 ```typescript
-async up() {
-  this.schema.createTable('rate_limits', (table) => {
-    table.increments('id')
-    table.string('key', 255).notNullable().unique()
-    table.integer('hits').notNullable().defaultTo(0)
-    table.timestamp('reset_at').notNullable()
-    table.timestamp('created_at')
-    table.timestamp('updated_at')
-    table.index('reset_at')
-  })
+export default class extends BaseSchema {
+  protected tableName = 'rate_limits'
+
+  async up() {
+    this.schema.createTable(this.tableName, (table) => {
+      table.increments('id')
+      table.string('key', 255).notNullable().unique()
+      table.integer('hits').notNullable().defaultTo(0)
+      table.timestamp('reset_at').notNullable()
+      table.timestamp('created_at')
+      table.timestamp('updated_at')
+      table.index('reset_at')
+    })
+  }
+
+  async down() {
+    this.schema.dropTable(this.tableName)
+  }
 }
 ```
 
 ### 1766503909953_add_attempts_to_tokens_table.ts
 ```typescript
-async up() {
-  this.schema.alterTable('tokens', (table) => {
-    table.integer('attempts').notNullable().defaultTo(0)
-  })
-}
+export default class extends BaseSchema {
+  protected tableName = 'tokens'
 
-async down() {
-  this.schema.alterTable('tokens', (table) => {
-    table.dropColumn('attempts')
-  })
+  async up() {
+    this.schema.alterTable(this.tableName, (table) => {
+      table.integer('attempts').notNullable().defaultTo(0)
+    })
+  }
+
+  async down() {
+    this.schema.alterTable(this.tableName, (table) => {
+      table.dropColumn('attempts')
+    })
+  }
 }
 ```
 
 ### 1766504715515_alter_tokens_add_longer_hashes_table.ts
 ```typescript
-async up() {
-  this.schema.alterTable('tokens', (table) => {
-    table.string('token', 255).notNullable().alter()
-  })
-}
+export default class extends BaseSchema {
+  protected tableName = 'tokens'
 
-async down() {
-  this.schema.alterTable('tokens', (table) => {
-    table.string('token', 64).notNullable().alter()
-  })
+  async up() {
+    this.schema.alterTable(this.tableName, (table) => {
+      table.string('token', 255).notNullable().alter()
+    })
+  }
+
+  async down() {
+    this.schema.alterTable(this.tableName, (table) => {
+      table.string('token', 64).notNullable().alter()
+    })
+  }
 }
 ```
 
 ---
 
-## 🎨 SCSS - Structure
+## 🌐 TRANSLATIONS - Backend
 
-### Abstracts
-```scss
-// abstracts/_colors.scss
-$dark: (complete palette with neutral, primary, accent, all shades)
-$light: (complete palette)
-$color-neutral-{shade}: var(--neutral-{shade})
-
-// abstracts/_typography.scss
-$font-family-base: Atkinson-Hyperlegible
-$font-sizes: (sm/lg breakpoints with 200-900)
-$font-size-{shade}: var(--fs-{shade})
-
-// abstracts/_sizes.scss
-$sizes: (0-20, from 0rem to 20rem)
-$size-{n}: value
-
-// abstracts/_tokens.scss
-$active-theme: $light
-$color-text-default, $color-background-default, etc.
-$box-shadow-{1-5}, $border-radius-{1-2}
-
-// abstracts/_mixins.scss
-@mixin mq($size)  // Media query helper
-@mixin heading($fs, $color)  // Heading style generator
+### resources/lang/en/auth.json
+```json
+{
+  "login": {
+    "success": "You have been successfully logged in.",
+    "failed": "Authentication failed. Please try again."
+  },
+  "register": {
+    "success": "Your account has been created successfully."
+  },
+  "logout": {
+    "success": "You have been successfully logged out."
+  },
+  "forgot_password": {
+    "email_sent": "If an account exists for this email, you will receive a reset link shortly."
+  },
+  "reset_password": {
+    "success": "Your password has been reset successfully.",
+    "invalid_token": "Invalid or expired password reset link.",
+    "max_attempts_exceeded": "This password reset link has been used too many times. Please request a new one.",
+    "failed": "Failed to reset password. Please try again."
+  },
+  "social": {
+    "not_configured": "{provider} authentication is not configured.",
+    "linked": "Your {provider} account has been linked successfully.",
+    "set_password_info": "Please set a password for your account to enable password login.",
+    "unlinked": "Your {provider} account has been unlinked.",
+    "unlink_failed": "Failed to unlink account.",
+    "password_defined": "Your password has been set successfully."
+  }
+}
 ```
 
-### Utilities (all responsive with breakpoints)
-```scss
-// Classes automatically generated for sm, md, lg
-.clr-{color}-{shade}
-.bg-{color}-{shade}
-.margin-{size}, .padding-{size}, .gap-{size}
-.fs-{300-900}, .fw-{bold|regular}
-.display-{block|flex|grid|hidden}
-.w-{full|fit|auto|10-100}, .h-{full|fit|auto}
-.border-radius-{size}
-// ... and many others
+### resources/lang/en/errors.json
+```json
+{
+  "too_many_requests": "Too many requests. Please try again in {minutes} minute(s).",
+  "rate_limit_exceeded": "Rate limit exceeded. Please slow down.",
+  "csrf_token_mismatch": "Your session has expired. Please refresh the page and try again."
+}
+```
+
+### resources/lang/en/profile.json
+```json
+{
+  "update": {
+    "success": "Your profile has been updated successfully."
+  },
+  "password": {
+    "incorrect_current": "The current password is incorrect.",
+    "success": "Your password has been updated successfully."
+  },
+  "delete": {
+    "incorrect_password": "The password is incorrect.",
+    "success": "Your account has been deleted successfully."
+  },
+  "notifications": {
+    "cleared": "Your notifications have been cleared successfully."
+  },
+  "locale": {
+    "updated": "Your language preference has been updated successfully."
+  }
+}
+```
+
+### resources/lang/en/emails.json
+```json
+{
+  "reset_password": {
+    "subject": "Reset your password",
+    "greeting": "Hello,",
+    "intro": "You are receiving this email because we received a password reset request for your account.",
+    "action": "Reset Password",
+    "outro": "If you did not request a password reset, no further action is required.",
+    "expiry": "This password reset link will expire in {hours} hour. | This password reset link will expire in {hours} hours.",
+    "footer": "If you're having trouble clicking the button, copy and paste the URL below into your web browser:"
+  }
+}
+```
+
+### resources/lang/fr/auth.json
+```json
+{
+  "login": {
+    "success": "Vous avez été connecté avec succès.",
+    "failed": "Échec de l'authentification. Veuillez réessayer."
+  },
+  "register": {
+    "success": "Votre compte a été créé avec succès."
+  },
+  "logout": {
+    "success": "Vous avez été déconnecté avec succès."
+  },
+  "forgot_password": {
+    "email_sent": "Si un compte existe pour cet e-mail, vous recevrez un lien de réinitialisation sous peu."
+  },
+  "reset_password": {
+    "success": "Votre mot de passe a été réinitialisé avec succès.",
+    "invalid_token": "Lien de réinitialisation invalide ou expiré.",
+    "max_attempts_exceeded": "Ce lien de réinitialisation a été utilisé trop de fois. Veuillez en demander un nouveau.",
+    "failed": "Échec de la réinitialisation du mot de passe. Veuillez réessayer."
+  },
+  "social": {
+    "not_configured": "L'authentification {provider} n'est pas configurée.",
+    "linked": "Votre compte {provider} a été lié avec succès.",
+    "set_password_info": "Veuillez définir un mot de passe pour votre compte afin d'activer la connexion par mot de passe.",
+    "unlinked": "Votre compte {provider} a été dissocié.",
+    "unlink_failed": "Échec de la dissociation du compte.",
+    "password_defined": "Votre mot de passe a été défini avec succès."
+  }
+}
+```
+
+### resources/lang/fr/errors.json
+```json
+{
+  "too_many_requests": "Trop de requêtes. Veuillez réessayer dans {minutes} minute(s).",
+  "rate_limit_exceeded": "Limite de taux dépassée. Veuillez ralentir.",
+  "csrf_token_mismatch": "Votre session a expiré. Veuillez actualiser la page et réessayer."
+}
+```
+
+### resources/lang/fr/profile.json
+```json
+{
+  "update": {
+    "success": "Votre profil a été mis à jour avec succès."
+  },
+  "password": {
+    "incorrect_current": "Le mot de passe actuel est incorrect.",
+    "success": "Votre mot de passe a été mis à jour avec succès."
+  },
+  "delete": {
+    "incorrect_password": "Le mot de passe est incorrect.",
+    "success": "Votre compte a été supprimé avec succès."
+  },
+  "notifications": {
+    "cleared": "Vos notifications ont été effacées avec succès."
+  },
+  "locale": {
+    "updated": "Votre préférence de langue a été mise à jour avec succès."
+  }
+}
+```
+
+---
+
+## 🌐 TRANSLATIONS - Frontend
+
+### inertia/locales/en/auth.json
+```json
+{
+  "login": {
+    "title": "Welcome back!",
+    "subtitle": "Please log in to continue.",
+    "email": "Email",
+    "email_placeholder": "john.doe@example.com",
+    "password": "Password",
+    "remember_me": "Remember me",
+    "forgot_password": "Forgot your password?",
+    "submit": "Login",
+    "or_continue_with": "Or continue with",
+    "no_account": "Don't have an account yet?",
+    "create_account": "Create an account"
+  },
+  "register": {
+    "title": "Welcome!",
+    "subtitle": "Please register to continue.",
+    "email": "Email",
+    "email_placeholder": "john.doe@example.com",
+    "password": "Password",
+    "confirmation": "Confirmation",
+    "password_help": "For optimal security, your password must be at least 8 characters long.",
+    "confirmation_help": "Re-enter your password to verify that there are no typing errors.",
+    "submit": "Register",
+    "or_continue_with": "Or continue with",
+    "has_account": "Do you already have an account?",
+    "login": "Login"
+  },
+  "forgot_password": {
+    "title": "Reset Password",
+    "subtitle": "Enter your email and we'll send you a link to reset your password.",
+    "email": "Email address",
+    "email_placeholder": "your-email@example.com",
+    "submit": "Send Reset Link",
+    "back_to_login": "Back to login"
+  },
+  "reset_password": {
+    "title": "Reset Password",
+    "subtitle": "Enter your new password.",
+    "new_password": "New password",
+    "confirmation": "Confirmation",
+    "password_help": "For optimal security, your password must be at least 8 characters long.",
+    "confirmation_help": "Re-enter your password to verify that there are no typing errors.",
+    "submit": "Reset",
+    "back_to_login": "Back to login"
+  },
+  "define_password": {
+    "title": "Welcome!",
+    "subtitle": "Please define your password to continue.",
+    "password": "Password",
+    "confirmation": "Confirmation",
+    "password_help": "For optimal security, your password must be at least 8 characters long.",
+    "confirmation_help": "Re-enter your password to verify that there are no typing errors.",
+    "submit": "Define"
+  }
+}
+```
+
+### inertia/locales/en/common.json
+```json
+{
+  "header": {
+    "home": "Home",
+    "greeting": "Hello, {name}",
+    "login": "Login",
+    "menu_label": "Menu"
+  },
+  "flash": {
+    "close_label": "Close"
+  },
+  "select": {
+    "default_placeholder": "Select an option"
+  },
+  "language": {
+    "selector_label": "Language",
+    "en": "English",
+    "fr": "Français"
+  }
+}
+```
+
+### inertia/locales/en/errors.json
+```json
+{
+  "not_found": {
+    "title": "Page not found",
+    "message": "This page does not exist."
+  },
+  "server_error": {
+    "title": "Server Error"
+  },
+  "csrf_token_mismatch": {
+    "title": "Session Expired",
+    "message": "Your session has expired for security reasons.",
+    "explanation": "This usually happens when you've been inactive for a while or opened multiple tabs. Please reload the page to continue.",
+    "reload": "Reload Page",
+    "go_home": "Go to Homepage"
+  }
+}
+```
+
+### inertia/locales/en/profile.json
+```json
+{
+  "title": "My Profile",
+  "subtitle": "Manage your account settings and preferences",
+  "sections": {
+    "profile_info": {
+      "title": "Profile Information",
+      "subtitle": "Update your account's profile information and email address.",
+      "full_name": "Full Name",
+      "full_name_placeholder": "John Doe",
+      "email": "Email Address",
+      "email_placeholder": "john.doe@example.com",
+      "locale": "Preferred language",
+      "submit": "Save Changes"
+    },
+    "connected_accounts": {
+      "title": "Connected Accounts",
+      "subtitle": "Manage your OAuth provider connections.",
+      "connected": "Connected",
+      "not_connected": "Not connected",
+      "unlink": "Unlink",
+      "connect": "Connect",
+      "confirm_unlink": "Are you sure you want to unlink your {provider} account?"
+    },
+    "update_password": {
+      "title": "Update Password",
+      "subtitle": "Ensure your account is using a long, random password to stay secure.",
+      "current_password": "Current Password",
+      "new_password": "New Password",
+      "confirm_password": "Confirm Password",
+      "password_help": "For optimal security, your password must be at least 8 characters long.",
+      "confirmation_help": "Re-enter your password to verify that there are no typing errors.",
+      "submit": "Update Password"
+    },
+    "delete_account": {
+      "title": "Delete Account",
+      "subtitle": "Once your account is deleted, all of its resources and data will be permanently deleted.",
+      "submit": "Delete Account",
+      "confirm_title": "Are you sure you want to delete your account?",
+      "confirm_subtitle": "Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.",
+      "password": "Password",
+      "password_placeholder": "Enter your password to confirm",
+      "cancel": "Cancel",
+      "confirm_delete": "Are you sure you want to delete your account? This action is irreversible."
+    }
+  }
+}
+```
+
+### inertia/locales/en/validation.json
+```json
+{
+  "required": "{field} is required",
+  "email": "Please enter a valid email address",
+  "min_length": "{field} must be at least {min} characters (currently: {current})",
+  "max_length": "{field} must be at most {max} characters (currently: {current})",
+  "matches": "Must match {other}",
+  "fields": {
+    "email": "Email",
+    "password": "Password",
+    "password_confirmation": "Password confirmation",
+    "current_password": "Current password",
+    "full_name": "Full name"
+  }
+}
+```
+
+### inertia/locales/fr/errors.json
+```json
+{
+  "not_found": {
+    "title": "Page introuvable",
+    "message": "Cette page n'existe pas."
+  },
+  "server_error": {
+    "title": "Erreur Serveur"
+  },
+  "csrf_token_mismatch": {
+    "title": "Session Expirée",
+    "message": "Votre session a expiré pour des raisons de sécurité.",
+    "explanation": "Cela se produit généralement après une période d'inactivité ou si vous avez ouvert plusieurs onglets. Veuillez recharger la page pour continuer.",
+    "reload": "Recharger la Page",
+    "go_home": "Aller à l'Accueil"
+  }
+}
 ```
 
 ---
@@ -1642,14 +1686,34 @@ export default await Env.create(new URL('../', import.meta.url), {
   NODE_ENV: Env.schema.enum(['development', 'production', 'test']),
   PORT: Env.schema.number(),
   APP_KEY: Env.schema.string(),
+  APP_NAME: Env.schema.string.optional(),
   HOST: Env.schema.string({ format: 'host' }),
   DOMAIN: Env.schema.string(),
   LOG_LEVEL: Env.schema.string(),
   SESSION_DRIVER: Env.schema.enum(['cookie', 'memory']),
-  DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE,
-  SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD,
-  GITHUB_CLIENT_ID (optional), GITHUB_CLIENT_SECRET (optional), ...
-  // OAuth variables optional
+  DB_HOST: Env.schema.string({ format: 'host' }),
+  DB_PORT: Env.schema.number(),
+  DB_USER: Env.schema.string(),
+  DB_PASSWORD: Env.schema.string.optional(),
+  DB_DATABASE: Env.schema.string(),
+  SMTP_HOST: Env.schema.string(),
+  SMTP_PORT: Env.schema.string(),
+  SMTP_USERNAME: Env.schema.string(),
+  SMTP_PASSWORD: Env.schema.string(),
+  SMTP_FROM_ADDRESS: Env.schema.string(),
+  GITHUB_CLIENT_ID: Env.schema.string.optional(),
+  GITHUB_CLIENT_SECRET: Env.schema.string.optional(),
+  GITHUB_CALLBACK_URL: Env.schema.string.optional(),
+  GOOGLE_CLIENT_ID: Env.schema.string.optional(),
+  GOOGLE_CLIENT_SECRET: Env.schema.string.optional(),
+  GOOGLE_CALLBACK_URL: Env.schema.string.optional(),
+  FACEBOOK_CLIENT_ID: Env.schema.string.optional(),
+  FACEBOOK_CLIENT_SECRET: Env.schema.string.optional(),
+  FACEBOOK_CALLBACK_URL: Env.schema.string.optional(),
+  REDIS_ENABLED: Env.schema.boolean(),
+  REDIS_HOST: Env.schema.string({ format: 'host' }),
+  REDIS_PORT: Env.schema.number(),
+  REDIS_PASSWORD: Env.schema.string.optional(),
 })
 ```
 
@@ -1658,20 +1722,20 @@ export default await Env.create(new URL('../', import.meta.url), {
 server.errorHandler(() => import('#core/exceptions/handler'))
 
 server.use([
-  container_bindings,
-  static_files,
-  cors,
-  vite,
-  inertia,
+  () => import('#core/middleware/container_bindings_middleware'),
+  () => import('@adonisjs/static/static_middleware'),
+  () => import('@adonisjs/cors/cors_middleware'),
+  () => import('@adonisjs/vite/vite_middleware'),
+  () => import('@adonisjs/inertia/inertia_middleware'),
 ])
 
 router.use([
-  bodyparser,
-  session,
-  shield,
-  initialize_auth,
-  silent_auth,
-  detect_locale,
+  () => import('@adonisjs/core/bodyparser_middleware'),
+  () => import('@adonisjs/session/session_middleware'),
+  () => import('@adonisjs/shield/shield_middleware'),  // CSRF protection
+  () => import('@adonisjs/auth/initialize_auth_middleware'),
+  () => import('#auth/middleware/silent_auth_middleware'),
+  () => import('#core/middleware/detect_user_locale_middleware'),
 ])
 
 export const middleware = router.named({
@@ -1683,52 +1747,57 @@ export const middleware = router.named({
 
 ### start/routes.ts
 ```typescript
-// Structure:
+// All routes with POST/PUT/PATCH/DELETE are automatically protected by CSRF via Shield
+
+router.on('/').renderInertia('landing').as('landing')
+
 router
   .group(() => {
-    // Login
     router.get('/login', [LoginController, 'render']).as('auth.login')
-    router
-      .post('/login', [LoginController, 'execute'])
-      .use(middleware.throttle({ max: 5, window: 900 }))  // 5 attempts / 15min
+    router.post('/login', [LoginController, 'execute']).use(middleware.throttle({ max: 5, window: 900 }))
 
-    // Register
     router.get('/register', [RegisterController, 'render']).as('auth.register')
-    router
-      .post('/register', [RegisterController, 'execute'])
-      .use(middleware.throttle({ max: 3, window: 3600 }))  // 3 registrations / 1h
+    router.post('/register', [RegisterController, 'execute']).use(middleware.throttle({ max: 3, window: 3600 }))
 
-    // Forgot Password
-    router
-      .get('/forgot-password', [ForgotPasswordController, 'render'])
-      .as('auth.forgot_password')
-    router
-      .post('/forgot-password', [ForgotPasswordController, 'execute'])
-      .use(middleware.throttle({ max: 3, window: 3600 }))  // 3 requests / 1h
+    router.get('/forgot-password', [ForgotPasswordController, 'render']).as('auth.forgot_password')
+    router.post('/forgot-password', [ForgotPasswordController, 'execute']).use(middleware.throttle({ max: 3, window: 3600 }))
 
-    // Reset Password
-    router
-      .get('/reset-password/:token', [ResetPasswordController, 'render'])
-      .as('auth.reset_password')
-    router
-      .post('/reset-password', [ResetPasswordController, 'execute'])
-      .use(middleware.throttle({ max: 3, window: 900 }))  // 3 attempts / 15min
+    router.get('/reset-password/:token', [ResetPasswordController, 'render']).as('auth.reset_password')
+    router.post('/reset-password', [ResetPasswordController, 'execute']).use(middleware.throttle({ max: 3, window: 900 }))
   })
   .use(middleware.guest())
 
-router.group(() => {
-  // Authenticated routes (logout, define-password, unlink)
-}).use(middleware.auth())
+router
+  .group(() => {
+    router.post('/logout', [LogoutController, 'execute']).as('auth.logout')
 
-router.group(() => {
-  // OAuth routes (redirect, callback)
-}).prefix('oauth')
+    router
+      .group(() => {
+        router.get('/define-password', [SocialController, 'render']).as('oauth.define.password')
+        router.post('/define-password', [SocialController, 'execute'])
+        router.post('/:provider/unlink', [SocialController, 'unlink']).as('oauth.unlink')
+      })
+      .prefix('oauth')
+  })
+  .use(middleware.auth())
 
-router.group(() => {
-  // Profile routes (show, update, password, delete, notifications)
-}).prefix('profile').use(middleware.auth())
+router
+  .group(() => {
+    router.get('/:provider', [SocialController, 'redirect']).as('oauth.redirect')
+    router.get('/:provider/callback', [SocialController, 'callback']).as('oauth.callback')
+  })
+  .prefix('oauth')
 
-router.on('/').renderInertia('landing').as('landing')
+router
+  .group(() => {
+    router.get('/', [ProfileShowController, 'render']).as('profile.show')
+    router.put('/', [ProfileUpdateController, 'execute']).as('profile.update')
+    router.put('/password', [ProfileUpdatePasswordController, 'execute']).as('profile.password.update')
+    router.delete('/', [ProfileDeleteController, 'execute']).as('profile.delete')
+    router.delete('/notifications', [ProfileCleanNotificationsController, 'execute']).as('profile.notifications.clean')
+  })
+  .prefix('profile')
+  .use(middleware.auth())
 ```
 
 ---
@@ -1738,7 +1807,8 @@ router.on('/').renderInertia('landing').as('landing')
 ### Injectable Services
 - PasswordService
 - SocialService
-- (Future: NotificationService, CacheService, etc.)
+- CacheService
+- RateLimitService
 
 ### Reusable Validators
 - `unique(table, column, options)` with exceptId
@@ -1749,7 +1819,7 @@ router.on('/').renderInertia('landing').as('landing')
 - Controllers: `render()` + `execute()`
 - Services: pure business logic
 - Presenters: data formatting for JSON
-- Middleware: auth, guest, silentAuth
+- Middleware: auth, guest, silentAuth, throttle
 - Flash messages: success, error, warning, info
 - Redirects: `toRoute()` or `back()`
 
@@ -1762,6 +1832,15 @@ router.on('/').renderInertia('landing').as('landing')
 - Props/variables: camelCase
 - Components: PascalCase, named exports
 - Pages: PascalCase, default export
+
+### Security Best Practices
+- **CSRF Protection**: Automatic via Shield on all POST/PUT/PATCH/DELETE
+- **Token Regeneration**: Call `regenerateCsrfToken()` after sensitive actions (login, password change, email change, OAuth linking)
+- **Rate Limiting**: Apply on authentication and sensitive endpoints
+- **Password Hashing**: Always use Scrypt with high cost factor
+- **Token Masking**: Use `maskToken()` for logging sensitive tokens
+- **Input Sanitization**: Frontend + Backend validation
+- **Logging**: Log all security events with context (IP, user agent, etc.)
 
 ---
 
