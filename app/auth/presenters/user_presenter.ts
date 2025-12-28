@@ -8,6 +8,8 @@ export interface UserPresenterData {
   githubId: string | null
   googleId: string | null
   facebookId: string | null
+  emailVerifiedAt: string | null
+  pendingEmail: string | null
   createdAt: string
   updatedAt: string | null
 }
@@ -26,6 +28,8 @@ export class UserPresenter {
       githubId: user.githubId,
       googleId: user.googleId,
       facebookId: user.facebookId,
+      emailVerifiedAt: user.emailVerifiedAt?.toISO() || null,
+      pendingEmail: user.pendingEmail,
       createdAt: user.createdAt.toISO()!,
       updatedAt: user.updatedAt?.toISO() || null,
     }
@@ -41,6 +45,8 @@ export class UserPresenter {
       email: user.email,
       fullName: user.fullName,
       locale: user.locale,
+      emailVerifiedAt: user.emailVerifiedAt?.toISO() || null,
+      pendingEmail: user.pendingEmail,
       createdAt: user.createdAt.toISO()!,
       updatedAt: user.updatedAt?.toISO() || null,
     }

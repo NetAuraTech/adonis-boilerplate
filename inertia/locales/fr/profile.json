@@ -10,7 +10,10 @@
       "email": "Adresse e-mail",
       "email_placeholder": "jean.dupont@example.com",
       "locale": "Langue préférée",
-      "submit": "Enregistrer les modifications"
+      "submit": "Enregistrer les modifications",
+      "pending_email_title": "Changement d'email en attente",
+      "pending_email_message": "Un email de confirmation a été envoyé à {email}. Veuillez vérifier votre boîte de réception pour terminer le changement.",
+      "cancel_email_change": "Annuler le changement d'email"
     },
     "connected_accounts": {
       "title": "Comptes Connectés",

@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react'
 import { Panel } from '#components/elements/panel'
 import { InputGroup } from '#components/forms/input_group'
 import { Button } from '#components/elements/button'
-import { Head, useForm, usePage } from '@inertiajs/react'
+import { Head, router, useForm, usePage } from '@inertiajs/react'
 import type { OAuthProvider } from '~/types/oauth'
 import type { SharedProps } from '@adonisjs/inertia/types'
 import { getProviderRoute } from '~/helpers/oauth'
@@ -55,13 +55,13 @@ export default function ProfilePage(props: ProfilePageProps) {
   })
 
   const passwordValidation = useFormValidation({
-    current_password: presets.currentPassword,
+    current_password: presets.password,
     password: presets.password,
     password_confirmation: presets.passwordConfirmation(passwordForm.data.password),
   })
 
   const deleteValidation = useFormValidation({
-    password: presets.currentPassword,
+    password: presets.password,
   })
 
   function handleProfileUpdate(event: FormEvent<HTMLFormElement>) {
@@ -164,7 +164,28 @@ export default function ProfilePage(props: ProfilePageProps) {
                 required
                 sanitize
               />
-
+              {pageProps.currentUser?.pendingEmail && (
+                <div
+                  className="bg-yellow-100 border-yellow-600 border-solid border-3 padding-4 border-radius-2 margin-block-start-3"
+                >
+                  <h4 className="heading-4 margin-block-end-1 clr-neutral-200">
+                    ⏳ {t('sections.profile_info.pending_email_title')}
+                  </h4>
+                  <p className="fs-300 clr-yellow-800 margin-block-end-2">
+                    {t('sections.profile_info.pending_email_message', {
+                      email: pageProps.currentUser?.pendingEmail
+                    })}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={() => router.delete('/email/change/cancel')}
+                    fitContent
+                  >
+                    {t('sections.profile_info.cancel_email_change')}
+                  </Button>
+                </div>
+              )}
               <InputGroup
                 label={t_common('language.selector_label')}
                 name="locale"

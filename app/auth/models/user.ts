@@ -24,6 +24,12 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   declare email: string
 
+  @column.dateTime()
+  declare emailVerifiedAt: DateTime | null
+
+  @column()
+  declare pendingEmail: string | null
+
   @column({ serializeAs: null })
   declare password: string | null
 
@@ -53,4 +59,12 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+
+  get isEmailVerified(): boolean {
+    return this.emailVerifiedAt !== null
+  }
+
+  get hasPendingEmailChange(): boolean {
+    return this.pendingEmail !== null
+  }
 }

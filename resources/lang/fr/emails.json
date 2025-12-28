@@ -7,5 +7,30 @@
     "outro": "Si vous n'avez pas demandé de réinitialisation de mot de passe, aucune action supplémentaire n'est requise.",
     "expiry": "Ce lien de réinitialisation expirera dans {hours} heure. Ce lien de réinitialisation expirera dans {hours} heures.",
     "footer": "Si vous rencontrez des difficultés pour cliquer sur le bouton, copiez et collez l'URL ci-dessous dans votre navigateur web :"
+  },
+  "verify_email": {
+    "subject": "Vérifiez votre adresse email",
+    "greeting": "Bonjour,",
+    "intro": "Merci de vous être inscrit ! Veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous.",
+    "action": "Vérifier l'adresse email",
+    "outro": "Si vous n'avez pas créé de compte, aucune action supplémentaire n'est requise.",
+    "expiry": "Ce lien de vérification expirera dans {hours} heure. Ce lien de vérification expirera dans {hours} heures.",
+    "footer": "Si vous avez des difficultés à cliquer sur le bouton, copiez et collez l'URL ci-dessous dans votre navigateur web :"
+  },
+  "email_change_confirmation": {
+    "subject": "Confirmez le changement de votre adresse email",
+    "greeting": "Bonjour,",
+    "intro": "Vous avez demandé à changer votre adresse email pour {email}. Veuillez confirmer ce changement en cliquant sur le bouton ci-dessous.",
+    "action": "Confirmer le changement d'email",
+    "outro": "Si vous n'avez pas demandé ce changement, veuillez ignorer cet email et contacter notre équipe d'assistance immédiatement.",
+    "expiry": "Ce lien de confirmation expirera dans {hours} heure. Ce lien de confirmation expirera dans {hours} heures.",
+    "footer": "Si vous avez des difficultés à cliquer sur le bouton, copiez et collez l'URL ci-dessous dans votre navigateur web :"
+  },
+  "email_change_notification": {
+    "subject": "Votre adresse email est en cours de modification",
+    "greeting": "Bonjour,",
+    "intro": "Cet email vous informe que l'adresse email de votre compte est en cours de modification de {oldEmail} à {newEmail}.",
+    "warning": "Si vous n'avez pas initié ce changement, votre compte pourrait être compromis. Veuillez contacter notre équipe d'assistance immédiatement.",
+    "action": "Si vous avez besoin d'aide, veuillez nous contacter à :"
   }
 }

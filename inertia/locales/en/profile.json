@@ -10,7 +10,10 @@
       "email": "Email Address",
       "email_placeholder": "john.doe@example.com",
       "locale": "Preferred language",
-      "submit": "Save Changes"
+      "submit": "Save Changes",
+      "pending_email_title": "Email Change Pending",
+      "pending_email_message": "A confirmation email has been sent to {email}. Please check your inbox to complete the change.",
+      "cancel_email_change": "Cancel Email Change"
     },
     "connected_accounts": {
       "title": "Connected Accounts",

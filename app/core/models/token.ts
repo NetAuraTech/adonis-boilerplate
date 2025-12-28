@@ -4,6 +4,12 @@ import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import User from '#auth/models/user'
 import hash from '@adonisjs/core/services/hash'
 
+export const TOKEN_TYPES = {
+  PASSWORD_RESET: 'PASSWORD_RESET',
+  EMAIL_VERIFICATION: 'EMAIL_VERIFICATION',
+  EMAIL_CHANGE: 'EMAIL_CHANGE',
+} as const
+
 export default class Token extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
@@ -43,7 +49,7 @@ export default class Token extends BaseModel {
   public static async expirePasswordResetTokens(user: User): Promise<void> {
     await this.query()
       .where('user_id', user.id)
-      .where('type', 'PASSWORD_RESET')
+      .where('type', TOKEN_TYPES.PASSWORD_RESET)
       .update({ expiresAt: DateTime.now() })
   }
 
@@ -56,7 +62,7 @@ export default class Token extends BaseModel {
    */
   public static async getPasswordResetUser(plainToken: string): Promise<User | undefined> {
     const tokens = await this.query()
-      .where('type', 'PASSWORD_RESET')
+      .where('type', TOKEN_TYPES.PASSWORD_RESET)
       .where('expires_at', '>', DateTime.now().toSQL()!)
       .preload('user')
 
@@ -78,7 +84,7 @@ export default class Token extends BaseModel {
    */
   public static async verify(plainToken: string): Promise<boolean> {
     const tokens = await this.query()
-      .where('type', 'PASSWORD_RESET')
+      .where('type', TOKEN_TYPES.PASSWORD_RESET)
       .where('expires_at', '>', DateTime.now().toSQL()!)
 
     for (const token of tokens) {
@@ -96,7 +102,7 @@ export default class Token extends BaseModel {
    */
   public static async incrementAttempts(plainToken: string): Promise<void> {
     const tokens = await this.query()
-      .where('type', 'PASSWORD_RESET')
+      .where('type', TOKEN_TYPES.PASSWORD_RESET)
       .where('expires_at', '>', DateTime.now().toSQL()!)
 
     for (const token of tokens) {
@@ -114,7 +120,7 @@ export default class Token extends BaseModel {
    */
   public static async hasExceededAttempts(plainToken: string): Promise<boolean> {
     const tokens = await this.query()
-      .where('type', 'PASSWORD_RESET')
+      .where('type', TOKEN_TYPES.PASSWORD_RESET)
       .where('expires_at', '>', DateTime.now().toSQL()!)
 
     for (const token of tokens) {
@@ -125,5 +131,57 @@ export default class Token extends BaseModel {
     }
 
     return false
+  }
+
+  static async expireEmailVerificationTokens(user: User): Promise<void> {
+    await Token.query()
+      .where('user_id', user.id)
+      .where('type', TOKEN_TYPES.EMAIL_VERIFICATION)
+      .update({ expires_at: DateTime.now() })
+  }
+
+  static async getEmailVerificationUser(plainToken: string): Promise<User | undefined> {
+    const token = await Token.query()
+      .where('type', TOKEN_TYPES.EMAIL_VERIFICATION)
+      .where('expires_at', '>', DateTime.now().toSQL())
+      .preload('user')
+      .first()
+
+    if (!token) {
+      return undefined
+    }
+
+    const isValid = await hash.verify(token.token, plainToken)
+    if (!isValid) {
+      return undefined
+    }
+
+    return token.user
+  }
+
+  static async expireEmailChangeTokens(user: User): Promise<void> {
+    await Token.query()
+      .where('user_id', user.id)
+      .where('type', TOKEN_TYPES.EMAIL_CHANGE)
+      .update({ expires_at: DateTime.now() })
+  }
+
+  static async getEmailChangeUser(plainToken: string): Promise<User | undefined> {
+    const token = await Token.query()
+      .where('type', TOKEN_TYPES.EMAIL_CHANGE)
+      .where('expires_at', '>', DateTime.now().toSQL())
+      .preload('user')
+      .first()
+
+    if (!token) {
+      return undefined
+    }
+
+    const isValid = await hash.verify(token.token, plainToken)
+    if (!isValid) {
+      return undefined
+    }
+
+    return token.user
   }
 }

@@ -1,6 +1,8 @@
 {
   "update": {
-    "success": "Votre profil a été mis à jour avec succès."
+    "success": "Votre profil a été mis à jour avec succès.",
+    "email_change_initiated": "Un email de confirmation a été envoyé à {email}. Veuillez vérifier votre boîte de réception pour terminer le changement.",
+    "email_change_failed": "Échec de l'initiation du changement d'email. Veuillez réessayer plus tard."
   },
   "password": {
     "incorrect_current": "Le mot de passe actuel est incorrect.",

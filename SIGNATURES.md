@@ -96,6 +96,42 @@ export default class SocialController {
 }
 ```
 
+### app/auth/controllers/email_verification_controller.ts
+```typescript
+@inject()
+export default class EmailVerificationController {
+  constructor(protected emailVerificationService: EmailVerificationService)
+  async execute({ params, response, session, auth, i18n }: HttpContext)
+}
+```
+
+### app/auth/controllers/email_resend_controller.ts
+```typescript
+@inject()
+export default class EmailResendController {
+  constructor(protected emailVerificationService: EmailVerificationService)
+  async execute({ auth, response, session, i18n }: HttpContext)
+}
+```
+
+### app/auth/controllers/email_change_controller.ts
+```typescript
+@inject()
+export default class EmailChangeController {
+  constructor(protected emailChangeService: EmailChangeService)
+  render({ inertia, params }: HttpContext)
+  async execute({ params, response, session, auth, i18n, request }: HttpContext)
+}
+```
+
+### app/auth/controllers/email_change_cancel_controller.ts
+```typescript
+@inject()
+export default class EmailChangeCancelController {
+  constructor(protected emailChangeService: EmailChangeService)
+  async execute({ auth, response, session, i18n }: HttpContext)
+}
+
 ---
 
 ## 🔐 AUTH - Services
@@ -106,6 +142,23 @@ export default class PasswordService {
   async sendResetPasswordLink(user: User): Promise<void>
 }
 ```
+
+### app/auth/services/email_verification_service.ts
+```typescript
+export default class EmailVerificationService {
+  async sendVerificationEmail(user: User, i18n: any): Promise
+  async verifyEmail(plainToken: string): Promise
+  async markAsVerified(user: User): Promise
+}
+```
+
+### app/auth/services/email_change_service.ts
+```typescript
+export default class EmailChangeService {
+  async initiateEmailChange(user: User, newEmail: string, i18n: any): Promise
+  async confirmEmailChange(plainToken: string): Promise
+  async cancelEmailChange(user: User): Promise
+}
 
 ### app/auth/services/social_service.ts
 ```typescript
@@ -152,6 +205,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   
   @column()
   declare email: string
+
+  @column.dateTime()
+  declare emailVerifiedAt: DateTime | null
   
   @column({ serializeAs: null })
   declare password: string | null
@@ -167,6 +223,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   
   @column()
   declare facebookId: string | null
+
+  @column()
+  declare pendingEmail: string | null
   
   @hasMany(() => Token)
   declare public tokens: HasMany<typeof Token>
@@ -179,6 +238,12 @@ export default class User extends compose(BaseModel, AuthFinder) {
   
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+
+  get isEmailVerified(): boolean
+
+  get isEmailVerified(): boolean
+  
+  get hasPendingEmailChange(): boolean
 }
 ```
 
@@ -196,6 +261,7 @@ export interface UserPresenterData {
   githubId: string | null
   googleId: string | null
   facebookId: string | null
+  emailVerifiedAt: string | null
   createdAt: string
   updatedAt: string | null
 }
@@ -297,6 +363,12 @@ export default class RateLimit extends BaseModel {
 
 ### app/core/models/token.ts
 ```typescript
+export const TOKEN_TYPES = {
+  PASSWORD_RESET: 'PASSWORD_RESET',
+  EMAIL_VERIFICATION: 'EMAIL_VERIFICATION',
+  EMAIL_CHANGE: 'EMAIL_CHANGE',
+} as const
+
 export default class Token extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
@@ -332,6 +404,10 @@ export default class Token extends BaseModel {
   static async verify(plainToken: string): Promise<boolean>
   static async incrementAttempts(plainToken: string): Promise<void>
   static async hasExceededAttempts(plainToken: string): Promise<boolean>
+  static async expireEmailVerificationTokens(user: User): Promise
+  static async getEmailVerificationUser(plainToken: string): Promise
+  static async expireEmailChangeTokens(user: User): Promise
+  static async getEmailChangeUser(plainToken: string): Promise
 }
 ```
 
@@ -541,6 +617,13 @@ declare module '@adonisjs/core/http' {
   export interface HttpContext {
     i18n: I18n
   }
+}
+```
+
+### app/core/middleware/verified_middleware.ts
+```typescript
+export default class VerifiedMiddleware {
+  async handle({ auth, response, session, i18n }: HttpContext, next: NextFn)
 }
 ```
 
@@ -1332,6 +1415,22 @@ export default class extends BaseSchema {
 }
 ```
 
+### 1766853923135_add_email_verified_at_to_users_table.ts
+```typescript
+export default class extends BaseSchema {
+  protected tableName = 'users'
+
+  async up() {
+    this.schema.alterTable(this.tableName, (table) => {
+      table.timestamp('email_verified_at').nullable()
+    })
+  }
+
+  async down() {
+    this.schema.dropTable(this.tableName)
+  }
+}
+
 ---
 
 ## 🌐 TRANSLATIONS - Backend
@@ -1365,6 +1464,17 @@ export default class extends BaseSchema {
     "unlinked": "Your {provider} account has been unlinked.",
     "unlink_failed": "Failed to unlink account.",
     "password_defined": "Your password has been set successfully."
+  },
+  "verify_email": {
+    "success": "Your email has been verified successfully.",
+    "invalid_token": "Invalid or expired verification link.",
+    "already_verified": "Your email is already verified.",
+    "email_sent": "A new verification email has been sent to your address.",
+    "send_failed": "Failed to send verification email. Please try again later.",
+    "required": "Please verify your email address to access this feature."
+  },
+  "middleware": {
+    "unauthenticated": "You must be logged in to access this page."
   }
 }
 ```
@@ -1411,6 +1521,15 @@ export default class extends BaseSchema {
     "action": "Reset Password",
     "outro": "If you did not request a password reset, no further action is required.",
     "expiry": "This password reset link will expire in {hours} hour. | This password reset link will expire in {hours} hours.",
+    "footer": "If you're having trouble clicking the button, copy and paste the URL below into your web browser:"
+  },
+  "verify_email": {
+    "subject": "Verify your email address",
+    "greeting": "Hello,",
+    "intro": "Thank you for registering! Please verify your email address by clicking the button below.",
+    "action": "Verify Email Address",
+    "outro": "If you did not create an account, no further action is required.",
+    "expiry": "This verification link will expire in {hours} hour. | This verification link will expire in {hours} hours.",
     "footer": "If you're having trouble clicking the button, copy and paste the URL below into your web browser:"
   }
 }
@@ -1541,6 +1660,11 @@ export default class extends BaseSchema {
     "password_help": "For optimal security, your password must be at least 8 characters long.",
     "confirmation_help": "Re-enter your password to verify that there are no typing errors.",
     "submit": "Define"
+  },
+  "verify_email": {
+    "alert_title": "Email Verification Required",
+    "alert_message": "Please verify your email address to access all features.",
+    "resend_button": "Resend Email"
   }
 }
 ```
@@ -1742,6 +1866,7 @@ export const middleware = router.named({
   guest: () => import('#core/middleware/guest_middleware'),
   auth: () => import('#core/middleware/auth_middleware'),
   throttle: () => import('#core/middleware/throttle_middleware'),
+  verified: () => import('#core/middleware/verified_middleware'),
 })
 ```
 
@@ -1778,6 +1903,15 @@ router
         router.post('/:provider/unlink', [SocialController, 'unlink']).as('oauth.unlink')
       })
       .prefix('oauth')
+
+    router
+      .group(() => {
+        router.get('/verify/:token', [EmailVerificationController, 'execute']).as('email.verify')
+        router.post('/resend', [EmailResendController, 'execute'])
+          .as('email.resend')
+          .use(middleware.throttle({ max: 1, window: 900 }))
+      })
+      .prefix('email')
   })
   .use(middleware.auth())
 

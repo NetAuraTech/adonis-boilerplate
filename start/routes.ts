@@ -25,6 +25,11 @@ const ProfileCleanNotificationsController = () =>
 const ProfileUpdatePasswordController = () =>
   import('#profile/controllers/profile_update_password_controller')
 
+const EmailVerificationController = () => import('#auth/controllers/email_verification_controller')
+const EmailResendController = () => import('#auth/controllers/email_resend_controller')
+const EmailChangeController = () => import('#auth/controllers/email_change_controller')
+const EmailChangeCancelController = () => import('#auth/controllers/email_change_cancel_controller')
+
 // endregion
 
 router.on('/').renderInertia('landing').as('landing')
@@ -66,6 +71,23 @@ router
         router.post('/:provider/unlink', [SocialController, 'unlink']).as('oauth.unlink')
       })
       .prefix('oauth')
+
+    router
+      .group(() => {
+        router.get('/verify/:token', [EmailVerificationController, 'execute']).as('email.verify')
+        router
+          .post('/resend', [EmailResendController, 'execute'])
+          .as('email.resend')
+          .use(middleware.throttle({ max: 1, window: 900 }))
+
+        router.get('/change/:token', [EmailChangeController, 'render']).as('email.change.show')
+        router.post('/change/:token', [EmailChangeController, 'execute']).as('email.change.confirm')
+        router
+          .delete('/change/cancel', [EmailChangeCancelController, 'execute'])
+          .as('email.change.cancel')
+          .use(middleware.auth())
+      })
+      .prefix('email')
   })
   .use(middleware.auth())
 
@@ -80,17 +102,25 @@ router
   .group(() => {
     router.get('/', [ProfileShowController, 'render']).as('profile.show')
 
-    router.put('/', [ProfileUpdateController, 'execute']).as('profile.update')
+    router
+      .put('/', [ProfileUpdateController, 'execute'])
+      .as('profile.update')
+      .use(middleware.verified())
 
     router
       .put('/password', [ProfileUpdatePasswordController, 'execute'])
       .as('profile.password.update')
+      .use(middleware.verified())
 
-    router.delete('/', [ProfileDeleteController, 'execute']).as('profile.delete')
+    router
+      .delete('/', [ProfileDeleteController, 'execute'])
+      .as('profile.delete')
+      .use(middleware.verified())
 
     router
       .delete('/notifications', [ProfileCleanNotificationsController, 'execute'])
       .as('profile.notifications.clean')
+      .use(middleware.verified())
   })
   .prefix('profile')
   .use(middleware.auth())

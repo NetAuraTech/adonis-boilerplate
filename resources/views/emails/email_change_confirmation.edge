@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="{{ locale }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ appName }} - Email Change Confirmation</title>
+  <style>
+    /* Reset styles */
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100% !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f4f4f7;
+    }
+
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+
+    .email-header {
+      background-color: #5468ff;
+      padding: 32px;
+      text-align: center;
+    }
+
+    .email-header h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .email-body {
+      padding: 40px 32px;
+      color: #51545e;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .email-body p {
+      margin: 0 0 16px;
+    }
+
+    .button-container {
+      text-align: center;
+      margin: 32px 0;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 14px 32px;
+      background-color: #5468ff;
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .button:hover {
+      background-color: #3d51e8;
+    }
+
+    .footer {
+      padding: 32px;
+      background-color: #f4f4f7;
+      text-align: center;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .link-fallback {
+      margin-top: 24px;
+      padding: 16px;
+      background-color: #f9fafb;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #6b7280;
+      word-break: break-all;
+    }
+
+    .expiry-notice {
+      margin-top: 24px;
+      padding: 12px 16px;
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #92400e;
+    }
+  </style>
+</head>
+<body>
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td style="padding: 40px 16px;">
+        <table role="presentation" class="email-container" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <!-- Header -->
+          <tr>
+            <td class="email-header">
+              <h1>{{ appName }}</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td class="email-body">
+              <p><strong>{{ greeting }}</strong></p>
+
+              <p>{{ intro }}</p>
+
+              <div class="button-container">
+                <a href="{{ confirmationLink }}" class="button">{{ action }}</a>
+              </div>
+
+              <p>{{ outro }}</p>
+
+              <div class="expiry-notice">
+                <strong>⏰ {{ expiry }}</strong>
+              </div>
+
+              <div class="link-fallback">
+                <p style="margin: 0 0 8px;"><strong>{{ footer }}</strong></p>
+                <a href="{{ confirmationLink }}" style="color: #5468ff; word-break: break-all;">{{ confirmationLink }}</a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td class="footer">
+              <p style="margin: 0;">&copy; {{ new Date().getFullYear() }} {{ appName }}. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

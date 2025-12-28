@@ -1,5 +1,7 @@
 import User from '#auth/models/user'
 import type { AllyUserContract } from '@adonisjs/ally/types'
+import { DateTime } from 'luxon'
+import logger from '@adonisjs/core/services/logger'
 
 export default class SocialService {
   async findOrCreateUser(
@@ -8,26 +10,50 @@ export default class SocialService {
   ): Promise<User> {
     const providerIdColumn = `${provider}Id` as 'githubId' | 'googleId' | 'facebookId'
 
-    let user = await User.query().where(providerIdColumn, allyUser.id).first()
+    let user = await User.findBy(providerIdColumn, allyUser.id)
 
     if (user) {
+      logger.info('User found by OAuth provider ID', {
+        userId: user.id,
+        provider,
+        providerId: allyUser.id,
+      })
       return user
     }
 
     if (allyUser.email) {
-      user = await User.query().where('email', allyUser.email).first()
+      user = await User.findBy('email', allyUser.email)
 
       if (user) {
         user[providerIdColumn] = allyUser.id
+
+        if (!user.emailVerifiedAt) {
+          user.emailVerifiedAt = DateTime.now()
+        }
+
         await user.save()
+
+        logger.info('Existing user linked to OAuth provider', {
+          userId: user.id,
+          provider,
+          providerId: allyUser.id,
+        })
+
         return user
       }
     }
 
     user = await User.create({
-      email: allyUser.email!,
-      fullName: allyUser.name || allyUser.nickName || null,
+      email: allyUser.email || `${provider}_${allyUser.id}@noemail.local`,
+      fullName: allyUser.name || allyUser.nickName,
       [providerIdColumn]: allyUser.id,
+      emailVerifiedAt: DateTime.now(),
+    })
+
+    logger.info('New user created via OAuth', {
+      userId: user.id,
+      provider,
+      providerId: allyUser.id,
     })
 
     return user

@@ -372,6 +372,7 @@ export default class SomeMiddleware {
 - `silentAuth`: Checks without blocking (global, to have `currentUser` everywhere)
 - `detectUserLocale`: Detects and applies user's language (user preference > Accept-Language > default EN)
 - `container_bindings`: Binds HttpContext and Logger for DI
+- `verified`: Ensures user's email is verified, redirects to landing if not
 
 ---
 
@@ -737,6 +738,38 @@ interface ThrottleOptions {
 ```
 
 ### Security Features
+
+#### Email Verification & Change
+- Token-based verification (24h expiration)
+- Automatic email sending after registration
+- OAuth accounts auto-verified
+- Resend verification with throttling (1 per 15 min)
+- Middleware to restrict unverified users
+- Visual alert banner for unverified users
+
+**Email Change Workflow (Security):**
+1. User requests email change in profile
+2. New email stored in `pending_email` (not immediately applied)
+3. Confirmation email sent to **new address** with token
+4. Notification email sent to **old address** (security)
+5. User clicks confirmation link in new email
+6. Email updated, `pending_email` cleared
+7. Email marked as verified
+8. CSRF token regenerated
+
+**When to Apply:**
+Use the `verified` middleware on routes that require email verification:
+```typescript
+router.put('/profile', [ProfileUpdateController, 'execute'])
+  .use(middleware.verified())
+```
+
+**Token Security:**
+- Tokens are hashed (Scrypt) before storage
+- Plain tokens only sent via email
+- 128 hex characters (64 bytes) cryptographically secure
+- Automatic expiration after 24 hours
+- Previous tokens expired when new one generated
 
 #### Rate Limiting
 - Protects against brute force attacks
@@ -1493,6 +1526,9 @@ logger.error('Error', { context })
 - ✅ Logout
 - ✅ Forgot password (email with link)
 - ✅ Reset password via token
+- ✅ Email verification with token (24h expiration)
+- ✅ Auto-verify OAuth emails
+- ✅ Resend verification email (throttled: 1 per 15 min)
 - ✅ Multi-provider OAuth (GitHub, Google, Facebook)
 - ✅ Link OAuth accounts
 - ✅ Unlink OAuth accounts

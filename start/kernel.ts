@@ -51,4 +51,5 @@ export const middleware = router.named({
   guest: () => import('#core/middleware/guest_middleware'),
   auth: () => import('#core/middleware/auth_middleware'),
   throttle: () => import('#core/middleware/throttle_middleware'),
+  verified: () => import('#core/middleware/verified_middleware'),
 })
