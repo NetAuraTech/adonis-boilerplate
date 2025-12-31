@@ -57,22 +57,23 @@ export function InputGroup(props: InputGroupProps) {
   const sanitizer = getSanitizer(type, sanitize)
 
   /**
-   * Handle change with sanitization
+   * Handle change - NO sanitization during typing
    */
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    if (type !== 'checkbox' && type !== 'radio' && sanitize) {
-      event.target.value = sanitizer(event.target.value)
-    }
-
     onChange?.(event)
   }
 
   /**
-   * Handle blur
+   * Handle blur - Apply sanitization when user leaves the field
    */
   const handleBlur = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     if (type !== 'checkbox' && type !== 'radio' && sanitize) {
-      event.target.value = sanitizer(event.target.value)
+      const sanitizedValue = sanitizer(event.target.value)
+
+      if (sanitizedValue !== event.target.value) {
+        event.target.value = sanitizedValue
+        onChange?.(event)
+      }
     }
 
     onBlur?.(event)
