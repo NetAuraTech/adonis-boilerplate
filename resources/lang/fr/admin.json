@@ -1,0 +1,30 @@
+{
+  "users": {
+    "updated": "L'utilisateur a été mis à jour avec succès.",
+    "deleted": "L'utilisateur a été supprimé avec succès.",
+    "cannot_delete_self": "Vous ne pouvez pas supprimer votre propre compte depuis ici.",
+    "invitation_sent": "Invitation envoyée avec succès à {email}.",
+    "invitation_failed": "Échec de l'envoi de l'invitation. Veuillez réessayer.",
+    "invitation_resent": "Invitation renvoyée à {email}",
+    "invitation_resend_failed": "Échec de la nouvelle tentative d'envoi de l'invitation.",
+    "user_already_exists": "Un utilisateur avec cette adresse e-mail existe déjà.",
+    "user_already_active": "Cet utilisateur a déjà accepté son invitation."
+  },
+  "roles": {
+    "created": "Le rôle a été créé avec succès.",
+    "updated": "Le rôle a été mis à jour avec succès.",
+    "deleted": "Le rôle a été supprimé avec succès.",
+    "permissions_updated": "Les permissions du rôle ont été mises à jour avec succès.",
+    "cannot_modify_system": "Les rôles système ne peuvent pas être modifiés.",
+    "cannot_delete_system": "Les rôles système ne peuvent pas être supprimés.",
+    "has_users": "Ce rôle est attribué à {count} utilisateur(s) et ne peut pas être supprimé."
+  },
+  "permissions": {
+    "created": "La permission a été créée avec succès.",
+    "updated": "La permission a été mise à jour avec succès.",
+    "deleted": "La permission a été supprimée avec succès.",
+    "cannot_modify_system": "Les permissions système ne peuvent pas être modifiées.",
+    "cannot_delete_system": "Les permissions système ne peuvent pas être supprimées.",
+    "has_roles": "Cette permission est attribuée à {count} rôle(s) et ne peut pas être supprimée."
+  }
+}

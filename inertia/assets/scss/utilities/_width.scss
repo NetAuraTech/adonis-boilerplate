@@ -10,7 +10,7 @@
   .#{$prefix}w-initial     { width: initial; }
 
   @for $i from 1 through 10 {
-    .#{$prefix}w-#{$i * 10} { width: #{$i * 10%}; }
+    .#{$prefix}w-#{$i} { width: #{$i * 0.5rem}; }
   }
 
   .#{$prefix}h-full        { height: 100%; }
@@ -19,7 +19,7 @@
   .#{$prefix}h-auto        { height: auto; }
 
   @for $i from 1 through 10 {
-    .#{$prefix}h-#{$i * 10} { height: #{$i * 10%}; }
+    .#{$prefix}h-#{$i} { height: #{$i * 0.5rem}; }
   }
 
   .#{$prefix}max-w-full    { max-width: 100%; }

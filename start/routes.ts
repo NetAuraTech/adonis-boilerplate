@@ -9,6 +9,7 @@
 
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
+import ErrorHandlerService from '#core/services/error_handler_service'
 
 // region Controller imports
 const LoginController = () => import('#auth/controllers/login_controller')
@@ -30,6 +31,45 @@ const EmailResendController = () => import('#auth/controllers/email_resend_contr
 const EmailChangeController = () => import('#auth/controllers/email_change_controller')
 const EmailChangeCancelController = () => import('#auth/controllers/email_change_cancel_controller')
 
+const AdminDashboardController = () =>
+  import('#admin/controllers/dashboard/admin_dashboard_controller')
+
+const AdminUsersIndexController = () =>
+  import('#admin/controllers/users/admin_users_index_controller')
+const AdminUsersShowController = () =>
+  import('#admin/controllers/users/admin_users_show_controller')
+const AdminUsersUpdateController = () =>
+  import('#admin/controllers/users/admin_users_update_controller')
+const AdminUsersDeleteController = () =>
+  import('#admin/controllers/users/admin_users_delete_controller')
+
+const AdminRolesIndexController = () =>
+  import('#admin/controllers/roles/admin_roles_index_controller')
+const AdminRolesShowController = () =>
+  import('#admin/controllers/roles/admin_roles_show_controller')
+const AdminRolesCreateController = () =>
+  import('#admin/controllers/roles/admin_roles_create_controller')
+const AdminRolesUpdateController = () =>
+  import('#admin/controllers/roles/admin_roles_update_controller')
+const AdminRolesDeleteController = () =>
+  import('#admin/controllers/roles/admin_roles_delete_controller')
+
+const AdminPermissionsIndexController = () =>
+  import('#admin/controllers/permissions/admin_permissions_index_controller')
+const AdminPermissionsShowController = () =>
+  import('#admin/controllers/permissions/admin_permissions_show_controller')
+const AdminPermissionsCreateController = () =>
+  import('#admin/controllers/permissions/admin_permissions_create_controller')
+const AdminPermissionsUpdateController = () =>
+  import('#admin/controllers/permissions/admin_permissions_update_controller')
+const AdminPermissionsDeleteController = () =>
+  import('#admin/controllers/permissions/admin_permissions_delete_controller')
+
+const AcceptInvitationController = () => import('#auth/controllers/accept_invitation_controller')
+const AdminUsersResendInvitationController = () =>
+  import('#admin/controllers/users/admin_users_resend_invitation_controller')
+const AdminUsersCreateController = () =>
+  import('#admin/controllers/users/admin_users_create_controller')
 // endregion
 
 router.on('/').renderInertia('landing').as('landing')
@@ -57,6 +97,15 @@ router
     router
       .post('/reset-password', [ResetPasswordController, 'execute'])
       .use(middleware.throttle({ max: 3, window: 900 }))
+    router
+      .get('/accept-invitation/:token', [AcceptInvitationController, 'render'])
+      .as('auth.accept_invitation')
+      .use(middleware.throttle({ max: 3, window: 900 }))
+
+    router
+      .post('/accept-invitation', [AcceptInvitationController, 'execute'])
+      .as('auth.accept_invitation.submit')
+      .use(middleware.throttle({ max: 3, window: 900 }))
   })
   .use(middleware.guest())
 
@@ -78,7 +127,7 @@ router
         router
           .post('/resend', [EmailResendController, 'execute'])
           .as('email.resend')
-          .use(middleware.throttle({ max: 1, window: 900 }))
+          .use(middleware.throttle({ max: 15, window: 900 }))
 
         router.get('/change/:token', [EmailChangeController, 'render']).as('email.change.show')
         router.post('/change/:token', [EmailChangeController, 'execute']).as('email.change.confirm')
@@ -124,3 +173,142 @@ router
   })
   .prefix('profile')
   .use(middleware.auth())
+
+router
+  .group(() => {
+    // ========================================
+    // DASHBOARD
+    // ========================================
+    router
+      .get('/', [AdminDashboardController, 'render'])
+      .as('admin.dashboard')
+      .use(middleware.permission({ permissions: ['admin.access'] }))
+
+    // ========================================
+    // USERS MANAGEMENT
+    // ========================================
+    router
+      .group(() => {
+        router
+          .get('/', [AdminUsersIndexController, 'render'])
+          .as('admin.users.index')
+          .use(middleware.permission({ permissions: ['users.view'] }))
+        router
+          .get('/create', [AdminUsersCreateController, 'render'])
+          .as('admin.users.create')
+          .use(middleware.permission({ permissions: ['users.create'] }))
+        router
+          .post('/', [AdminUsersCreateController, 'execute'])
+          .as('admin.users.store')
+          .use(middleware.permission({ permissions: ['users.create'] }))
+        router
+          .get('/:id/edit', [AdminUsersUpdateController, 'render'])
+          .as('admin.users.edit')
+          .use(middleware.permission({ permissions: ['users.update'] }))
+        router
+          .get('/:id', [AdminUsersShowController, 'render'])
+          .as('admin.users.show')
+          .use(middleware.permission({ permissions: ['users.view'] }))
+        router
+          .post('/:id/resend-invitation', [AdminUsersResendInvitationController, 'execute'])
+          .as('admin.users.resend_invitation')
+          .use(middleware.permission({ permissions: ['users.create', 'users.update'] }))
+        router
+          .put('/:id', [AdminUsersUpdateController, 'execute'])
+          .as('admin.users.update')
+          .use(middleware.permission({ permissions: ['users.update'] }))
+        router
+          .delete('/:id', [AdminUsersDeleteController, 'execute'])
+          .as('admin.users.delete')
+          .use(middleware.permission({ permissions: ['users.delete'] }))
+      })
+      .prefix('users')
+
+    // ========================================
+    // ROLES MANAGEMENT
+    // ========================================
+    router
+      .group(() => {
+        router
+          .get('/', [AdminRolesIndexController, 'render'])
+          .as('admin.roles.index')
+          .use(middleware.permission({ permissions: ['roles.view'] }))
+        router
+          .get('/create', [AdminRolesCreateController, 'render'])
+          .as('admin.roles.create')
+          .use(middleware.permission({ permissions: ['roles.create'] }))
+        router
+          .post('/', [AdminRolesCreateController, 'execute'])
+          .as('admin.roles.store')
+          .use(middleware.permission({ permissions: ['roles.create'] }))
+        router
+          .get('/:id/edit', [AdminRolesUpdateController, 'render'])
+          .as('admin.roles.edit')
+          .use(middleware.permission({ permissions: ['roles.update'] }))
+        router
+          .get('/:id', [AdminRolesShowController, 'render'])
+          .as('admin.roles.show')
+          .use(middleware.permission({ permissions: ['roles.view'] }))
+        router
+          .put('/:id', [AdminRolesUpdateController, 'execute'])
+          .as('admin.roles.update')
+          .use(middleware.permission({ permissions: ['roles.update'] }))
+        router
+          .delete('/:id', [AdminRolesDeleteController, 'execute'])
+          .as('admin.roles.delete')
+          .use(middleware.permission({ permissions: ['roles.delete'] }))
+      })
+      .prefix('roles')
+
+    // ========================================
+    // PERMISSIONS MANAGEMENT
+    // ========================================
+    router
+      .group(() => {
+        router
+          .get('/', [AdminPermissionsIndexController, 'render'])
+          .as('admin.permissions.index')
+          .use(middleware.permission({ permissions: ['permissions.view'] }))
+        router
+          .get('/create', [AdminPermissionsCreateController, 'render'])
+          .as('admin.permissions.create')
+          .use(middleware.permission({ permissions: ['permissions.create'] }))
+        router
+          .post('/', [AdminPermissionsCreateController, 'execute'])
+          .as('admin.permissions.store')
+          .use(middleware.permission({ permissions: ['permissions.create'] }))
+        router
+          .get('/:id/edit', [AdminPermissionsUpdateController, 'render'])
+          .as('admin.permissions.edit')
+          .use(middleware.permission({ permissions: ['permissions.update'] }))
+        router
+          .get('/:id', [AdminPermissionsShowController, 'render'])
+          .as('admin.permissions.show')
+          .use(middleware.permission({ permissions: ['permissions.view'] }))
+        router
+          .put('/:id', [AdminPermissionsUpdateController, 'execute'])
+          .as('admin.permissions.update')
+          .use(middleware.permission({ permissions: ['permissions.update'] }))
+        router
+          .delete('/:id', [AdminPermissionsDeleteController, 'execute'])
+          .as('admin.permissions.delete')
+          .use(middleware.permission({ permissions: ['permissions.delete'] }))
+      })
+      .prefix('permissions')
+  })
+  .prefix('admin')
+  .use(middleware.auth())
+  .use(middleware.verified())
+
+router
+  .get('/debug-sentry', async (ctx) => {
+    const errorHandler = new ErrorHandlerService()
+
+    try {
+      // On simule une erreur imprévue (une variable qui n'existe pas par exemple)
+      throw new Error('Test de crash manuel pour Sentry')
+    } catch (error) {
+      return await errorHandler.handle(ctx, error)
+    }
+  })
+  .use(({ auth }, next) => auth.authenticate().then(next))

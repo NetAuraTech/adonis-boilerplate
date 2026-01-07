@@ -120,6 +120,26 @@ export const rules = {
    */
   custom: (validator: (value: any) => boolean, i18nKey: string): ValidationRule =>
     createRule(validator, i18nKey),
+
+  /**
+   * Value must be in allowed list (empty allowed for optional fields)
+   */
+  oneOf: (allowedValues: (string | number)[], fieldNameKey?: string): ValidationRule =>
+    createRule(
+      (value) => {
+        if (!value || value === '' || value === '0') return true
+
+        const normalizedAllowed = allowedValues.map((v) => String(v))
+        const normalizedValue = String(value)
+
+        return normalizedAllowed.includes(normalizedValue)
+      },
+      'one_of',
+      (value) => ({
+        field: fieldNameKey,
+        value: value,
+      })
+    ),
 }
 
 /**
@@ -151,5 +171,21 @@ export const presets = {
     rules.required('full_name'),
     rules.minLength(2, 'full_name'),
     rules.maxLength(255, 'full_name'),
+  ],
+  search: [rules.maxLength(255, 'search')],
+
+  /**
+   * Select field (optional, max length only)
+   */
+  select: [rules.maxLength(255, 'select')],
+
+  /**
+   * Select field with allowed values validation
+   * @param allowedValues - List of allowed values (will be normalized to strings)
+   * @param fieldNameKey - Field name for i18n (default: 'select')
+   */
+  selectWithOptions: (allowedValues: (string | number)[], fieldNameKey: string = 'select') => [
+    rules.maxLength(255, fieldNameKey),
+    rules.oneOf(allowedValues, fieldNameKey),
   ],
 }

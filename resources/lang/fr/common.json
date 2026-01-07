@@ -1,0 +1,4 @@
+{
+  "unexpected_error": "Une erreur inattendue est survenue (Code: {code}). Veuillez réessayer plus tard.",
+  "not_found": "La ressource demandée est introuvable."
+}

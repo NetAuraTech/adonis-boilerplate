@@ -4,11 +4,13 @@ import { Link } from '@inertiajs/react'
 interface ButtonProps {
   loading?: boolean
   type?: "button" | "submit" | "reset"
-  variant?: "primary" | "accent" | "danger" | "success" | "outline" | "transparent" | "social"
+  variant?: "primary" | "accent" | "danger" | "success" | "outline" | "transparent" | "icon" | "social"
   disabled?: boolean
   children: ReactNode
+  title?: string
   onClick?: () => void
   fitContent?: boolean
+  padding?: string
   href?: string
   external?: boolean
 }
@@ -20,21 +22,24 @@ export function Button(props: ButtonProps) {
     variant = "primary",
     disabled = false,
     children,
+    title,
     onClick,
     fitContent = false,
+    padding = "padding-block-3 padding-inline-8",
     href,
     external = false
   } = props
-  const baseClass = "display-flex align-items-center border-0 border-radius-2 fs-400 justify-content-center padding-block-3 padding-inline-8 fw-bold transition:bg-300 transition:clr-300 cursor-pointer"
+  const baseClass = `display-flex align-items-center fs-400 ${padding} justify-content-center fw-bold transition:bg-300 transition:clr-300 cursor-pointer`
 
   const variantClasses = {
-    primary: "bg-primary-400 clr-neutral-1000 hover:bg-primary-500",
-    accent: "bg-accent-400 clr-neutral-1000 hover:bg-accent-500",
-    danger: "bg-red-400 clr-neutral-1000 hover:bg-red-500",
-    success: "bg-green-400 clr-neutral-1000 hover:bg-green-500",
-    outline: "bg-transparent border-solid border-2 border-primary-500 clr-neutral-1000 hover:bg-primary-500 hover:clr-neutral-1000",
-    transparent: "bg-transparent clr-neutral-700 hover:clr-primary-400",
-    social: "bg-neutral-1000 clr-neutral-200 border-solid border-1 border-neutral-200 hover:bg-neutral-800 hover:clr-neutral-000"
+    primary: "border-0 border-radius-2 bg-primary-400 clr-neutral-1000 hover:clr-neutral-1000 hover:bg-primary-500",
+    accent: "border-0 border-radius-2 bg-accent-400 clr-neutral-1000 hover:clr-neutral-1000 hover:bg-accent-500",
+    danger: "border-0 border-radius-2 bg-red-400 clr-neutral-1000 hover:clr-neutral-1000 hover:bg-red-500",
+    success: "border-0 border-radius-2 bg-green-400 clr-neutral-1000 hover:clr-neutral-1000 hover:bg-green-500",
+    outline: "border-0 border-radius-2 bg-transparent border-solid border-2 border-primary-500 clr-neutral-1000 hover:bg-primary-500 hover:clr-neutral-1000",
+    transparent: "border-0 border-radius-2 bg-transparent clr-neutral-700 hover:clr-primary-400",
+    icon: "bg-transparent clr-neutral-700 hover:clr-primary-400",
+    social: "border-0 border-radius-2 bg-neutral-1000 clr-neutral-200 border-solid border-1 border-neutral-200 hover:bg-neutral-800 hover:clr-neutral-000"
   }
 
   const classes = `
@@ -64,14 +69,24 @@ export function Button(props: ButtonProps) {
   if (href) {
     if (external) {
       return (
-        <a href={href} className={classes} onClick={onClick}>
+        <a
+          href={href}
+          className={classes}
+          onClick={onClick}
+          title={title}
+        >
           {content}
         </a>
       )
     }
 
     return (
-      <Link href={href} className={classes} onClick={onClick}>
+      <Link
+        href={href}
+        className={classes}
+        onClick={onClick}
+        title={title}
+      >
         {content}
       </Link>
     )
@@ -83,6 +98,7 @@ export function Button(props: ButtonProps) {
       type={type}
       onClick={onClick}
       className={classes}
+      title={title}
     >
       {content}
     </button>

@@ -1,18 +1,27 @@
 import User from '#auth/models/user'
 import Token, { TOKEN_TYPES } from '#core/models/token'
-import { generateToken } from '#core/helpers/crypto'
+import { generateSplitToken } from '#core/helpers/crypto'
 import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
 
+/**
+ * Service for handling email change workflows
+ */
 export default class EmailChangeService {
   /**
    * Initiate email change process
-   * - Send confirmation email to NEW address
-   * - Send notification email to OLD address
-   * - Store new email in pending_email
+   *
+   * - Sends confirmation email to NEW address with verification link
+   * - Sends notification email to OLD address for security
+   * - Stores new email in pending_email field
+   *
+   * @param user - The user requesting email change
+   * @param newEmail - The new email address to change to
+   * @param i18n - Internationalization instance for translations
+   * @throws Error if email sending fails
    */
   async initiateEmailChange(user: User, newEmail: string, i18n: any): Promise<void> {
     const oldEmail = user.email
@@ -22,17 +31,18 @@ export default class EmailChangeService {
 
     await Token.expireEmailChangeTokens(user)
 
-    const plainToken = generateToken()
-    const hashedToken = await hash.make(plainToken)
+    const { selector, validator, fullToken } = generateSplitToken()
+    const hashedValidator = await hash.make(validator)
 
     await Token.create({
       userId: user.id,
       type: TOKEN_TYPES.EMAIL_CHANGE,
-      token: hashedToken,
+      selector: selector,
+      token: hashedValidator,
       expiresAt: DateTime.now().plus({ hours: 24 }),
     })
 
-    const confirmationLink = `${env.get('DOMAIN')}/email/change/${plainToken}`
+    const confirmationLink = `${env.get('DOMAIN')}/email/change/${fullToken}`
 
     try {
       await mail.send((message) => {
@@ -88,13 +98,17 @@ export default class EmailChangeService {
 
   /**
    * Confirm email change with token
-   * - Validate token
-   * - Move pending_email to email
-   * - Mark email as verified
-   * - Clear pending_email
+   *
+   * - Validates the token
+   * - Moves pending_email to email
+   * - Marks email as verified
+   * - Clears pending_email
+   *
+   * @param fullToken - Complete token in format "selector.validator"
+   * @returns User if email change successful, null if token is invalid or expired
    */
-  async confirmEmailChange(plainToken: string): Promise<User | null> {
-    const user = await Token.getEmailChangeUser(plainToken)
+  async confirmEmailChange(fullToken: string): Promise<User | null> {
+    const user = await Token.getEmailChangeUser(fullToken)
 
     if (!user || !user.pendingEmail) {
       return null
@@ -121,6 +135,10 @@ export default class EmailChangeService {
 
   /**
    * Cancel pending email change
+   *
+   * Clears the pending_email field and expires all email change tokens
+   *
+   * @param user - The user whose pending email change should be cancelled
    */
   async cancelEmailChange(user: User): Promise<void> {
     if (!user.hasPendingEmailChange) {

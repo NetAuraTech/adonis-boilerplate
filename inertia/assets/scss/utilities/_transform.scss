@@ -31,6 +31,22 @@
       text-transform: uppercase;
     }
   }
+
+  .#{$prefix}rotate-0 {
+    transform: rotate(0deg);
+  }
+
+  .#{$prefix}rotate-90 {
+    transform: rotate(90deg);
+  }
+
+  .#{$prefix}rotate-180 {
+    transform: rotate(180deg);
+  }
+
+  .#{$prefix}rotate-270 {
+    transform: rotate(270deg);
+  }
 }
 
 @each $breakpoint-name, $breakpoint-value in $breakpoints {

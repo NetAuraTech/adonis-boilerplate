@@ -32,5 +32,14 @@
     "intro": "Cet email vous informe que l'adresse email de votre compte est en cours de modification de {oldEmail} à {newEmail}.",
     "warning": "Si vous n'avez pas initié ce changement, votre compte pourrait être compromis. Veuillez contacter notre équipe d'assistance immédiatement.",
     "action": "Si vous avez besoin d'aide, veuillez nous contacter à :"
+  },
+  "user_invitation": {
+    "subject": "Vous avez été invité à rejoindre {appName}",
+    "greeting": "Vous êtes invités !",
+    "intro": "Un administrateur vous a invité à rejoindre {appName}. Cliquez sur le bouton ci-dessous pour accepter votre invitation et configurer votre compte.",
+    "action": "Accepter l'invitation",
+    "outro": "Une fois que vous aurez accepté, vous pourrez définir votre mot de passe et commencer à utiliser votre compte immédiatement. Votre adresse e-mail sera automatiquement vérifiée.",
+    "expiry": "Ce lien d'invitation expirera dans {days} jours.",
+    "footer": "Si vous ne vous attendiez pas à cette invitation, vous pouvez ignorer cet e-mail sans crainte."
   }
 }

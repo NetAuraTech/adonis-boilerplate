@@ -1,0 +1,35 @@
+import { inject } from '@adonisjs/core'
+import type { HttpContext } from '@adonisjs/core/http'
+import InvitationService from '#auth/services/invitation_service'
+import User from '#auth/models/user'
+
+@inject()
+export default class AdminUsersResendInvitationController {
+  constructor(protected invitationService: InvitationService) {}
+
+  async execute({ params, response, session, i18n }: HttpContext) {
+    try {
+      const user = await User.findOrFail(params.id)
+
+      if (user.isEmailVerified) {
+        session.flash('info', i18n.t('admin.users.user_already_active'))
+        return response.redirect().back()
+      }
+
+      await this.invitationService.sendInvitation(
+        {
+          email: user.email,
+          fullName: user.fullName || '',
+          roleId: user.roleId,
+        },
+        i18n
+      )
+
+      session.flash('success', i18n.t('admin.users.invitation_resent', { email: user.email }))
+      return response.redirect().back()
+    } catch (error) {
+      session.flash('error', i18n.t('admin.users.invitation_resend_failed'))
+      return response.redirect().back()
+    }
+  }
+}

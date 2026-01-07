@@ -1,6 +1,23 @@
 @use "../abstracts" as *;
 
 @each $color, $shade-map in $active-theme {
+
+  .clr-transparent {
+    color: transparent;
+  }
+
+  .bg-transparent {
+    background-color: transparent;
+  }
+
+  .hover\:clr-transparent {
+    color: transparent;
+  }
+
+  .hover\:bg-transparent {
+    background-color: transparent;
+  }
+
   @each $shade, $value in $shade-map {
     $variable: var(--#{$color}-#{$shade});
 

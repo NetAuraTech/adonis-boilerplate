@@ -48,7 +48,6 @@ export default class ProfileUpdateController {
           })
         )
       } catch (error) {
-        console.log(error)
         session.flash('error', i18n.t('profile.update.email_change_failed'))
         return response.redirect().back()
       }

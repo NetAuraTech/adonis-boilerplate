@@ -1,0 +1,4 @@
+{
+  "unexpected_error": "An unexpected error occurred (Code: {code}). Please try again later.",
+  "not_found": "The requested resource was not found."
+}

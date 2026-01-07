@@ -34,9 +34,54 @@ export interface FormValidationConfig {
 }
 
 /**
+ * Return type of the useFormValidation hook
+ */
+export interface UseFormValidationReturn {
+  /**
+   * The object containing the complete state of all fields
+   * */
+  fieldStates: Record<string, FieldState>
+
+  /**
+   * Retrieves the status of a specific field
+   * */
+  getFieldState: (fieldName: string) => FieldState
+
+  /**
+   * To be called on the onChange event
+   * */
+  handleChange: (fieldName: string, value: any) => void
+
+  /**
+   * To be called on the onBlur event
+   * */
+  handleBlur: (fieldName: string, value: any) => void
+
+  /**
+   * Manually validate all fields (useful before submitting)
+   * */
+  validateAll: (values: Record<string, any>) => boolean
+
+  /**
+   * Resets all validation states (pristine)
+   * */
+  reset: () => void
+
+  /**
+   * Retrieves the error message if the field is touched and invalid
+   * */
+  getValidationMessage: (fieldName: string) => string | undefined
+
+  /**
+   * Returns the CSS color class based on status
+   * */
+  getHelpClassName: (fieldName: string) => string
+}
+
+/**
  * Form validation hook
  */
-export function useFormValidation(config: FormValidationConfig) {
+export function useFormValidation(config: FormValidationConfig): UseFormValidationReturn {
   const [fieldStates, setFieldStates] = useState<Record<string, FieldState>>(() => {
     const initial: Record<string, FieldState> = {}
     Object.keys(config).forEach((field) => {

@@ -1,0 +1,67 @@
+import { useState } from 'react'
+import { AdminHeader } from '~/components/layouts/admin/admin_header'
+import { AdminNav } from '~/components/layouts/admin/admin_nav'
+import { buildAdminNav } from '~/helpers/admin'
+import { FlashMessages } from '~/components/elements/flash_messages'
+
+interface LayoutProps {
+  children: React.ReactNode
+}
+
+export default function AdminShell({ children }: LayoutProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const handleNavButtonClick = () => {
+    setSidebarOpen(!sidebarOpen)
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+  }
+
+  const closeMenu = () => {
+    setSidebarOpen(false)
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+  }
+
+  return (
+    <div className="display-flex min-h-screen bg-neutral-000">
+      <FlashMessages />
+      <AdminNav sidebarOpen={sidebarOpen} categories={buildAdminNav()} setIsMenuOpen={closeMenu} />
+      <div
+        className="main-content"
+        style={{
+          marginLeft: '0',
+          width: '100%',
+          minHeight: '100vh',
+          transition: 'margin-left 0.3s ease',
+        }}
+      >
+        <AdminHeader handleClick={handleNavButtonClick} />
+        <main className="padding-6">
+          {children}
+        </main>
+      </div>
+      {sidebarOpen && (
+        <div
+          className="display-block lg:display-hidden fixed inset-0 bg-neutral-1000 opacity-50"
+          style={{ zIndex: 90 }}
+          onClick={() => closeMenu()}
+        />
+      )}
+
+      <style>{`
+        @media (min-width: 65em) {
+          .sidebar {
+            transform: translateX(0) !important;
+          }
+          .main-content {
+            margin-left: 250px !important;
+            width: calc(100% - 250px) !important;
+          }
+        }
+      `}</style>
+    </div>
+  )
+}

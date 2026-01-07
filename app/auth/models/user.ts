@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import { compose } from '@adonisjs/core/helpers'
-import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, computed, hasMany } from '@adonisjs/lucid/orm'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbRememberMeTokensProvider } from '@adonisjs/auth/session'
 import Token from '#core/models/token'
-import type { HasMany } from '@adonisjs/lucid/types/relations'
+import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import Role from '#core/models/role'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -54,6 +55,12 @@ export default class User extends compose(BaseModel, AuthFinder) {
   })
   declare public passwordResetTokens: HasMany<typeof Token>
 
+  @column()
+  declare roleId: number | null
+
+  @belongsTo(() => Role)
+  declare role: BelongsTo<typeof Role>
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
@@ -66,5 +73,72 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   get hasPendingEmailChange(): boolean {
     return this.pendingEmail !== null
+  }
+
+  /**
+   * Check if user has a specific role
+   */
+  async hasRole(roleSlug: string): Promise<boolean> {
+    if (!this.roleId) return false
+
+    const role = await (this as User).related('role').query().first()
+    return role?.slug === roleSlug
+  }
+
+  /**
+   * Check if user has any of the given roles
+   */
+  async hasAnyRole(roleSlugs: string[]): Promise<boolean> {
+    if (!this.roleId) return false
+
+    const role = await (this as User).related('role').query().first()
+    return role ? roleSlugs.includes(role.slug) : false
+  }
+
+  /**
+   * Check if user has a specific permission
+   */
+  async can(permissionSlug: string): Promise<boolean> {
+    if (!this.roleId) return false
+
+    const role = await (this as User).related('role').query().preload('permissions').first()
+    if (!role) return false
+
+    return role.permissions.some((p) => p.slug === permissionSlug)
+  }
+
+  /**
+   * Check if user is admin
+   */
+  async isAdmin(): Promise<boolean> {
+    return this.hasRole('admin')
+  }
+
+  /**
+   * Load role with permissions (for optimization)
+   */
+  async loadRoleWithPermissions(): Promise<void> {
+    if (!this.roleId) return
+    await (this as User).load('role', (query) => {
+      query.preload('permissions')
+    })
+  }
+
+  /**
+   * Check if a user has an active invitation (not yet accepted)
+   */
+  @computed()
+  get status(): string {
+    const hasInvitation = this.tokens && this.tokens.length > 0
+
+    if (hasInvitation) {
+      return 'PENDING_INVITE'
+    }
+
+    if (this.isEmailVerified) {
+      return 'VERIFIED'
+    }
+
+    return 'UNVERIFIED'
   }
 }

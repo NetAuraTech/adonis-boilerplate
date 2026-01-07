@@ -1,8 +1,8 @@
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class ProfileCleanNotificationsController {
-  async execute({ auth, response, session, i18n }: HttpContext) {
-    const user = auth.getUserOrFail()
+  async execute({ response, session, i18n }: HttpContext) {
+    //const user = auth.getUserOrFail()
 
     // TODO
     // await user.related('notifications').query().delete()

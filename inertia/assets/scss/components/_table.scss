@@ -1,0 +1,57 @@
+@use "../abstracts" as *;
+
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  line-height: 1.2;
+
+  thead {
+    background-color: var(--white);
+    border: 0;
+
+    th {
+      text-transform: uppercase;
+      opacity: 0.6;
+      font-size: 0.9em;
+      text-align: left;
+
+      &.center {
+        text-align: center;
+      }
+
+      &:last-child {
+        text-align: right;
+      }
+    }
+  }
+
+
+  tbody {
+    a {
+      text-decoration: none;
+      color: $color-text-default;
+
+      &:hover {
+        color: $color-accent-400;
+      }
+    }
+
+    td {
+      vertical-align: middle;
+      padding: 1rem 0;
+
+      &:last-child {
+        text-align: right;
+      }
+    }
+
+    tr {
+      border-bottom: 1px solid $color-neutral-200;
+
+      &:last-child {
+        border: none;
+      }
+    }
+  }
+}

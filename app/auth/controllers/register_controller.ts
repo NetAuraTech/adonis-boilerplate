@@ -6,6 +6,7 @@ import { getEnabledProviders } from '#auth/helpers/oauth'
 import EmailVerificationService from '#auth/services/email_verification_service'
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
+import Role from '#core/models/role'
 
 @inject()
 export default class RegisterController {
@@ -26,7 +27,13 @@ export default class RegisterController {
   async execute({ auth, request, response, i18n }: HttpContext) {
     const payload = await request.validateUsing(RegisterController.validator)
 
-    const user = await User.create(payload)
+    const userRole = await Role.findBy('slug', 'user')
+
+    const user = await User.create({
+      ...payload,
+      roleId: userRole?.id || null,
+    })
+
     await auth.use('web').login(user)
 
     this.emailVerificationService.sendVerificationEmail(user, i18n).catch((error) => {

@@ -2,6 +2,7 @@ import User from '#auth/models/user'
 import type { AllyUserContract } from '@adonisjs/ally/types'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
+import Role from '#core/models/role'
 
 export default class SocialService {
   async findOrCreateUser(
@@ -43,17 +44,21 @@ export default class SocialService {
       }
     }
 
+    const userRole = await Role.findBy('slug', 'user')
+
     user = await User.create({
       email: allyUser.email || `${provider}_${allyUser.id}@noemail.local`,
       fullName: allyUser.name || allyUser.nickName,
       [providerIdColumn]: allyUser.id,
       emailVerifiedAt: DateTime.now(),
+      roleId: userRole?.id || null
     })
 
     logger.info('New user created via OAuth', {
       userId: user.id,
       provider,
       providerId: allyUser.id,
+      roleId: user.roleId,
     })
 
     return user

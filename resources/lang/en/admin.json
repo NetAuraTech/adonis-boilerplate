@@ -1,0 +1,30 @@
+{
+  "users": {
+    "updated": "User has been updated successfully.",
+    "deleted": "User has been deleted successfully.",
+    "cannot_delete_self": "You cannot delete your own account from here.",
+    "invitation_sent": "Invitation sent successfully to {email}",
+    "invitation_failed": "Failed to send invitation. Please try again.",
+    "invitation_resent": "Invitation resent to {email}",
+    "invitation_resend_failed": "Failed to resend invitation",
+    "user_already_exists": "A user with this email already exists",
+    "user_already_active": "This user has already accepted their invitation"
+  },
+  "roles": {
+    "created": "Role has been created successfully.",
+    "updated": "Role has been updated successfully.",
+    "deleted": "Role has been deleted successfully.",
+    "permissions_updated": "Role permissions have been updated successfully.",
+    "cannot_modify_system": "System roles cannot be modified.",
+    "cannot_delete_system": "System roles cannot be deleted.",
+    "has_users": "This role is assigned to {count} user(s) and cannot be deleted."
+  },
+  "permissions": {
+    "created": "Permission has been created successfully.",
+    "updated": "Permission has been updated successfully.",
+    "deleted": "Permission has been deleted successfully.",
+    "cannot_modify_system": "System permissions cannot be modified.",
+    "cannot_delete_system": "System permissions cannot be deleted.",
+    "has_roles": "This permission is assigned to {count} role(s) and cannot be deleted."
+  }
+}

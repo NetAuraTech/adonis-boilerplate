@@ -15,7 +15,7 @@ export default class CreateUser extends BaseCommand {
 
   async run() {
     this.logger.info(`Creating user ${this.email} with password "password"`)
-    await User.create({ email: this.email.toLowerCase().trim(), password: 'password' })
+    await User.create({ email: this.email.toLowerCase().trim(), password: 'password', roleId: 1 })
     this.logger.success('User created successfully')
   }
 }

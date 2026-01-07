@@ -4,11 +4,15 @@
   "min_length": "{field} doit contenir au moins {min} caractères (actuellement : {current})",
   "max_length": "{field} doit contenir au maximum {max} caractères (actuellement : {current})",
   "matches": "Doit correspondre à {other}",
+  "one_of": "{field} contient une valeur invalide",
   "fields": {
     "email": "Email",
     "password": "Mot de passe",
     "password_confirmation": "Confirmation du mot de passe",
     "current_password": "Mot de passe actuel",
-    "full_name": "Nom complet"
+    "full_name": "Nom complet",
+    "search": "Recherche",
+    "select": "Sélection",
+    "role": "Rôle"
   }
 }

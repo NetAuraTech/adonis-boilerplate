@@ -32,5 +32,14 @@
     "intro": "This email is to notify you that your account email address is being changed from {oldEmail} to {newEmail}.",
     "warning": "If you did not initiate this change, your account may be compromised. Please contact our support team immediately.",
     "action": "If you need assistance, please contact us at:"
+  },
+  "user_invitation": {
+    "subject": "You've been invited to join {appName}",
+    "greeting": "You're Invited!",
+    "intro": "An administrator has invited you to join {appName}. Click the button below to accept your invitation and set up your account.",
+    "action": "Accept Invitation",
+    "outro": "Once you accept, you'll be able to set your password and start using your account immediately. Your email will be automatically verified.",
+    "expiry": "This invitation link will expire in {days} days.",
+    "footer": "If you didn't expect this invitation, you can safely ignore this email."
   }
 }

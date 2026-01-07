@@ -1,0 +1,247 @@
+{
+  "permissions": {
+    "title": "Permissions",
+    "create": "Créer une permission",
+    "edit": "Modifier la permission : {name}",
+    "show": "Permission : {name}",
+    "details": "Détails de la permission",
+    "information": "Informations sur la permission",
+    "statistics": "Statistiques et statut",
+    "assigned_roles": "Attribuée aux rôles",
+    "form": {
+      "name": {
+        "label": "Nom de la permission",
+        "placeholder": "ex. Modifier les articles, Gérer les utilisateurs",
+        "help": "Un nom clair et descriptif pour cette permission"
+      },
+      "slug": {
+        "label": "Identifiant",
+        "placeholder": "ex. users.create, posts.edit, settings.manage",
+        "help": "Identifiant unique utilisé dans le code (ex. middleware.permission(['users.create'])). Format : categorie.action (minuscules, utiliser des points)"
+      },
+      "category": {
+        "label": "Catégorie",
+        "placeholder": "ex. articles, utilisateurs, paramètres",
+        "help": "Utilisée pour regrouper les permissions connexes (minuscules recommandées)"
+      },
+      "description": {
+        "label": "Description",
+        "placeholder": "Brève description de ce que cette permission autorise",
+        "help": "Description optionnelle pour aider les administrateurs à comprendre cette permission"
+      }
+    },
+    "fields": {
+      "name": "Nom",
+      "slug": "Identifiant",
+      "description": "Description",
+      "category": "Catégorie",
+      "actions": "Actions"
+    },
+    "stats": {
+      "roles_count": "Rôles avec cette permission",
+      "permission_type": "Type de permission"
+    },
+    "types": {
+      "system": "Permission système",
+      "custom": "Permission personnalisée"
+    },
+    "warnings": {
+      "system_permission": "Il s'agit d'une permission système qui ne peut pas être {actions} pour maintenir l'intégrité du système.",
+      "modified_or_deleted": "modifiée ou supprimée",
+      "deleted": "supprimée"
+    },
+    "empty": {
+      "no_permissions": "Aucune permission trouvée",
+      "no_roles": "Cette permission n'est attribuée à aucun rôle pour le moment"
+    },
+    "search": {
+      "placeholder": "Rechercher par nom...",
+      "category_placeholder": "Toutes les catégories",
+      "filter": "Filtrer",
+      "clear": "Effacer"
+    },
+    "roles_assigned": "{count} rôle(s) possède(nt) cette permission"
+  },
+  "roles": {
+    "title": "Rôles",
+    "create": "Créer un rôle",
+    "edit": "Modifier le rôle : {name}",
+    "show": "Rôle : {name}",
+    "information": "Informations sur le rôle",
+    "statistics": "Statistiques et statut",
+    "basic_info": "Informations de base",
+    "permissions_section": "Permissions",
+    "assigned_permissions": "Permissions attribuées",
+    "form": {
+      "name": {
+        "label": "Nom du rôle",
+        "placeholder": "ex. Éditeur, Modérateur"
+      },
+      "description": {
+        "label": "Description",
+        "placeholder": "Brève description de l'objectif de ce rôle"
+      }
+    },
+    "fields": {
+      "name": "Nom",
+      "description": "Description",
+      "users_count": "Nombre d'utilisateurs",
+      "actions": "Actions"
+    },
+    "stats": {
+      "users_count": "Utilisateurs avec ce rôle",
+      "total_permissions": "Permissions totales",
+      "role_type": "Type de rôle"
+    },
+    "types": {
+      "system": "Rôle système",
+      "custom": "Rôle personnalisé"
+    },
+    "warnings": {
+      "system_role": "Il s'agit d'un rôle système qui ne peut pas être {actions} pour maintenir l'intégrité du système."
+    },
+    "permissions": {
+      "selected_count": "{count} permission(s) sélectionnée(s)",
+      "assigned_count": "{count} permission(s) attribuée(s)",
+      "category_count": "({selected}/{total})",
+      "select_all": "Tout sélectionner",
+      "deselect_all": "Tout désélectionner",
+      "system_badge": "Système",
+      "no_permissions": "Aucune permission attribuée à ce rôle"
+    },
+    "empty": {
+      "no_roles": "Aucun rôle trouvé"
+    }
+  },
+  "users": {
+    "title": "Utilisateurs",
+    "create": "Inviter un nouvel utilisateur",
+    "edit": "Modifier l'utilisateur: {name}",
+    "show": "Utilisateur : {email}",
+    "information": "Informations sur l'utilisateur",
+    "timeline": "Chronologie du compte",
+    "connected_accounts": "Comptes connectés",
+    "role_permissions": "Rôle et permissions",
+    "invitation_details": "Détails de l'invitation",
+    "invitation_subtitle": "Envoyer un e-mail d'invitation pour créer un nouveau compte utilisateur",
+    "form": {
+      "email": {
+        "label": "Adresse e-mail",
+        "placeholder": "utilisateur@exemple.com",
+        "help": "L'utilisateur recevra un lien d'invitation à cette adresse e-mail"
+      },
+      "full_name": {
+        "label": "Nom complet",
+        "placeholder": "Jean Dupont",
+        "help": "Optionnel - l'utilisateur peut le mettre à jour en acceptant l'invitation"
+      },
+      "role": {
+        "label": "Attribuer un rôle",
+        "no_role": "Aucun rôle (l'utilisateur aura les permissions par défaut)",
+        "help": "Le rôle sera automatiquement attribué lorsque l'utilisateur acceptera l'invitation"
+      }
+    },
+    "fields": {
+      "user": "Utilisateur",
+      "email": "E-mail",
+      "full_name": "Nom complet",
+      "pending_email": "Changement d'e-mail en attente",
+      "role": "Rôle",
+      "status": "Statut",
+      "joined": "Inscrit le",
+      "actions": "Actions",
+      "created_at": "Créé le",
+      "last_updated": "Dernière mise à jour",
+      "email_verified_at": "E-mail vérifié le",
+      "current_role": "Rôle actuel"
+    },
+    "status": {
+      "verified": "✓ Vérifié",
+      "unverified": "× Non vérifié",
+      "pending_invite": "⟳ Invitation en attente"
+    },
+    "actions": {
+      "back_to_list": "Retour à la liste",
+      "delete_user": "Supprimer l'utilisateur",
+      "change_role": "Changer de rôle",
+      "update_role": "Mettre à jour le rôle",
+      "resend": "Renvoyer",
+      "send_invitation": "Envoyer l'invitation"
+    },
+    "empty": {
+      "no_users": "Aucun utilisateur trouvé",
+      "no_name": "Aucun nom",
+      "no_role_assigned": "Aucun rôle attribué",
+      "never": "Jamais"
+    },
+    "search": {
+      "placeholder": "Rechercher par e-mail ou nom...",
+      "role_placeholder": "Tous les rôles"
+    },
+    "invitation_info": {
+      "title": "Comment fonctionnent les invitations",
+      "steps": [
+        "Un e-mail d'invitation sera envoyé à l'adresse fournie",
+        "Le lien d'invitation est valable 7 jours",
+        "L'utilisateur définira son propre mot de passe lors de l'acceptation",
+        "Son e-mail sera automatiquement vérifié",
+        "Le rôle attribué sera appliqué immédiatement"
+      ]
+    },
+    "permissions_from_role": "Permissions de ce rôle ({count})"
+  },
+  "resources": {
+    "users": {
+      "label": "Utilisateurs",
+      "index": "Gérer les utilisateurs",
+      "create": "Ajouter un utilisateur",
+      "store": "Créer",
+      "show": "Voir l'utilisateur {label}",
+      "edit": "Modifier l'utilisateur {label}",
+      "update": "Mettre à jour",
+      "delete": "Supprimer l'utilisateur {label}",
+      "delete_confirm": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?"
+    },
+    "roles": {
+      "label": "Rôles",
+      "index": "Gérer les rôles",
+      "create": "Ajouter un rôle",
+      "store": "Enregistrer le rôle",
+      "show": "Voir le rôle {label}",
+      "edit": "Modifier le rôle {label}",
+      "update": "Mettre à jour le rôle",
+      "delete": "Supprimer le rôle {label}",
+      "delete_confirm": "Êtes-vous sûr de vouloir supprimer ce rôle ?"
+    },
+    "permissions": {
+      "label": "Permissions",
+      "index": "Gérer les permissions",
+      "create": "Ajouter une permission",
+      "store": "Ajouter une permission",
+      "show": "Voir la permission {label}",
+      "edit": "Modifier la permission {label}",
+      "update": "Modifier la permission",
+      "delete": "Supprimer la permission {label}",
+      "delete_confirm": "Êtes-vous sûr de vouloir supprimer cette permission ?"
+    }
+  },
+  "common": {
+    "actions": {
+      "save": "Enregistrer",
+      "update": "Mettre à jour",
+      "create": "Créer",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "edit": "Modifier",
+      "view": "Voir",
+      "back": "Retour",
+      "filter": "Filtrer",
+      "clear": "Effacer",
+      "search": "Rechercher"
+    },
+    "navigation": {
+      "dashboard": "Tableau de bord",
+      "access_control": "Contrôle d'accès"
+    }
+  }
+}

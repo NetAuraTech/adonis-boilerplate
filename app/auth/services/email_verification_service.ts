@@ -1,30 +1,41 @@
 import User from '#auth/models/user'
 import Token, { TOKEN_TYPES } from '#core/models/token'
-import { generateToken } from '#core/helpers/crypto'
+import { generateSplitToken } from '#core/helpers/crypto'
 import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
 
+/**
+ * Service for handling email verification workflows
+ */
 export default class EmailVerificationService {
   /**
    * Generate and send email verification link
+   *
+   * Creates a new verification token using selector/validator pattern
+   * and sends an email with a verification link to the user
+   *
+   * @param user - The user to send verification email to
+   * @param i18n - Internationalization instance for translations
+   * @throws Error if email sending fails
    */
   async sendVerificationEmail(user: User, i18n: any): Promise<void> {
     await Token.expireEmailVerificationTokens(user)
 
-    const plainToken = generateToken()
-    const hashedToken = await hash.make(plainToken)
+    const { selector, validator, fullToken } = generateSplitToken()
+    const hashedValidator = await hash.make(validator)
 
     await Token.create({
       userId: user.id,
       type: TOKEN_TYPES.EMAIL_VERIFICATION,
-      token: hashedToken,
+      selector: selector,
+      token: hashedValidator,
       expiresAt: DateTime.now().plus({ hours: 24 }),
     })
 
-    const verificationLink = `${env.get('DOMAIN')}/email/verify/${plainToken}`
+    const verificationLink = `${env.get('DOMAIN')}/email/verify/${fullToken}`
 
     try {
       await mail.send((message) => {
@@ -60,9 +71,14 @@ export default class EmailVerificationService {
 
   /**
    * Verify email with token
+   *
+   * Validates the token and marks the user's email as verified
+   *
+   * @param fullToken - Complete token in format "selector.validator"
+   * @returns User if verification successful, null if token is invalid or expired
    */
-  async verifyEmail(plainToken: string): Promise<User | null> {
-    const user = await Token.getEmailVerificationUser(plainToken)
+  async verifyEmail(fullToken: string): Promise<User | null> {
+    const user = await Token.getEmailVerificationUser(fullToken)
 
     if (!user) {
       return null
@@ -83,6 +99,10 @@ export default class EmailVerificationService {
 
   /**
    * Mark email as verified without token (for OAuth)
+   *
+   * Used when a user signs in via OAuth provider with a verified email
+   *
+   * @param user - The user whose email should be marked as verified
    */
   async markAsVerified(user: User): Promise<void> {
     if (user.isEmailVerified) {

@@ -6,9 +6,8 @@ import { createInertiaApp } from '@inertiajs/react'
 import { resolvePageComponent } from '@adonisjs/inertia/helpers'
 import { ReactNode } from 'react'
 import AppShell from '#components/layouts/app_shell'
+import AdminShell from '~/components/layouts/admin/admin_shell'
 import i18n from '~/lib/i18n'
-
-import.meta.glob(['../assets/**/*'])
 
 import '../assets/scss/app.scss'
 
@@ -25,8 +24,13 @@ void createInertiaApp({
       import.meta.glob('../pages/**/*.tsx')
     )
 
-    page.default.layout =
-      page.default.layout || ((page: ReactNode) => <AppShell children={page} />)
+    page.default.layout = page.default.layout || ((page: ReactNode) => {
+      if (name.startsWith('admin/')) {
+        return <AdminShell children={page} />
+      }
+
+      return <AppShell children={page} />
+    })
 
     return page
   },

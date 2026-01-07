@@ -12,7 +12,7 @@ const inertiaConfig = defineConfig({
    * Data that should be shared with all rendered pages
    */
   sharedData: {
-    currentUser: (ctx) => UserPresenter.toPublicJSON(ctx.auth?.user),
+    currentUser: async (ctx) => await UserPresenter.toPublicJSON(ctx.auth?.user),
     locale: (ctx) => ctx.i18n?.locale || ctx.auth?.user?.locale || 'en',
     errors: (ctx) => ctx.session?.flashMessages.get('errors'),
     flash: (ctx) => {
