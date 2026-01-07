@@ -6,6 +6,7 @@ import env from '#start/env'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
+import { Exception } from '@adonisjs/core/exceptions'
 
 /**
  * Service for handling email verification workflows
@@ -19,7 +20,7 @@ export default class EmailVerificationService {
    *
    * @param user - The user to send verification email to
    * @param i18n - Internationalization instance for translations
-   * @throws Error if email sending fails
+   * @throws Exception E_EMAIL_SEND_FAILED
    */
   async sendVerificationEmail(user: User, i18n: any): Promise<void> {
     await Token.expireEmailVerificationTokens(user)
@@ -65,7 +66,10 @@ export default class EmailVerificationService {
         email: user.email,
         error: error.message,
       })
-      throw error
+      throw new Exception('Failed to send verification email', {
+        status: 500,
+        code: 'E_EMAIL_SEND_FAILED',
+      })
     }
   }
 

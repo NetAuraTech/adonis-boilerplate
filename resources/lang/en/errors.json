@@ -1,5 +1,0 @@
-{
-  "too_many_requests": "Too many requests. Please try again in {minutes} minute(s).",
-  "rate_limit_exceeded": "Rate limit exceeded. Please slow down.",
-  "csrf_token_mismatch": "Your session has expired. Please refresh the page and try again."
-}

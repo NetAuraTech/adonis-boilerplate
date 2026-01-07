@@ -1,48 +1,52 @@
-import type { HttpContext } from '@adonisjs/core/http'
-import User from '#auth/models/user'
-import vine from '@vinejs/vine'
-import { unique } from '#core/helpers/validator'
-import { getEnabledProviders } from '#auth/helpers/oauth'
-import EmailVerificationService from '#auth/services/email_verification_service'
 import { inject } from '@adonisjs/core'
+import type { HttpContext } from '@adonisjs/core/http'
+import { getEnabledProviders } from '#auth/helpers/oauth'
+import AuthService from '#auth/services/auth_service'
+import EmailVerificationService from '#auth/services/email_verification_service'
+import ErrorHandlerService from '#core/services/error_handler_service'
 import logger from '@adonisjs/core/services/logger'
-import Role from '#core/models/role'
+import AuthValidators from '#auth/validators/auth_validators'
 
 @inject()
 export default class RegisterController {
-  static validator = vine.compile(
-    vine.object({
-      email: vine.string().trim().toLowerCase().email().unique(unique('users', 'email')),
-      password: vine.string().minLength(8).confirmed(),
-    })
-  )
+  constructor(
+    protected authService: AuthService,
+    protected emailVerificationService: EmailVerificationService,
+    protected errorHandler: ErrorHandlerService
+  ) {}
 
-  constructor(protected emailVerificationService: EmailVerificationService) {}
-  render({ inertia }: HttpContext) {
-    return inertia.render('auth/register', {
-      providers: getEnabledProviders(),
-    })
+  render(ctx: HttpContext) {
+    const { inertia } = ctx
+
+    try {
+      return inertia.render('auth/register', {
+        providers: getEnabledProviders(),
+      })
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error)
+    }
   }
 
-  async execute({ auth, request, response, i18n }: HttpContext) {
-    const payload = await request.validateUsing(RegisterController.validator)
+  async execute(ctx: HttpContext) {
+    const { request, response, auth, i18n } = ctx
 
-    const userRole = await Role.findBy('slug', 'user')
+    try {
+      const payload = await request.validateUsing(AuthValidators.register())
 
-    const user = await User.create({
-      ...payload,
-      roleId: userRole?.id || null,
-    })
+      const user = await this.authService.register(payload)
 
-    await auth.use('web').login(user)
+      await auth.use('web').login(user)
 
-    this.emailVerificationService.sendVerificationEmail(user, i18n).catch((error) => {
-      logger.error('Failed to send verification email after registration', {
-        userId: user.id,
-        error: error.message,
+      this.emailVerificationService.sendVerificationEmail(user, i18n).catch((error) => {
+        logger.error('Failed to send verification email', {
+          userId: user.id,
+          error: error.message,
+        })
       })
-    })
 
-    return response.redirect().toRoute('profile.show')
+      return response.redirect().toRoute('profile.show')
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error)
+    }
   }
 }

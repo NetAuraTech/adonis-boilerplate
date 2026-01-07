@@ -10,16 +10,11 @@ export default class EmailVerificationController {
     protected errorHandler: ErrorHandlerService
   ) {}
 
-  /**
-   * Verify email with token
-   */
   async execute(ctx: HttpContext) {
     const { params, response, session, auth, i18n } = ctx
 
     try {
-      const { token } = params
-
-      const user = await this.emailVerificationService.verifyEmail(token)
+      const user = await this.emailVerificationService.verifyEmail(params.token)
 
       if (!user) {
         session.flash('error', i18n.t('auth.verify_email.invalid_token'))

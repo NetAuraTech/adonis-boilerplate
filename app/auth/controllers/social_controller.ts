@@ -1,63 +1,60 @@
+import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import SocialService from '#auth/services/social_service'
-import { inject } from '@adonisjs/core'
-import vine from '@vinejs/vine'
 import { isProviderEnabled } from '#config/ally'
 import { regenerateCsrfToken } from '#core/helpers/csrf'
+import ErrorHandlerService from '#core/services/error_handler_service'
+import AuthValidators from '#auth/validators/auth_validators'
+import { Exception } from '@adonisjs/core/exceptions'
 
 type OAuthProvider = 'github' | 'google' | 'facebook'
 
 @inject()
 export default class SocialController {
-  constructor(protected socialService: SocialService) {}
+  constructor(
+    protected socialService: SocialService,
+    protected errorHandler: ErrorHandlerService
+  ) {}
 
-  static definePasswordValidator = vine.compile(
-    vine.object({
-      password: vine.string().minLength(8).confirmed(),
-    })
-  )
-
-  protected validateProvider(provider: string, session: any, response: any, i18n: any) {
+  protected validateProvider(provider: string): void {
     if (!isProviderEnabled(provider)) {
-      session.flash('error', i18n.t('auth.social.not_configured', { provider }))
-      return response.redirect().toRoute('auth.login')
+      throw new Exception(`${provider} authentication is not configured`, {
+        status: 400,
+        code: 'E_PROVIDER_NOT_CONFIGURED',
+      })
     }
-    return null
   }
 
-  async redirect({ ally, params, session, response, i18n }: HttpContext) {
+  async redirect(ctx: HttpContext) {
+    const { ally, params } = ctx
     const provider = params.provider as OAuthProvider
-
-    const validation = this.validateProvider(provider, session, response, i18n)
-    if (validation) return validation
-
-    return ally.use(provider).redirect()
-  }
-
-  async callback({ ally, params, auth, request, response, session, i18n }: HttpContext) {
-    const provider = params.provider as OAuthProvider
-
-    const validation = this.validateProvider(provider, session, response, i18n)
-    if (validation) return validation
 
     try {
-      const allyUser = await ally.use(provider).user()
+      this.validateProvider(provider)
+      return ally.use(provider).redirect()
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error)
+    }
+  }
 
+  async callback(ctx: HttpContext) {
+    const { ally, params, auth, response, session, i18n } = ctx
+    const provider = params.provider as OAuthProvider
+
+    try {
+      this.validateProvider(provider)
+
+      const allyUser = await ally.use(provider).user()
       const authenticatedUser = auth.user
 
       if (authenticatedUser) {
-        try {
-          await this.socialService.linkProvider(authenticatedUser, allyUser, provider)
-          regenerateCsrfToken({ auth, request, response, session } as HttpContext)
-          session.flash('success', i18n.t('auth.social.linked', { provider }))
-        } catch (error) {
-          session.flash('error', error.message)
-        }
+        await this.socialService.linkProvider(authenticatedUser, allyUser, provider)
+        regenerateCsrfToken(ctx)
+        session.flash('success', i18n.t('auth.social.linked', { provider }))
         return response.redirect().toRoute('profile.show')
       }
 
       const user = await this.socialService.findOrCreateUser(allyUser, provider)
-
       await auth.use('web').login(user)
 
       if (this.socialService.needsPasswordSetup(user)) {
@@ -68,43 +65,53 @@ export default class SocialController {
       session.flash('success', i18n.t('auth.login.success'))
       return response.redirect().toRoute('profile.show')
     } catch (error) {
-      console.error('OAuth error:', error)
-      session.flash('error', i18n.t('auth.login.failed'))
-      return response.redirect().toRoute('auth.login')
+      return this.errorHandler.handle(ctx, error)
     }
   }
 
-  async unlink({ auth, params, request, response, session, i18n }: HttpContext) {
+  async unlink(ctx: HttpContext) {
+    const { auth, params, response, session, i18n } = ctx
     const provider = params.provider as OAuthProvider
 
-    const validation = this.validateProvider(provider, session, response, i18n)
-    if (validation) return validation
-
     try {
+      this.validateProvider(provider)
+
       const user = auth.getUserOrFail()
       await this.socialService.unlinkProvider(user, provider)
 
-      regenerateCsrfToken({ auth, request, response, session } as HttpContext)
+      regenerateCsrfToken(ctx)
       session.flash('success', i18n.t('auth.social.unlinked', { provider }))
+
+      return response.redirect().back()
     } catch (error) {
-      session.flash('error', i18n.t('auth.social.unlink_failed'))
+      return this.errorHandler.handle(ctx, error)
     }
-
-    return response.redirect().back()
   }
 
-  render({ inertia }: HttpContext) {
-    return inertia.render('auth/define_password')
+  render(ctx: HttpContext) {
+    const { inertia } = ctx
+
+    try {
+      return inertia.render('auth/define_password')
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error)
+    }
   }
 
-  async execute({ auth, request, response, session, i18n }: HttpContext) {
-    const user = auth.getUserOrFail()
-    const payload = await request.validateUsing(SocialController.definePasswordValidator)
+  async execute(ctx: HttpContext) {
+    const { auth, request, response, session, i18n } = ctx
 
-    user.password = payload.password
-    await user.save()
+    try {
+      const user = auth.getUserOrFail()
+      const payload = await request.validateUsing(AuthValidators.definePassword())
 
-    session.flash('success', i18n.t('auth.social.password_defined'))
-    return response.redirect().toRoute('profile.show')
+      user.password = payload.password
+      await user.save()
+
+      session.flash('success', i18n.t('auth.social.password_defined'))
+      return response.redirect().toRoute('profile.show')
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error)
+    }
   }
 }

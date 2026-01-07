@@ -1,84 +1,76 @@
+import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
-import Token from '#core/models/token'
-import vine from '@vinejs/vine'
-import logger from '@adonisjs/core/services/logger'
-import { maskToken } from '#core/helpers/crypto'
+import PasswordService from '#auth/services/password_service'
+import ErrorHandlerService from '#core/services/error_handler_service'
+import AuthValidators from '#auth/validators/auth_validators'
 
+@inject()
 export default class ResetPasswordController {
-  static validator = vine.compile(
-    vine.object({
-      token: vine.string(),
-      password: vine.string().minLength(8).confirmed(),
-    })
-  )
+  constructor(
+    protected passwordService: PasswordService,
+    protected errorHandler: ErrorHandlerService
+  ) {}
 
-  async render({ inertia, params, session, response, i18n }: HttpContext) {
-    const token = params.token
+  async render(ctx: HttpContext) {
+    const { inertia, params, i18n } = ctx
 
-    const isValid = await Token.verify(token)
+    try {
+      await this.passwordService.validateResetToken(params.token)
 
-    if (!isValid) {
-      const exceededAttempts = await Token.hasExceededAttempts(token)
-
-      if (exceededAttempts) {
-        logger.warn('Password reset token exceeded max attempts', {
-          token: maskToken(token),
-        })
-        session.flash('error', i18n.t('auth.reset_password.max_attempts_exceeded'))
-      } else {
-        logger.warn('Invalid or expired password reset token', {
-          token: maskToken(token),
-        })
-        session.flash('error', i18n.t('auth.reset_password.invalid_token'))
-      }
-
-      return response.redirect().toRoute('auth.forgot_password')
+      return inertia.render('auth/reset_password', { token: params.token })
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error, [
+        {
+          code: 'E_TOKEN_EXPIRED',
+          message: i18n.t('auth.reset_password.invalid_token'),
+          callback: ({ response: callback_response, session: callback_session }) => {
+            callback_session.flash('error', i18n.t('auth.reset_password.invalid_token'))
+            return callback_response.redirect().toRoute('auth.forgot_password')
+          },
+        },
+        {
+          code: 'E_MAX_ATTEMPTS_EXCEEDED',
+          message: i18n.t('auth.reset_password.max_attempts_exceeded'),
+          callback: ({ response: callback_response, session: callback_session }) => {
+            callback_session.flash('error', i18n.t('auth.reset_password.max_attempts_exceeded'))
+            return callback_response.redirect().toRoute('auth.forgot_password')
+          },
+        },
+      ])
     }
-
-    return inertia.render('auth/reset_password', { token })
   }
 
-  async execute({ request, response, session, auth, i18n }: HttpContext) {
-    const { token: plainToken } = request.only(['token'])
-    await Token.incrementAttempts(plainToken)
+  async execute(ctx: HttpContext) {
+    const { request, response, session, auth, i18n } = ctx
 
-    const exceededAttempts = await Token.hasExceededAttempts(plainToken)
+    try {
+      const payload = await request.validateUsing(AuthValidators.resetPassword())
 
-    if (exceededAttempts) {
-      logger.error('Password reset max attempts exceeded', {
-        token: maskToken(plainToken),
-        ip: request.ip(),
-      })
-      session.flash('error', i18n.t('auth.reset_password.max_attempts_exceeded'))
-      return response.redirect().toRoute('auth.forgot_password')
+      const user = await this.passwordService.resetPassword(payload)
+
+      await auth.use('web').login(user)
+
+      session.flash('success', i18n.t('auth.reset_password.success'))
+      return response.redirect().toRoute('profile.show')
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error, [
+        {
+          code: 'E_INVALID_TOKEN',
+          message: i18n.t('auth.reset_password.invalid_token'),
+          callback: ({ response: callback_response, session: callback_session }) => {
+            callback_session.flash('error', i18n.t('auth.reset_password.invalid_token'))
+            return callback_response.redirect().toRoute('auth.forgot_password')
+          },
+        },
+        {
+          code: 'E_MAX_ATTEMPTS_EXCEEDED',
+          message: i18n.t('auth.reset_password.max_attempts_exceeded'),
+          callback: ({ response: callback_response, session: callback_session }) => {
+            callback_session.flash('error', i18n.t('auth.reset_password.max_attempts_exceeded'))
+            return callback_response.redirect().toRoute('auth.forgot_password')
+          },
+        },
+      ])
     }
-
-    const data = await request.validateUsing(ResetPasswordController.validator)
-
-    const user = await Token.getPasswordResetUser(data.token)
-
-    if (!user) {
-      logger.warn('Failed password reset attempt - invalid token', {
-        token: maskToken(data.token),
-        ip: request.ip(),
-      })
-      session.flash('error', i18n.t('auth.reset_password.invalid_token'))
-      return response.redirect().toRoute('auth.forgot_password')
-    }
-
-    user.password = data.password
-    await user.save()
-
-    await Token.expirePasswordResetTokens(user)
-
-    await auth.use('web').login(user)
-
-    logger.info('Password reset successful', {
-      userId: user.id,
-      token: maskToken(data.token),
-    })
-
-    session.flash('success', i18n.t('auth.reset_password.success'))
-    return response.redirect().toRoute('profile.show')
   }
 }

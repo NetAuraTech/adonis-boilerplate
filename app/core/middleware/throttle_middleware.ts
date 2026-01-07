@@ -1,9 +1,9 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
 import RateLimitService from '#core/services/rate_limit_service'
-import TooManyRequestsException from '#core/exceptions/too_many_requests_exception'
 import logger from '@adonisjs/core/services/logger'
 import { inject } from '@adonisjs/core'
+import TooManyRequestsException from '#core/exceptions/too_many_requests_exception'
 
 export interface ThrottleOptions {
   /**
@@ -41,6 +41,8 @@ export default class ThrottleMiddleware {
     ctx.response.header('X-RateLimit-Reset', result.resetAt.toSeconds().toString())
 
     if (!result.allowed) {
+      const retryMinutes = result.retryAfter ? Math.ceil(result.retryAfter / 60) : 1
+
       logger.warn('Rate limit exceeded', {
         key,
         ip: ctx.request.ip(),
@@ -48,26 +50,17 @@ export default class ThrottleMiddleware {
         max,
         window,
         retryAfter: result.retryAfter,
+        retryMinutes,
       })
 
-      if (ctx.request.header('X-Inertia')) {
-        const retryMinutes = result.retryAfter ? Math.ceil(result.retryAfter / 60) : 1
-
-        ctx.session.flash(
-          'error',
-          ctx.i18n.t('errors.too_many_requests', { minutes: retryMinutes })
-        )
-
-        ctx.session.flash('rateLimitRetryAt', result.resetAt.toMillis())
-
-        return ctx.response.redirect().back()
+      if (result.retryAfter) {
+        ctx.response.header('Retry-After', result.retryAfter.toString())
       }
 
       throw new TooManyRequestsException(
-        ctx.i18n.t('errors.too_many_requests', {
-          minutes: Math.ceil((result.retryAfter || 60) / 60),
-        }),
-        result.retryAfter
+        ctx.i18n.t('common.too_many_requests', { minutes: retryMinutes }),
+        result.retryAfter,
+        retryMinutes
       )
     }
 

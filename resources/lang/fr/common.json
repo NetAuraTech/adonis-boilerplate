@@ -1,4 +1,9 @@
 {
   "unexpected_error": "Une erreur inattendue est survenue (Code: {code}). Veuillez réessayer plus tard.",
-  "not_found": "La ressource demandée est introuvable."
+  "not_found": "La ressource demandée est introuvable.",
+  "too_many_requests": "Trop de requêtes. Veuillez réessayer dans {minutes} minute(s).",
+  "rate_limit_exceeded": "Limite de taux dépassée. Veuillez ralentir.",
+  "csrf_token_mismatch": "Votre session a expiré. Veuillez actualiser la page et réessayer.",
+  "unauthorized": "Vous devez être connecté pour accéder à cette ressource.",
+  "forbidden": "Vous n'avez pas l'autorisation d'accéder à cette ressource."
 }

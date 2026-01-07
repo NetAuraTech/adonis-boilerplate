@@ -1,36 +1,45 @@
+import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
-import User from '#auth/models/user'
 import { getEnabledProviders } from '#auth/helpers/oauth'
-import vine from '@vinejs/vine'
 import { regenerateCsrfToken } from '#core/helpers/csrf'
+import AuthService from '#auth/services/auth_service'
+import ErrorHandlerService from '#core/services/error_handler_service'
+import AuthValidators from '#auth/validators/auth_validators'
 
+@inject()
 export default class LoginController {
-  static validator = vine.compile(
-    vine.object({
-      email: vine.string().trim().toLowerCase().email(),
-      password: vine.string(),
-      remember_me: vine.boolean().optional(),
-    })
-  )
+  constructor(
+    protected authService: AuthService,
+    protected errorHandler: ErrorHandlerService
+  ) {}
 
-  render({ inertia }: HttpContext) {
-    return inertia.render('auth/login', {
-      providers: getEnabledProviders(),
-    })
-  }
-
-  async execute({ auth, request, response, session, i18n }: HttpContext) {
-    const payload = await request.validateUsing(LoginController.validator)
+  render(ctx: HttpContext) {
+    const { inertia } = ctx
 
     try {
-      const user = await User.verifyCredentials(payload.email, payload.password)
+      return inertia.render('auth/login', {
+        providers: getEnabledProviders(),
+      })
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error)
+    }
+  }
+
+  async execute(ctx: HttpContext) {
+    const { request, response, session, auth, i18n } = ctx
+
+    try {
+      const payload = await request.validateUsing(AuthValidators.login())
+
+      const user = await this.authService.login(payload.email, payload.password)
+
       await auth.use('web').login(user, payload.remember_me)
-      regenerateCsrfToken({ auth, request, response, session } as HttpContext)
+      regenerateCsrfToken(ctx)
+
       session.flash('success', i18n.t('auth.login.success'))
       return response.redirect().toRoute('profile.show')
-    } catch {
-      session.flash('error', i18n.t('auth.login.failed'))
-      return response.redirect().back()
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error)
     }
   }
 }

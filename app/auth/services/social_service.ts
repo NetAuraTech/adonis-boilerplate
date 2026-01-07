@@ -3,6 +3,7 @@ import type { AllyUserContract } from '@adonisjs/ally/types'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
 import Role from '#core/models/role'
+import { Exception } from '@adonisjs/core/exceptions'
 
 export default class SocialService {
   async findOrCreateUser(
@@ -51,7 +52,7 @@ export default class SocialService {
       fullName: allyUser.name || allyUser.nickName,
       [providerIdColumn]: allyUser.id,
       emailVerifiedAt: DateTime.now(),
-      roleId: userRole?.id || null
+      roleId: userRole?.id || null,
     })
 
     logger.info('New user created via OAuth', {
@@ -64,6 +65,11 @@ export default class SocialService {
     return user
   }
 
+  /**
+   * Links an OAuth account to an existing user
+   *
+   * @throws Exception E_PROVIDER_ALREADY_LINKED if the OAuth account is already linked to another user
+   */
   async linkProvider(
     user: User,
     allyUser: AllyUserContract<any>,
@@ -77,7 +83,10 @@ export default class SocialService {
       .first()
 
     if (existingUser) {
-      throw new Error(`This ${provider} account is already linked to another user.`)
+      throw new Exception(`This ${provider} account is already linked to another user`, {
+        status: 409,
+        code: 'E_PROVIDER_ALREADY_LINKED',
+      })
     }
 
     user[providerIdColumn] = allyUser.id

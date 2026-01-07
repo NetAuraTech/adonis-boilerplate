@@ -1,0 +1,15 @@
+{
+  "required": "The { field } field is required",
+  "email": "The { field } field must be a valid email address",
+  "minLength": "The { field } field must contain at least { min } characters",
+  "maxLength": "The { field } field must not exceed { max } characters",
+  "confirmed": "The confirmation for the { field } field does not match",
+  "unique": "The { field } field is already in use",
+  "exists": "The selected { field } field is invalid",
+  "string": "The { field } field must be a string",
+  "number": "The { field } field must be a number",
+  "boolean": "The { field } field must be true or false",
+  "date": "The { field } field must be a valid date",
+  "enum": "The selected { field } field is invalid",
+  "failed": "The provided data is invalid. Please check your input and try again."
+}
