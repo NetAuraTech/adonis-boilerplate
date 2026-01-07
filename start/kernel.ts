@@ -35,6 +35,7 @@ server.use([
  * requests with a registered route.
  */
 router.use([
+  () => import('@rlanz/sentry/middleware'),
   () => import('@adonisjs/core/bodyparser_middleware'),
   () => import('@adonisjs/session/session_middleware'),
   () => import('@adonisjs/shield/shield_middleware'),
@@ -52,4 +53,6 @@ export const middleware = router.named({
   auth: () => import('#core/middleware/auth_middleware'),
   throttle: () => import('#core/middleware/throttle_middleware'),
   verified: () => import('#core/middleware/verified_middleware'),
+  role: () => import('#core/middleware/role_middleware'),
+  permission: () => import('#core/middleware/permission_middleware'),
 })
