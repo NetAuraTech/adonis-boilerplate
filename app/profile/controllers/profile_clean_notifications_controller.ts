@@ -1,14 +1,27 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import ProfileService from '#profile/services/profile_service'
+import ErrorHandlerService from '#core/services/error_handler_service'
+import { inject } from '@adonisjs/core'
 
+@inject()
 export default class ProfileCleanNotificationsController {
-  async execute({ response, session, i18n }: HttpContext) {
-    //const user = auth.getUserOrFail()
+  constructor(
+    protected profileService: ProfileService,
+    protected errorHandler: ErrorHandlerService
+  ) {}
 
-    // TODO
-    // await user.related('notifications').query().delete()
+  async execute(ctx: HttpContext) {
+    const { response, session, auth, i18n } = ctx
 
-    session.flash('success', i18n.t('profile.notifications.cleared'))
+    try {
+      const user = auth.getUserOrFail()
+      await this.profileService.cleanNotification(user)
 
-    return response.redirect().toRoute('profile.show')
+      session.flash('success', i18n.t('profile.notifications.cleared'))
+
+      return response.redirect().toRoute('profile.show')
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error)
+    }
   }
 }

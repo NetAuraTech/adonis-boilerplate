@@ -1,32 +1,33 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import vine from '@vinejs/vine'
-import hash from '@adonisjs/core/services/hash'
+import ProfileService from '#profile/services/profile_service'
+import ErrorHandlerService from '#core/services/error_handler_service'
+import ProfileValidators from '#profile/validators/profile_validators'
+import { inject } from '@adonisjs/core'
 
+@inject()
 export default class ProfileDeleteController {
-  static validator = vine.compile(
-    vine.object({
-      password: vine.string(),
-    })
-  )
+  constructor(
+    protected profileService: ProfileService,
+    protected errorHandler: ErrorHandlerService
+  ) {}
 
-  async execute({ auth, request, response, session, i18n }: HttpContext) {
-    const user = auth.getUserOrFail()
-    const payload = await request.validateUsing(ProfileDeleteController.validator)
+  async execute(ctx: HttpContext) {
+    const { auth, request, response, session, i18n } = ctx
 
-    const isPasswordValid = await hash.verify(user.password!, payload.password)
+    try {
+      const payload = await request.validateUsing(ProfileValidators.deleteProfile())
 
-    if (!isPasswordValid) {
-      session.flashExcept(['password'])
-      session.flashErrors({ password: i18n.t('profile.delete.incorrect_password') })
-      return response.redirect().back()
+      const user = auth.getUserOrFail()
+
+      await this.profileService.deleteAccount(user, payload)
+
+      await auth.use('web').logout()
+
+      session.flash('success', i18n.t('profile.delete.success'))
+
+      return response.redirect().toRoute('landing')
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error)
     }
-
-    await auth.use('web').logout()
-
-    await user.delete()
-
-    session.flash('success', i18n.t('profile.delete.success'))
-
-    return response.redirect().toRoute('landing')
   }
 }

@@ -1,34 +1,32 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import vine from '@vinejs/vine'
-import hash from '@adonisjs/core/services/hash'
 import { regenerateCsrfToken } from '#core/helpers/csrf'
+import ErrorHandlerService from '#core/services/error_handler_service'
+import ProfileService from '#profile/services/profile_service'
+import ProfileValidators from '#profile/validators/profile_validators'
+import { inject } from '@adonisjs/core'
 
+@inject()
 export default class ProfileUpdatePasswordController {
-  static validator = vine.compile(
-    vine.object({
-      current_password: vine.string(),
-      password: vine.string().minLength(8).confirmed(),
-    })
-  )
+  constructor(
+    protected profileService: ProfileService,
+    protected errorHandler: ErrorHandlerService
+  ) {}
 
-  async execute({ auth, request, response, session, i18n }: HttpContext) {
-    const user = auth.getUserOrFail()
-    const payload = await request.validateUsing(ProfileUpdatePasswordController.validator)
+  async execute(ctx: HttpContext) {
+    const { auth, request, response, session, i18n } = ctx
 
-    const isPasswordValid = await hash.verify(user.password!, payload.current_password)
+    try {
+      const user = auth.getUserOrFail()
+      const payload = await request.validateUsing(ProfileValidators.updatePassword())
 
-    if (!isPasswordValid) {
-      session.flashExcept(['current_password', 'password', 'password_confirmation'])
-      session.flashErrors({ current_password: i18n.t('profile.password.incorrect_current') })
-      return response.redirect().back()
+      await this.profileService.updatePassword(user, payload)
+
+      regenerateCsrfToken(ctx)
+      session.flash('success', i18n.t('profile.password.success'))
+
+      return response.redirect().toRoute('profile.show')
+    } catch (error) {
+      return this.errorHandler.handle(ctx, error)
     }
-
-    user.password = payload.password
-    await user.save()
-
-    regenerateCsrfToken({ auth, request, response, session } as HttpContext)
-    session.flash('success', i18n.t('profile.password.success'))
-
-    return response.redirect().toRoute('profile.show')
   }
 }

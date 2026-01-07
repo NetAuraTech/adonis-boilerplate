@@ -1,15 +1,18 @@
 {
+  "email" : {
+
+  },
   "update": {
     "success": "Your profile has been updated successfully.",
     "email_change_initiated": "A confirmation email has been sent to {email}. Please check your inbox to complete the change.",
     "email_change_failed": "Failed to initiate email change. Please try again later."
   },
   "password": {
+    "incorrect_password": "The password is incorrect.",
     "incorrect_current": "The current password is incorrect.",
     "success": "Your password has been updated successfully."
   },
   "delete": {
-    "incorrect_password": "The password is incorrect.",
     "success": "Your account has been deleted successfully."
   },
   "notifications": {

@@ -34,6 +34,23 @@ export default class ErrorHandlerService {
       return response.redirect().back()
     }
 
+    if (error.code === 'E_INVALID_CURRENT_PASSWORD') {
+      session.flashExcept(['current_password', 'password', 'password_confirmation'])
+      session.flashErrors({ current_password: i18n.t('profile.password.incorrect_current') })
+      return response.redirect().back()
+    }
+
+    if (error.code === 'E_INVALID_PASSWORD') {
+      session.flashExcept(['password'])
+      session.flashErrors({ password: i18n.t('profile.password.incorrect_password') })
+      return response.redirect().back()
+    }
+
+    if (error.code === 'E_EMAIL_NOT_VERIFIED') {
+      session.flash('error', i18n.t('auth.verify_email.required'))
+      return response.redirect().back()
+    }
+
     Sentry.captureException(error)
 
     const errorCode = error.code || error.name || 'UNKNOWN'

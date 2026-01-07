@@ -5,11 +5,11 @@
     "email_change_failed": "Échec de l'initiation du changement d'email. Veuillez réessayer plus tard."
   },
   "password": {
+    "incorrect_password": "Le mot de passe est incorrect.",
     "incorrect_current": "Le mot de passe actuel est incorrect.",
     "success": "Votre mot de passe a été mis à jour avec succès."
   },
   "delete": {
-    "incorrect_password": "Le mot de passe est incorrect.",
     "success": "Votre compte a été supprimé avec succès."
   },
   "notifications": {
