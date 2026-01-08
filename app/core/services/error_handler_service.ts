@@ -172,6 +172,22 @@ export default class ErrorHandlerService {
     error: any,
     i18n: any
   ): { code: string; message: string; status: number; redirectTo?: string } | null {
+    if (error.code === 'PERMISSION_HAS_ROLES' && error.rolesCount !== undefined) {
+      return {
+        code: 'PERMISSION_HAS_ROLES',
+        message: i18n.t('admin.permissions.has_roles', { count: error.rolesCount }),
+        status: 409,
+      }
+    }
+
+    if (error.code === 'ROLE_HAS_USERS' && error.usersCount !== undefined) {
+      return {
+        code: 'ROLE_HAS_USERS',
+        message: i18n.t('admin.roles.has_users', { count: error.usersCount }),
+        status: 409,
+      }
+    }
+
     if (error.code === 'E_RATE_LIMIT' && error.message) {
       return {
         code: 'E_RATE_LIMIT',
@@ -247,6 +263,26 @@ export default class ErrorHandlerService {
       E_CSRF_TOKEN_MISMATCH: {
         message: i18n.t('common.csrf_token_mismatch'),
         status: 419,
+      },
+      CANNOT_DELETE_SYSTEM_PERMISSION: {
+        message: i18n.t('admin.permissions.cannot_delete_system'),
+        status: 403,
+      },
+      CANNOT_MODIFY_SYSTEM_PERMISSION: {
+        message: i18n.t('admin.permissions.cannot_modify_system'),
+        status: 403,
+      },
+      CANNOT_DELETE_SYSTEM_ROLE: {
+        message: i18n.t('admin.roles.cannot_delete_system'),
+        status: 403,
+      },
+      CANNOT_MODIFY_SYSTEM_ROLE: {
+        message: i18n.t('admin.roles.cannot_modify_system'),
+        status: 403,
+      },
+      CANNOT_SELF_DELETE: {
+        message: i18n.t('admin.users.cannot_delete_self'),
+        status: 403,
       },
     }
 

@@ -18,19 +18,7 @@ export default class AdminPermissionsDeleteController {
       session.flash('success', i18n.t('admin.permissions.deleted'))
       return response.redirect().toRoute('admin.permissions.index')
     } catch (error) {
-      if (error.message.startsWith('PERMISSION_HAS_ROLES:')) {
-        const count = error.message.split(':')[1]
-        session.flash('error', i18n.t('admin.permissions.has_roles', { count }))
-
-        return response.redirect().back()
-      }
-
-      return this.errorHandler.handle(ctx, error, [
-        {
-          code: 'CANNOT_DELETE_SYSTEM_PERMISSION',
-          message: i18n.t('admin.permissions.cannot_delete_system'),
-        },
-      ])
+      return this.errorHandler.handle(ctx, error)
     }
   }
 }

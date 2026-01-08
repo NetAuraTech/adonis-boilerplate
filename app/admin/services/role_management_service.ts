@@ -3,6 +3,8 @@ import Permission from '#core/models/permission'
 import string from '@adonisjs/core/helpers/string'
 import { DEFAULT_PAGINATION } from '#core/helpers/pagination'
 import BaseAdminService from '#core/services/base_admin_service'
+import { Exception } from '@adonisjs/core/exceptions'
+import RoleHasUsersException from '#core/exceptions/role_has_users_exception'
 
 export interface CreateRoleData {
   name: string
@@ -104,7 +106,10 @@ export default class RoleManagementService extends BaseAdminService<
     const role = await Role.findOrFail(roleId)
 
     if (!role.canBeModified) {
-      throw new Error('CANNOT_MODIFY_SYSTEM_ROLE')
+      throw new Exception('Cannot modify system role', {
+        status: 403,
+        code: 'CANNOT_MODIFY_SYSTEM_ROLE',
+      })
     }
 
     role.merge({
@@ -123,11 +128,14 @@ export default class RoleManagementService extends BaseAdminService<
     const role = await Role.query().where('id', roleId).withCount('users').firstOrFail()
 
     if (!role.canBeDeleted) {
-      throw new Error('CANNOT_DELETE_SYSTEM_ROLE')
+      throw new Exception('Cannot delete system role', {
+        status: 403,
+        code: 'CANNOT_DELETE_SYSTEM_ROLE',
+      })
     }
 
     if (role.$extras.users_count > 0) {
-      throw new Error(`ROLE_HAS_USERS:${role.$extras.users_count}`)
+      throw new RoleHasUsersException(role.$extras.users_count)
     }
 
     await role.delete()

@@ -3,6 +3,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import RoleManagementService from '#admin/services/role_management_service'
 import AdminRoleValidators from '#admin/validators/admin_role_validators'
 import ErrorHandlerService from '#core/services/error_handler_service'
+import { Exception } from '@adonisjs/core/exceptions'
 
 @inject()
 export default class AdminRolesUpdateController {
@@ -12,14 +13,16 @@ export default class AdminRolesUpdateController {
   ) {}
 
   async render(ctx: HttpContext) {
-    const { inertia, params, response, session, i18n } = ctx
+    const { inertia, params } = ctx
 
     try {
       const role = await this.roleManagementService.detail(params.id)
 
       if (!role.canBeModified) {
-        session.flash('error', i18n.t('admin.roles.cannot_modify_system'))
-        return response.redirect().toRoute('admin.roles.index')
+        throw new Exception('Cannot modify system role', {
+          status: 403,
+          code: 'CANNOT_MODIFY_SYSTEM_ROLE',
+        })
       }
 
       const permissionsByCategory = await this.roleManagementService.getPermissionsByCategory(
@@ -42,12 +45,7 @@ export default class AdminRolesUpdateController {
       session.flash('success', i18n.t('admin.roles.updated'))
       return response.redirect().toRoute('admin.roles.show', { id: params.id })
     } catch (error) {
-      return this.errorHandler.handle(ctx, error, [
-        {
-          code: 'CANNOT_MODIFY_SYSTEM_ROLE',
-          message: i18n.t('admin.roles.cannot_modify_system'),
-        },
-      ])
+      return this.errorHandler.handle(ctx, error)
     }
   }
 }

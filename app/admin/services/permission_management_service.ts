@@ -2,6 +2,8 @@ import Permission from '#core/models/permission'
 import type { ModelPaginatorContract } from '@adonisjs/lucid/types/model'
 import { DEFAULT_PAGINATION } from '#core/helpers/pagination'
 import BaseAdminService from '#core/services/base_admin_service'
+import { Exception } from '@adonisjs/core/exceptions'
+import PermissionHasRolesException from '#core/exceptions/permission_has_roles_exception'
 
 export interface CreatePermissionData {
   name: string
@@ -110,7 +112,10 @@ export default class PermissionManagementService extends BaseAdminService<
     const permission = await Permission.findOrFail(permissionId)
 
     if (!permission.canBeModified) {
-      throw new Error('CANNOT_MODIFY_SYSTEM_PERMISSION')
+      throw new Exception('Cannot modify system permission', {
+        status: 403,
+        code: 'CANNOT_MODIFY_SYSTEM_PERMISSION',
+      })
     }
 
     permission.merge({
@@ -131,11 +136,14 @@ export default class PermissionManagementService extends BaseAdminService<
       .firstOrFail()
 
     if (!permission.canBeDeleted) {
-      throw new Error('CANNOT_DELETE_SYSTEM_PERMISSION')
+      throw new Exception('Cannot delete system permission', {
+        status: 403,
+        code: 'CANNOT_DELETE_SYSTEM_PERMISSION',
+      })
     }
 
     if (permission.roles.length > 0) {
-      throw new Error(`PERMISSION_HAS_ROLES:${permission.roles.length}`)
+      throw new PermissionHasRolesException(permission.roles.length)
     }
 
     await permission.delete()

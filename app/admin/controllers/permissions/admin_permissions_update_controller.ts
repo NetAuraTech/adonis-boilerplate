@@ -3,6 +3,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import PermissionManagementService from '#admin/services/permission_management_service'
 import AdminPermissionValidators from '#admin/validators/admin_permission_validators'
 import ErrorHandlerService from '#core/services/error_handler_service'
+import { Exception } from '@adonisjs/core/exceptions'
 
 @inject()
 export default class AdminPermissionsUpdateController {
@@ -12,14 +13,16 @@ export default class AdminPermissionsUpdateController {
   ) {}
 
   async render(ctx: HttpContext) {
-    const { inertia, params, response, session, i18n } = ctx
+    const { inertia, params } = ctx
 
     try {
       const permission = await this.permissionManagementService.detail(params.id)
 
       if (!permission.canBeModified) {
-        session.flash('error', i18n.t('admin.permissions.cannot_modify_system'))
-        return response.redirect().toRoute('admin.permissions.index')
+        throw new Exception('Cannot modify system permission', {
+          status: 403,
+          code: 'CANNOT_MODIFY_SYSTEM_PERMISSION',
+        })
       }
 
       return inertia.render('admin/permissions/form', { permission })
@@ -38,12 +41,7 @@ export default class AdminPermissionsUpdateController {
       session.flash('success', i18n.t('admin.permissions.updated'))
       return response.redirect().toRoute('admin.permissions.show', { id: params.id })
     } catch (error) {
-      return this.errorHandler.handle(ctx, error, [
-        {
-          code: 'CANNOT_MODIFY_SYSTEM_PERMISSION',
-          message: i18n.t('admin.permissions.cannot_modify_system'),
-        },
-      ])
+      return this.errorHandler.handle(ctx, error)
     }
   }
 }

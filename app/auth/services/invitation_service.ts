@@ -6,6 +6,7 @@ import env from '#start/env'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
+import { Exception } from '@adonisjs/core/exceptions'
 
 export interface CreateInvitationData {
   email: string
@@ -28,13 +29,16 @@ export default class InvitationService {
    * @param data - Invitation data containing email, fullName, and roleId
    * @param i18n - Internationalization instance for translations
    * @returns The created or updated user
-   * @throws Error with code 'USER_ALREADY_EXISTS' if user exists with verified email
+   * @throws Exception USER_ALREADY_EXISTS if user exists with verified email
    * @throws Error if email sending fails
    */
   async sendInvitation(data: CreateInvitationData, i18n: any): Promise<User> {
     const existingUser = await User.findBy('email', data.email)
     if (existingUser && existingUser.isEmailVerified) {
-      throw new Error('USER_ALREADY_EXISTS')
+      throw new Exception('User already exists', {
+        status: 409,
+        code: 'USER_ALREADY_EXISTS',
+      })
     }
 
     if (existingUser) {

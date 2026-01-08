@@ -18,23 +18,7 @@ export default class AdminRolesDeleteController {
       session.flash('success', i18n.t('admin.roles.deleted'))
       return response.redirect().toRoute('admin.roles.index')
     } catch (error) {
-      if (error.message.startsWith('ROLE_HAS_USERS:')) {
-        const count = error.message.split(':')[1]
-        session.flash('error', i18n.t('admin.roles.has_users', { count }))
-
-        return response.redirect().back()
-      }
-
-      return this.errorHandler.handle(ctx, error, [
-        {
-          code: 'CANNOT_DELETE_SYSTEM_ROLE',
-          message: i18n.t('admin.roles.cannot_delete_system'),
-        },
-        {
-          code: 'CANNOT_DELETE_SYSTEM_ROLE',
-          message: i18n.t('admin.roles.cannot_delete_system'),
-        },
-      ])
+      return this.errorHandler.handle(ctx, error)
     }
   }
 }

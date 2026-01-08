@@ -1,13 +1,19 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import InvitationService from '#auth/services/invitation_service'
+import ErrorHandlerService from '#core/services/error_handler_service'
 import User from '#auth/models/user'
 
 @inject()
 export default class AdminUsersResendInvitationController {
-  constructor(protected invitationService: InvitationService) {}
+  constructor(
+    protected invitationService: InvitationService,
+    protected errorHandler: ErrorHandlerService
+  ) {}
 
-  async execute({ params, response, session, i18n }: HttpContext) {
+  async execute(ctx: HttpContext) {
+    const { params, response, session, i18n } = ctx
+
     try {
       const user = await User.findOrFail(params.id)
 
@@ -28,8 +34,7 @@ export default class AdminUsersResendInvitationController {
       session.flash('success', i18n.t('admin.users.invitation_resent', { email: user.email }))
       return response.redirect().back()
     } catch (error) {
-      session.flash('error', i18n.t('admin.users.invitation_resend_failed'))
-      return response.redirect().back()
+      return this.errorHandler.handle(ctx, error)
     }
   }
 }

@@ -26,12 +26,7 @@ export default class AdminUsersDeleteController {
       session.flash('success', i18n.t('admin.users.deleted'))
       return response.redirect().toRoute('admin.users.index')
     } catch (error) {
-      return this.errorHandler.handle(ctx, error, [
-        {
-          code: 'CANNOT_SELF_DELETE',
-          message: i18n.t('admin.users.cannot_delete_self'),
-        },
-      ])
+      return this.errorHandler.handle(ctx, error)
     }
   }
 }
