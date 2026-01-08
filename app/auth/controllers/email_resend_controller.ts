@@ -21,7 +21,7 @@ export default class EmailResendController {
         return response.redirect().back()
       }
 
-      await this.emailVerificationService.sendVerificationEmail(user, i18n)
+      await this.emailVerificationService.sendVerificationEmail(user)
       session.flash('success', i18n.t('auth.verify_email.email_sent'))
 
       return response.redirect().back()

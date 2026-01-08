@@ -42,7 +42,7 @@ export default class ErrorHandlerService {
       }
       const message = customHandler.message || i18n.t('common.unexpected_error')
       session.flash('error', message)
-      return response.redirect().back()
+      return response.status(error.status).redirect().back()
     }
 
     const commonError = this.handleCommonErrors(error, i18n)
@@ -50,10 +50,10 @@ export default class ErrorHandlerService {
       session.flash('error', commonError.message)
 
       if (commonError.redirectTo) {
-        return response.redirect().toRoute(commonError.redirectTo)
+        return response.status(commonError.status).redirect().toRoute(commonError.redirectTo)
       }
 
-      return response.redirect().back()
+      return response.status(commonError.status).redirect().back()
     }
 
     this.logError(ctx, error)
@@ -61,7 +61,7 @@ export default class ErrorHandlerService {
 
     const errorCode = error.code || error.name || 'UNKNOWN'
     session.flash('error', i18n.t('common.unexpected_error', { code: errorCode }))
-    return response.redirect().back()
+    return response.status(500).redirect().back()
   }
 
   /**
@@ -188,6 +188,22 @@ export default class ErrorHandlerService {
       }
     }
 
+    if (error.code === 'E_PROVIDER_NOT_CONFIGURED' && error.provider !== undefined) {
+      return {
+        code: 'E_PROVIDER_NOT_CONFIGURED',
+        message: i18n.t('auth.social.not_configured', { provider: error.provider }),
+        status: 400,
+      }
+    }
+
+    if (error.code === 'E_PROVIDER_ALREADY_LINKED' && error.provider !== undefined) {
+      return {
+        code: 'E_PROVIDER_ALREADY_LINKED',
+        message: i18n.t('auth.social.already_linked', { provider: error.provider }),
+        status: 409,
+      }
+    }
+
     if (error.code === 'E_RATE_LIMIT' && error.message) {
       return {
         code: 'E_RATE_LIMIT',
@@ -251,14 +267,6 @@ export default class ErrorHandlerService {
       E_EMAIL_SEND_FAILED: {
         message: i18n.t('auth.verify_email.send_failed'),
         status: 500,
-      },
-      E_PROVIDER_NOT_CONFIGURED: {
-        message: i18n.t('auth.social.not_configured'),
-        status: 400,
-      },
-      E_PROVIDER_ALREADY_LINKED: {
-        message: i18n.t('auth.social.already_linked'),
-        status: 409,
       },
       E_CSRF_TOKEN_MISMATCH: {
         message: i18n.t('common.csrf_token_mismatch'),

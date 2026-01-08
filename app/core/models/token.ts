@@ -170,7 +170,7 @@ export default class Token extends BaseModel {
       return
     }
 
-    const { selector, validator } = parts
+    const { selector } = parts
 
     const token = await this.query()
       .where('selector', selector)
@@ -182,11 +182,8 @@ export default class Token extends BaseModel {
       return
     }
 
-    const matches = await hash.verify(token.token, validator)
-    if (matches) {
-      token.attempts += 1
-      await token.save()
-    }
+    token.attempts += 1
+    await token.save()
   }
 
   /**

@@ -7,6 +7,7 @@ import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
+import VerifyEmailMail from '#auth/mails/verify_email'
 
 /**
  * Service for handling email verification workflows
@@ -19,10 +20,9 @@ export default class EmailVerificationService {
    * and sends an email with a verification link to the user
    *
    * @param user - The user to send verification email to
-   * @param i18n - Internationalization instance for translations
    * @throws Exception E_EMAIL_SEND_FAILED
    */
-  async sendVerificationEmail(user: User, i18n: any): Promise<void> {
+  async sendVerificationEmail(user: User): Promise<void> {
     await Token.expireEmailVerificationTokens(user)
 
     const { selector, validator, fullToken } = generateSplitToken()
@@ -39,22 +39,7 @@ export default class EmailVerificationService {
     const verificationLink = `${env.get('DOMAIN')}/email/verify/${fullToken}`
 
     try {
-      await mail.send((message) => {
-        message
-          .to(user.email)
-          .subject(i18n.t('emails.verify_email.subject'))
-          .htmlView('emails/verify_email', {
-            locale: user.locale || 'en',
-            appName: env.get('APP_NAME', 'AdonisJS'),
-            greeting: i18n.t('emails.verify_email.greeting'),
-            intro: i18n.t('emails.verify_email.intro'),
-            action: i18n.t('emails.verify_email.action'),
-            outro: i18n.t('emails.verify_email.outro'),
-            expiry: i18n.t('emails.verify_email.expiry', { hours: 24 }),
-            footer: i18n.t('emails.verify_email.footer'),
-            verificationLink,
-          })
-      })
+      await mail.send(new VerifyEmailMail(user, verificationLink))
 
       logger.info('Email verification sent', {
         userId: user.id,

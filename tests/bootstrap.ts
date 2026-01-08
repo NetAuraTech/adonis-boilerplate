@@ -1,7 +1,7 @@
 import { assert } from '@japa/assert'
 import app from '@adonisjs/core/services/app'
-import type { Config } from '@japa/runner/types'
 import { pluginAdonisJS } from '@japa/plugin-adonisjs'
+import type { Config } from '@japa/runner/types'
 import testUtils from '@adonisjs/core/services/test_utils'
 
 /**
@@ -12,26 +12,45 @@ import testUtils from '@adonisjs/core/services/test_utils'
  * Configure Japa plugins in the plugins array.
  * Learn more - https://japa.dev/docs/runner-config#plugins-optional
  */
-export const plugins: Config['plugins'] = [assert(), pluginAdonisJS(app)]
+
+export const plugins: Config['plugins'] = [
+  assert(),
+  pluginAdonisJS(app),
+]
 
 /**
- * Configure lifecycle function to run before and after all the
- * tests.
- *
- * The setup functions are executed before all the tests
- * The teardown functions are executed after all the tests
+ * Configure lifecycle hooks to run before and after all tests
  */
-export const runnerHooks: Required<Pick<Config, 'setup' | 'teardown'>> = {
-  setup: [],
+
+export const runnerHooks: Pick<Config, 'setup' | 'teardown'> = {
+  setup: [
+    () => testUtils.db().migrate(),
+    () => testUtils.db().seed(),
+    () => testUtils.httpServer().start(),
+  ],
   teardown: [],
 }
 
 /**
- * Configure suites by tapping into the test suite instance.
- * Learn more - https://japa.dev/docs/test-suites#lifecycle-hooks
+
+ * Configure the test reporters
+
  */
+
+export const reporters: Config['reporters'] = {
+  activated: ['spec'],
+}
+
+/**
+
+ * Configure the test timeout
+
+ */
+
+export const timeout: Config['timeout'] = 30_000
+
 export const configureSuite: Config['configureSuite'] = (suite) => {
-  if (['browser', 'functional', 'e2e'].includes(suite.name)) {
-    return suite.setup(() => testUtils.httpServer().start())
-  }
+  suite.onGroup((group) => {
+    group.each.setup(() => testUtils.db().withGlobalTransaction())
+  })
 }

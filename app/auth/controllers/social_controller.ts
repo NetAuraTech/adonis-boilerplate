@@ -5,7 +5,7 @@ import { isProviderEnabled } from '#config/ally'
 import { regenerateCsrfToken } from '#core/helpers/csrf'
 import ErrorHandlerService from '#core/services/error_handler_service'
 import AuthValidators from '#auth/validators/auth_validators'
-import { Exception } from '@adonisjs/core/exceptions'
+import ProviderNotConfiguredException from '#core/exceptions/provider_not_configured_exception'
 
 type OAuthProvider = 'github' | 'google' | 'facebook'
 
@@ -18,10 +18,7 @@ export default class SocialController {
 
   protected validateProvider(provider: string): void {
     if (!isProviderEnabled(provider)) {
-      throw new Exception(`${provider} authentication is not configured`, {
-        status: 400,
-        code: 'E_PROVIDER_NOT_CONFIGURED',
-      })
+      throw new ProviderNotConfiguredException(provider)
     }
   }
 

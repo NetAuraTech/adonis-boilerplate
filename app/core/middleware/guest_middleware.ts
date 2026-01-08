@@ -10,9 +10,6 @@ import type { Authenticators } from '@adonisjs/auth/types'
  * is already logged-in
  */
 export default class GuestMiddleware {
-  /**
-   * The URL to redirect to when user is logged-in
-   */
   redirectTo = '/'
 
   async handle(
@@ -20,8 +17,20 @@ export default class GuestMiddleware {
     next: NextFn,
     options: { guards?: (keyof Authenticators)[] } = {}
   ) {
-    for (let guard of options.guards || [ctx.auth.defaultGuard]) {
+    // Debug de sécurité
+    if (!ctx.auth) {
+      console.error("ERREUR: Le middleware d'Auth n'est pas initialisé. Vérifiez le Kernel.")
+      return next()
+    }
+
+    // On récupère les guards de manière sécurisée
+    const guards =
+      options.guards && options.guards.length > 0 ? options.guards : [ctx.auth.defaultGuard]
+
+    for (let guard of guards) {
+      console.error('test du guard: ', guard)
       if (await ctx.auth.use(guard).check()) {
+        console.error('auth check: ', await ctx.auth.use(guard).check())
         return ctx.response.redirect(this.redirectTo, true)
       }
     }

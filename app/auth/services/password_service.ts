@@ -3,11 +3,11 @@ import Token from '#core/models/token'
 import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
 import { DateTime } from 'luxon'
-import i18nManager from '@adonisjs/i18n/services/main'
 import hash from '@adonisjs/core/services/hash'
 import { generateSplitToken, maskToken } from '#core/helpers/crypto'
 import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
+import ResetPasswordMail from '#auth/mails/reset_password_email'
 
 interface ResetPasswordPayload {
   token: string
@@ -47,27 +47,10 @@ export default class PasswordService {
       expiresAt: DateTime.now().plus({ hours: 1 }),
     })
 
-    const locale = user.locale || 'en'
-    const i18n = i18nManager.locale(locale)
     const resetLink = `${env.get('DOMAIN')}/reset-password/${fullToken}`
 
     try {
-      await mail.send((message) => {
-        message
-          .to(user.email)
-          .subject(i18n.t('emails.reset_password.subject'))
-          .htmlView('emails/reset_password', {
-            locale,
-            appName: env.get('APP_NAME'),
-            greeting: i18n.t('emails.reset_password.greeting'),
-            intro: i18n.t('emails.reset_password.intro'),
-            action: i18n.t('emails.reset_password.action'),
-            outro: i18n.t('emails.reset_password.outro'),
-            expiry: i18n.t('emails.reset_password.expiry', { hours: 1 }),
-            footer: i18n.t('emails.reset_password.footer'),
-            resetLink,
-          })
-      })
+      await mail.send(new ResetPasswordMail(user, resetLink))
 
       logger.info('Password reset email sent', {
         userId: user.id,
