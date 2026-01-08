@@ -7,7 +7,6 @@ import BaseAdminService from '#core/services/base_admin_service'
 import i18n from 'i18next'
 import InvitationService from '#auth/services/invitation_service'
 import { inject } from '@adonisjs/core'
-import string from '@adonisjs/core/helpers/string'
 
 export interface UserListFilters {
   search?: string
@@ -154,7 +153,7 @@ export default class UserManagementService extends BaseAdminService<
 
     user.merge({
       fullName: data.fullName,
-      email: string.slug(data.email, { lower: true }),
+      email: data.email.trim().toLowerCase(),
       roleId: data.role_id || null,
     })
 
