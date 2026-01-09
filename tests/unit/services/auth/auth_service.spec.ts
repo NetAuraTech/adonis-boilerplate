@@ -2,6 +2,7 @@ import { test } from '@japa/runner'
 import AuthService from '#auth/services/auth_service'
 import { UserFactory } from '#tests/helpers/factories'
 import User from '#auth/models/user'
+import Role from '#core/models/role'
 
 test.group('AuthService', (group) => {
   let authService: AuthService
@@ -85,5 +86,30 @@ test.group('AuthService', (group) => {
 
     // Should not throw
     await assert.doesNotReject(async () => authService.logout(user.id))
+  })
+
+  test('login: should allow login for unverified users', async ({ assert }) => {
+    const user = await UserFactory.createUnverified({
+      email: 'unverified@example.com',
+      password: 'password123',
+    })
+
+    const authenticatedUser = await authService.login('unverified@example.com', 'password123')
+
+    assert.equal(authenticatedUser.id, user.id)
+    assert.isFalse(authenticatedUser.isEmailVerified)
+  })
+
+  test('register: should handle missing default user role gracefully', async ({ assert }) => {
+    const userRole = await Role.findBy('slug', 'user')
+    if (userRole) await userRole.delete()
+
+    const user = await authService.register({
+      email: 'newuser@example.com',
+      password: 'password123',
+    })
+
+    assert.instanceOf(user, User)
+    assert.isNull(user.roleId)
   })
 })

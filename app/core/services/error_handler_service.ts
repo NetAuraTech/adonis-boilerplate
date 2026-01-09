@@ -192,7 +192,7 @@ export default class ErrorHandlerService {
       return {
         code: 'E_PROVIDER_NOT_CONFIGURED',
         message: i18n.t('auth.social.not_configured', { provider: error.provider }),
-        status: 400,
+        status: 409,
       }
     }
 

@@ -7,7 +7,7 @@ import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
-import VerifyEmailMail from '#auth/mails/verify_email'
+import VerifyEmailMail from '#auth/mails/verify_email_mail'
 
 /**
  * Service for handling email verification workflows

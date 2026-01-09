@@ -7,7 +7,7 @@ import hash from '@adonisjs/core/services/hash'
 import { generateSplitToken, maskToken } from '#core/helpers/crypto'
 import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
-import ResetPasswordMail from '#auth/mails/reset_password_email'
+import ResetPasswordMail from '#auth/mails/reset_password_mail'
 
 interface ResetPasswordPayload {
   token: string

@@ -158,6 +158,23 @@ test.group('PasswordService', (group) => {
       'Max attempts exceeded'
     )
   })
+
+  test('resetPassword: should fail if user is deleted', async ({ assert }) => {
+    const user = await UserFactory.create()
+    const { selector, validator } = await createPasswordResetToken(user)
+    const fullToken = `${selector}.${validator}`
+
+    await user.delete()
+
+    await assert.rejects(
+      async () =>
+        passwordService.resetPassword({
+          token: fullToken,
+          password: 'newpassword123',
+        }),
+      'Invalid token'
+    )
+  })
 })
 
 const createPasswordResetToken = async (

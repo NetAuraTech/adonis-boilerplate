@@ -7,6 +7,7 @@ import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
+import InvitationMail from '#auth/mails/invitation_mail'
 
 export interface CreateInvitationData {
   email: string
@@ -27,12 +28,11 @@ export default class InvitationService {
    * - Sends invitation email with link
    *
    * @param data - Invitation data containing email, fullName, and roleId
-   * @param i18n - Internationalization instance for translations
    * @returns The created or updated user
    * @throws Exception USER_ALREADY_EXISTS if user exists with verified email
    * @throws Error if email sending fails
    */
-  async sendInvitation(data: CreateInvitationData, i18n: any): Promise<User> {
+  async sendInvitation(data: CreateInvitationData): Promise<User> {
     const existingUser = await User.findBy('email', data.email)
     if (existingUser && existingUser.isEmailVerified) {
       throw new Exception('User already exists', {
@@ -76,25 +76,9 @@ export default class InvitationService {
     })
 
     const invitationLink = `${env.get('DOMAIN')}/accept-invitation/${fullToken}`
-    const appName = env.get('APP_NAME', 'AdonisJS')
 
     try {
-      await mail.send((message) => {
-        message
-          .to(data.email)
-          .subject(i18n.t('emails.user_invitation.subject', { appName }))
-          .htmlView('emails/user_invitation', {
-            locale: 'en',
-            appName,
-            greeting: i18n.t('emails.user_invitation.greeting'),
-            intro: i18n.t('emails.user_invitation.intro', { appName }),
-            action: i18n.t('emails.user_invitation.action'),
-            outro: i18n.t('emails.user_invitation.outro'),
-            expiry: i18n.t('emails.user_invitation.expiry', { days: 7 }),
-            footer: i18n.t('emails.user_invitation.footer'),
-            invitationLink,
-          })
-      })
+      await mail.send(new InvitationMail(user, invitationLink))
 
       logger.info('User invitation sent', {
         userId: user.id,

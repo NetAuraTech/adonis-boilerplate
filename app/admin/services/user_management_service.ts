@@ -4,7 +4,6 @@ import { DEFAULT_PAGINATION } from '#core/helpers/pagination'
 import { TOKEN_TYPES } from '#core/models/token'
 import { DateTime } from 'luxon'
 import BaseAdminService from '#core/services/base_admin_service'
-import i18n from 'i18next'
 import InvitationService from '#auth/services/invitation_service'
 import { inject } from '@adonisjs/core'
 
@@ -139,14 +138,11 @@ export default class UserManagementService extends BaseAdminService<
   }
 
   async create(data: CreateUserData) {
-    return await this.invitationService.sendInvitation(
-      {
-        email: data.email,
-        fullName: data.fullName,
-        roleId: data.role_id || null,
-      },
-      i18n
-    )
+    return await this.invitationService.sendInvitation({
+      email: data.email,
+      fullName: data.fullName,
+      roleId: data.role_id || null,
+    })
   }
   async update(userId: number, data: UpdateUserData) {
     const user = await User.findOrFail(userId)

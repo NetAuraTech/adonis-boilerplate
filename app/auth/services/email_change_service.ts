@@ -6,6 +6,8 @@ import env from '#start/env'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
+import ChangeEmailNotificationMail from '#auth/mails/change_email_notification_mail'
+import ChangeEmailConfirmationMail from '#auth/mails/change_email_confirmation_mail'
 
 /**
  * Service for handling email change workflows
@@ -20,10 +22,9 @@ export default class EmailChangeService {
    *
    * @param user - The user requesting email change
    * @param newEmail - The new email address to change to
-   * @param i18n - Internationalization instance for translations
    * @throws Error if email sending fails
    */
-  async initiateEmailChange(user: User, newEmail: string, i18n: any): Promise<void> {
+  async initiateEmailChange(user: User, newEmail: string): Promise<void> {
     const oldEmail = user.email
 
     user.pendingEmail = newEmail
@@ -45,40 +46,9 @@ export default class EmailChangeService {
     const confirmationLink = `${env.get('DOMAIN')}/email/change/${fullToken}`
 
     try {
-      await mail.send((message) => {
-        message
-          .to(newEmail)
-          .subject(i18n.t('emails.email_change_confirmation.subject'))
-          .htmlView('emails/email_change_confirmation', {
-            locale: user.locale || 'en',
-            appName: env.get('APP_NAME', 'AdonisJS'),
-            greeting: i18n.t('emails.email_change_confirmation.greeting'),
-            intro: i18n.t('emails.email_change_confirmation.intro', { email: newEmail }),
-            action: i18n.t('emails.email_change_confirmation.action'),
-            outro: i18n.t('emails.email_change_confirmation.outro'),
-            expiry: i18n.t('emails.email_change_confirmation.expiry', { hours: 24 }),
-            footer: i18n.t('emails.email_change_confirmation.footer'),
-            confirmationLink,
-          })
-      })
+      await mail.send(new ChangeEmailConfirmationMail(user, newEmail, confirmationLink))
 
-      await mail.send((message) => {
-        message
-          .to(oldEmail)
-          .subject(i18n.t('emails.email_change_notification.subject'))
-          .htmlView('emails/email_change_notification', {
-            locale: user.locale || 'en',
-            appName: env.get('APP_NAME', 'AdonisJS'),
-            greeting: i18n.t('emails.email_change_notification.greeting'),
-            intro: i18n.t('emails.email_change_notification.intro', {
-              oldEmail,
-              newEmail,
-            }),
-            warning: i18n.t('emails.email_change_notification.warning'),
-            action: i18n.t('emails.email_change_notification.action'),
-            supportEmail: env.get('SMTP_FROM_ADDRESS'),
-          })
-      })
+      await mail.send(new ChangeEmailNotificationMail(user, oldEmail, newEmail))
 
       logger.info('Email change initiated', {
         userId: user.id,

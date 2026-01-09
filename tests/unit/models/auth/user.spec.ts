@@ -166,4 +166,36 @@ test.group('User Model', () => {
     assert.notEqual(user.password, 'plaintext')
     assert.isTrue(user.password!.length > 20)
   })
+
+  test('hasAnyRole: should return false with empty array', async ({ assert }) => {
+    const role = await RoleFactory.create({ slug: 'editor' })
+    const user = await UserFactory.create({ roleId: role.id })
+
+    const hasAnyRole = await user.hasAnyRole([])
+    assert.isFalse(hasAnyRole)
+  })
+
+  test('can: should handle multiple permissions correctly', async ({ assert }) => {
+    const perm1 = await PermissionFactory.create({ slug: 'users.create' })
+    const perm2 = await PermissionFactory.create({ slug: 'users.delete' })
+    const role = await RoleFactory.create()
+    await role.related('permissions').attach([perm1.id, perm2.id])
+    const user = await UserFactory.create({ roleId: role.id })
+
+    const canCreate = await user.can('users.create')
+    const canDelete = await user.can('users.delete')
+    const canEdit = await user.can('users.edit')
+
+    assert.isTrue(canCreate)
+    assert.isTrue(canDelete)
+    assert.isFalse(canEdit)
+  })
+
+  test('loadRoleWithPermissions: should handle user without roleId', async ({ assert }) => {
+    const user = await UserFactory.create({ roleId: null })
+
+    await user.loadRoleWithPermissions()
+
+    assert.isUndefined(user.role)
+  })
 })

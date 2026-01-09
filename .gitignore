@@ -22,6 +22,7 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+package-lock.json
 
 # Editors specific
 .fleet
@@ -30,3 +31,7 @@ yarn-error.log
 
 # Platform specific
 .DS_Store
+
+# Test Coverage
+coverage/
+.nyc_output/

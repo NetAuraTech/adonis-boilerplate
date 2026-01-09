@@ -22,14 +22,11 @@ export default class AdminUsersResendInvitationController {
         return response.redirect().back()
       }
 
-      await this.invitationService.sendInvitation(
-        {
-          email: user.email,
-          fullName: user.fullName || '',
-          roleId: user.roleId,
-        },
-        i18n
-      )
+      await this.invitationService.sendInvitation({
+        email: user.email,
+        fullName: user.fullName || '',
+        roleId: user.roleId,
+      })
 
       session.flash('success', i18n.t('admin.users.invitation_resent', { email: user.email }))
       return response.redirect().back()

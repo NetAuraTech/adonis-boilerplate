@@ -3,7 +3,6 @@ import hash from '@adonisjs/core/services/hash'
 import EmailChangeService from '#auth/services/email_change_service'
 import { Exception } from '@adonisjs/core/exceptions'
 import User from '#auth/models/user'
-import i18n from 'i18next'
 
 interface UpdatePayload {
   email: string
@@ -31,7 +30,7 @@ export default class ProfileService {
 
     const emailChanged = user.email !== payload.email
     if (emailChanged) {
-      await this.emailChangeService.initiateEmailChange(user, payload.email, i18n)
+      await this.emailChangeService.initiateEmailChange(user, payload.email)
     }
 
     user.merge({ fullName: payload.fullName, locale: payload.locale })
