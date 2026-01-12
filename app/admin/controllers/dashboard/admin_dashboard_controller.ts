@@ -1,12 +1,12 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
-import AdminDashboardService from '#admin/services/admin_dashboard_service'
+import DashboardService from '#admin/services/dashboard_service'
 import ErrorHandlerService from '#core/services/error_handler_service'
 
 @inject()
 export default class AdminDashboardController {
   constructor(
-    protected adminDashboardService: AdminDashboardService,
+    protected adminDashboardService: DashboardService,
     protected errorHandler: ErrorHandlerService
   ) {}
 

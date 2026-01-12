@@ -1,13 +1,13 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
-import UserManagementService from '#admin/services/user_management_service'
+import UserService from '#admin/services/user_service'
 import AdminUserValidators from '#admin/validators/admin_user_validators'
 import ErrorHandlerService from '#core/services/error_handler_service'
 
 @inject()
 export default class AdminUsersCreateController {
   constructor(
-    protected userManagementService: UserManagementService,
+    protected userManagementService: UserService,
     protected errorHandler: ErrorHandlerService
   ) {}
 

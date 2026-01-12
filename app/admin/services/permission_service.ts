@@ -42,7 +42,7 @@ export interface PermissionListFilters {
   perPage?: number
 }
 
-export default class PermissionManagementService extends BaseAdminService<
+export default class PermissionService extends BaseAdminService<
   typeof Permission,
   PermissionListFilters,
   CreatePermissionData,

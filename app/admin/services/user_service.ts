@@ -52,7 +52,7 @@ export interface UpdateUserData {
 }
 
 @inject()
-export default class UserManagementService extends BaseAdminService<
+export default class UserService extends BaseAdminService<
   typeof User,
   UserListFilters,
   CreateUserData,
@@ -148,8 +148,8 @@ export default class UserManagementService extends BaseAdminService<
     const user = await User.findOrFail(userId)
 
     user.merge({
-      fullName: data.fullName,
-      email: data.email.trim().toLowerCase(),
+      fullName: data.fullName || user.fullName,
+      email: data.email.trim().toLowerCase() || user.email,
       roleId: data.role_id || null,
     })
 

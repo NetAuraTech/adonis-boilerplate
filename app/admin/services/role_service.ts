@@ -44,7 +44,7 @@ export interface RoleListFilters {
   perPage?: number
 }
 
-export default class RoleManagementService extends BaseAdminService<
+export default class RoleService extends BaseAdminService<
   typeof Role,
   RoleListFilters,
   CreateRoleData,

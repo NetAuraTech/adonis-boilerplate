@@ -1,12 +1,12 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
-import RoleManagementService from '#admin/services/role_management_service'
+import RoleService from '#admin/services/role_service'
 import ErrorHandlerService from '#core/services/error_handler_service'
 
 @inject()
 export default class AdminRolesDeleteController {
   constructor(
-    protected roleManagementService: RoleManagementService,
+    protected roleManagementService: RoleService,
     protected errorHandler: ErrorHandlerService
   ) {}
 

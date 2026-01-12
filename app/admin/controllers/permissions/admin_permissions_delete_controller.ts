@@ -1,12 +1,12 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
-import PermissionManagementService from '#admin/services/permission_management_service'
+import PermissionService from '#admin/services/permission_service'
 import ErrorHandlerService from '#core/services/error_handler_service'
 
 @inject()
 export default class AdminPermissionsDeleteController {
   constructor(
-    protected permissionManagementService: PermissionManagementService,
+    protected permissionManagementService: PermissionService,
     protected errorHandler: ErrorHandlerService
   ) {}
 

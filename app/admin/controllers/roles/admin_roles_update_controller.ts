@@ -1,6 +1,6 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
-import RoleManagementService from '#admin/services/role_management_service'
+import RoleService from '#admin/services/role_service'
 import AdminRoleValidators from '#admin/validators/admin_role_validators'
 import ErrorHandlerService from '#core/services/error_handler_service'
 import { Exception } from '@adonisjs/core/exceptions'
@@ -8,7 +8,7 @@ import { Exception } from '@adonisjs/core/exceptions'
 @inject()
 export default class AdminRolesUpdateController {
   constructor(
-    protected roleManagementService: RoleManagementService,
+    protected roleManagementService: RoleService,
     protected errorHandler: ErrorHandlerService
   ) {}
 

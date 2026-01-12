@@ -2,6 +2,7 @@ import User from '#auth/models/user'
 import Role from '#core/models/role'
 import Permission from '#core/models/permission'
 import db from '@adonisjs/lucid/services/db'
+import { DateTime } from 'luxon'
 
 export interface DashboardStatistics {
   totalUsers: number
@@ -21,7 +22,7 @@ export interface DashboardStatistics {
   }>
 }
 
-export default class AdminDashboardService {
+export default class DashboardService {
   /**
    * Get dashboard statistics
    */
@@ -51,7 +52,7 @@ export default class AdminDashboardService {
    */
   private async getTotalUsers(): Promise<number> {
     const result = await User.query().count('* as total').first()
-    return result?.$extras.total || 0
+    return Number(result?.$extras.total) || 0
   }
 
   /**
@@ -59,7 +60,7 @@ export default class AdminDashboardService {
    */
   private async getTotalRoles(): Promise<number> {
     const result = await Role.query().count('* as total').first()
-    return result?.$extras.total || 0
+    return Number(result?.$extras.total) || 0
   }
 
   /**
@@ -67,18 +68,21 @@ export default class AdminDashboardService {
    */
   private async getTotalPermissions(): Promise<number> {
     const result = await Permission.query().count('* as total').first()
-    return result?.$extras.total || 0
+    return Number(result?.$extras.total) || 0
   }
 
   /**
    * Get users created this month
    */
   private async getUsersThisMonth(): Promise<number> {
+    const startOfMonth = DateTime.now().startOf('month').toSQL()
+
     const result = await User.query()
-      .where('created_at', '>=', db.raw("DATE_TRUNC('month', CURRENT_DATE)"))
+      .where('created_at', '>=', startOfMonth)
       .count('* as total')
       .first()
-    return result?.$extras.total || 0
+
+    return Number(result?.$extras.total || 0)
   }
 
   /**
