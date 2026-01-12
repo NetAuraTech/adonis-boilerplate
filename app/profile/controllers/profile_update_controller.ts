@@ -22,7 +22,7 @@ export default class ProfileUpdateController {
 
       const payload = await request.validateUsing(ProfileValidators.updateProfile(user.id))
 
-      const { emailChanged, localeChanged } = await this.profileService.update(user, payload)
+      const { emailChanged, localeChanged } = await this.profileService.update(user, payload, i18n)
 
       if (localeChanged) {
         regenerateCsrfToken(ctx)

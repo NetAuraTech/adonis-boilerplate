@@ -4,6 +4,7 @@ import EmailChangeService from '#auth/services/email_change_service'
 import { Exception } from '@adonisjs/core/exceptions'
 import User from '#auth/models/user'
 import i18n from 'i18next'
+import { I18n } from '@adonisjs/i18n'
 
 interface UpdatePayload {
   email: string
@@ -24,7 +25,7 @@ interface DeletePayload {
 export default class ProfileService {
   constructor(protected emailChangeService: EmailChangeService) {}
 
-  async update(user: User, payload: UpdatePayload) {
+  async update(user: User, payload: UpdatePayload, translator: I18n) {
     if (!user.isEmailVerified) {
       throw new Exception(i18n.t('auth.verify_email.required'), {
         code: 'E_EMAIL_NOT_VERIFIED',
@@ -34,7 +35,7 @@ export default class ProfileService {
 
     const emailChanged = user.email !== payload.email
     if (emailChanged) {
-      await this.emailChangeService.initiateEmailChange(user, payload.email)
+      await this.emailChangeService.initiateEmailChange(user, payload.email, translator)
     }
 
     const localeChanged = user.locale !== payload.locale

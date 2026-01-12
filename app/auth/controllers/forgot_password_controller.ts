@@ -30,7 +30,7 @@ export default class ForgotPasswordController {
       const user = await User.findBy('email', payload.email)
 
       if (user) {
-        await this.passwordService.sendResetPasswordLink(user)
+        await this.passwordService.sendResetPasswordLink(user, i18n)
       }
 
       session.flash('success', i18n.t('auth.forgot_password.email_sent'))

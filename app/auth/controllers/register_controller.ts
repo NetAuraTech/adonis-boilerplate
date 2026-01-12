@@ -28,7 +28,7 @@ export default class RegisterController {
   }
 
   async execute(ctx: HttpContext) {
-    const { request, response, auth } = ctx
+    const { request, response, auth, i18n } = ctx
 
     try {
       const payload = await request.validateUsing(AuthValidators.register())
@@ -37,7 +37,7 @@ export default class RegisterController {
 
       await auth.use('web').login(user)
 
-      this.emailVerificationService.sendVerificationEmail(user).catch((error) => {
+      this.emailVerificationService.sendVerificationEmail(user, i18n).catch((error) => {
         logger.error('Failed to send verification email', {
           userId: user.id,
           error: error.message,

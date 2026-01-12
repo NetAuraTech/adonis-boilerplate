@@ -8,6 +8,7 @@ import { generateSplitToken, maskToken } from '#core/helpers/crypto'
 import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
 import ResetPasswordMail from '#auth/mails/reset_password_mail'
+import { I18n } from '@adonisjs/i18n'
 
 interface ResetPasswordPayload {
   token: string
@@ -30,9 +31,10 @@ export default class PasswordService {
    * - Validator is hashed for security
    *
    * @param user - The user requesting password reset
+   * @param translator
    * @throws Error if email sending fails
    */
-  async sendResetPasswordLink(user: User): Promise<void> {
+  async sendResetPasswordLink(user: User, translator: I18n): Promise<void> {
     await Token.expirePasswordResetTokens(user)
 
     const { selector, validator, fullToken } = generateSplitToken()
@@ -50,7 +52,7 @@ export default class PasswordService {
     const resetLink = `${env.get('DOMAIN')}/reset-password/${fullToken}`
 
     try {
-      await mail.send(new ResetPasswordMail(user, resetLink))
+      await mail.send(new ResetPasswordMail(user, resetLink, translator))
 
       logger.info('Password reset email sent', {
         userId: user.id,

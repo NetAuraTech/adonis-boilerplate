@@ -8,6 +8,7 @@ import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
 import VerifyEmailMail from '#auth/mails/verify_email_mail'
+import { I18n } from '@adonisjs/i18n'
 
 /**
  * Service for handling email verification workflows
@@ -20,9 +21,10 @@ export default class EmailVerificationService {
    * and sends an email with a verification link to the user
    *
    * @param user - The user to send verification email to
+   * @param translator
    * @throws Exception E_EMAIL_SEND_FAILED
    */
-  async sendVerificationEmail(user: User): Promise<void> {
+  async sendVerificationEmail(user: User, translator: I18n): Promise<void> {
     await Token.expireEmailVerificationTokens(user)
 
     const { selector, validator, fullToken } = generateSplitToken()
@@ -39,7 +41,7 @@ export default class EmailVerificationService {
     const verificationLink = `${env.get('DOMAIN')}/email/verify/${fullToken}`
 
     try {
-      await mail.send(new VerifyEmailMail(user, verificationLink))
+      await mail.send(new VerifyEmailMail(user, verificationLink, translator))
 
       logger.info('Email verification sent', {
         userId: user.id,

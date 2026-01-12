@@ -42,7 +42,7 @@ export default class ErrorHandlerService {
       }
       const message = customHandler.message || i18n.t('common.unexpected_error')
       session.flash('error', message)
-      return response.status(error.status).redirect().back()
+      return response.redirect().back()
     }
 
     const commonError = this.handleCommonErrors(error, i18n)
@@ -50,10 +50,10 @@ export default class ErrorHandlerService {
       session.flash('error', commonError.message)
 
       if (commonError.redirectTo) {
-        return response.status(commonError.status).redirect().toRoute(commonError.redirectTo)
+        return response.redirect().toRoute(commonError.redirectTo)
       }
 
-      return response.status(commonError.status).redirect().back()
+      return response.redirect().back()
     }
 
     this.logError(ctx, error)
@@ -61,7 +61,7 @@ export default class ErrorHandlerService {
 
     const errorCode = error.code || error.name || 'UNKNOWN'
     session.flash('error', i18n.t('common.unexpected_error', { code: errorCode }))
-    return response.status(500).redirect().back()
+    return response.redirect().back()
   }
 
   /**
@@ -232,6 +232,7 @@ export default class ErrorHandlerService {
       E_INVALID_CREDENTIALS: {
         message: i18n.t('auth.login.failed'),
         status: 401,
+        redirectTo: 'auth.login',
       },
       E_INVALID_TOKEN: {
         message: i18n.t('auth.token.invalid'),

@@ -8,6 +8,7 @@ import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
 import ChangeEmailNotificationMail from '#auth/mails/change_email_notification_mail'
 import ChangeEmailConfirmationMail from '#auth/mails/change_email_confirmation_mail'
+import { I18n } from '@adonisjs/i18n'
 
 /**
  * Service for handling email change workflows
@@ -22,9 +23,10 @@ export default class EmailChangeService {
    *
    * @param user - The user requesting email change
    * @param newEmail - The new email address to change to
+   * @param translator
    * @throws Error if email sending fails
    */
-  async initiateEmailChange(user: User, newEmail: string): Promise<void> {
+  async initiateEmailChange(user: User, newEmail: string, translator: I18n): Promise<void> {
     const oldEmail = user.email
 
     user.pendingEmail = newEmail
@@ -46,9 +48,9 @@ export default class EmailChangeService {
     const confirmationLink = `${env.get('DOMAIN')}/email/change/${fullToken}`
 
     try {
-      await mail.send(new ChangeEmailConfirmationMail(user, newEmail, confirmationLink))
+      await mail.send(new ChangeEmailConfirmationMail(user, newEmail, confirmationLink, translator))
 
-      await mail.send(new ChangeEmailNotificationMail(user, oldEmail, newEmail))
+      await mail.send(new ChangeEmailNotificationMail(user, oldEmail, newEmail, translator))
 
       logger.info('Email change initiated', {
         userId: user.id,
