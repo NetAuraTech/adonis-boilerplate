@@ -5,6 +5,8 @@ import Token, { TOKEN_TYPES } from '#core/models/token'
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
+import i18n from 'i18next'
+import { I18n } from '@adonisjs/i18n'
 
 test.group('PasswordService', (group) => {
   let passwordService: PasswordService
@@ -18,7 +20,7 @@ test.group('PasswordService', (group) => {
 
     const user = await UserFactory.create()
 
-    await passwordService.sendResetPasswordLink(user)
+    await passwordService.sendResetPasswordLink(user, i18n as unknown as I18n)
 
     const tokens = await Token.query()
       .where('userId', user.id)
@@ -42,13 +44,13 @@ test.group('PasswordService', (group) => {
     const user = await UserFactory.create()
 
     // Create first token
-    await passwordService.sendResetPasswordLink(user)
+    await passwordService.sendResetPasswordLink(user, i18n as unknown as I18n)
     const firstTokens = await Token.query()
       .where('userId', user.id)
       .where('type', TOKEN_TYPES.PASSWORD_RESET)
 
     // Create second token
-    await passwordService.sendResetPasswordLink(user)
+    await passwordService.sendResetPasswordLink(user, i18n as unknown as I18n)
 
     await firstTokens[0].refresh()
     assert.isTrue(firstTokens[0].expiresAt! < DateTime.now())

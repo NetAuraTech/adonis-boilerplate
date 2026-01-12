@@ -345,11 +345,11 @@ test.group('UserPresenter', () => {
     })
 
     const full = await UserPresenter.toJSON(user)
-    const public_ = await UserPresenter.toPublicJSON(user)
+    const publicUser = await UserPresenter.toPublicJSON(user)
 
-    assert.equal(full!.id, public_!.id)
-    assert.equal(full!.email, public_!.email)
-    assert.equal(full!.fullName, public_!.fullName)
+    assert.equal(full!.id, publicUser!.id)
+    assert.equal(full!.email, publicUser!.email)
+    assert.equal(full!.fullName, publicUser!.fullName)
   })
 
   test('edge case: user with empty string OAuth IDs', async ({ assert }) => {

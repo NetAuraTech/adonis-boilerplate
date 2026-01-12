@@ -6,6 +6,7 @@ import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import User from '#auth/models/user'
 import i18n from 'i18next'
+import { I18n } from '@adonisjs/i18n'
 
 test.group('ProfileService', (group) => {
   let profileService: ProfileService
@@ -23,11 +24,15 @@ test.group('ProfileService', (group) => {
       locale: 'en',
     })
 
-    const result = await profileService.update(user, {
-      email: 'test@example.com',
-      fullName: 'New Name',
-      locale: 'fr',
-    })
+    const result = await profileService.update(
+      user,
+      {
+        email: 'test@example.com',
+        fullName: 'New Name',
+        locale: 'fr',
+      },
+      i18n as unknown as I18n
+    )
 
     await user.refresh()
     assert.equal(user.fullName, 'New Name')
@@ -44,11 +49,15 @@ test.group('ProfileService', (group) => {
       locale: 'en',
     })
 
-    const result = await profileService.update(user, {
-      email: 'new@example.com',
-      fullName: 'Test User',
-      locale: 'en',
-    })
+    const result = await profileService.update(
+      user,
+      {
+        email: 'new@example.com',
+        fullName: 'Test User',
+        locale: 'en',
+      },
+      i18n as unknown as I18n
+    )
 
     await user.refresh()
     assert.isTrue(result.emailChanged)
@@ -70,11 +79,15 @@ test.group('ProfileService', (group) => {
       locale: 'en',
     })
 
-    const result = await profileService.update(user, {
-      email: 'test@example.com',
-      fullName: 'Updated Name',
-      locale: 'en',
-    })
+    const result = await profileService.update(
+      user,
+      {
+        email: 'test@example.com',
+        fullName: 'Updated Name',
+        locale: 'en',
+      },
+      i18n as unknown as I18n
+    )
 
     assert.isFalse(result.emailChanged)
     mails.assertSentCount(0)
@@ -91,11 +104,15 @@ test.group('ProfileService', (group) => {
 
     await assert.rejects(
       async () =>
-        profileService.update(user, {
-          email: 'new@example.com',
-          fullName: 'Test',
-          locale: 'en',
-        }),
+        profileService.update(
+          user,
+          {
+            email: 'new@example.com',
+            fullName: 'Test',
+            locale: 'en',
+          },
+          i18n as unknown as I18n
+        ),
       i18n.t('auth.verify_email.required')
     )
   })
@@ -103,19 +120,27 @@ test.group('ProfileService', (group) => {
   test('update: should detect locale change', async ({ assert }) => {
     const user = await UserFactory.create({ locale: 'en' })
 
-    const result1 = await profileService.update(user, {
-      email: user.email,
-      fullName: user.fullName!,
-      locale: 'fr',
-    })
+    const result1 = await profileService.update(
+      user,
+      {
+        email: user.email,
+        fullName: user.fullName!,
+        locale: 'fr',
+      },
+      i18n as unknown as I18n
+    )
 
     assert.isTrue(result1.localeChanged)
 
-    const result2 = await profileService.update(user, {
-      email: user.email,
-      fullName: user.fullName!,
-      locale: 'fr',
-    })
+    const result2 = await profileService.update(
+      user,
+      {
+        email: user.email,
+        fullName: user.fullName!,
+        locale: 'fr',
+      },
+      i18n as unknown as I18n
+    )
 
     assert.isFalse(result2.localeChanged)
   })
@@ -123,11 +148,15 @@ test.group('ProfileService', (group) => {
   test('update: should handle optional fullName', async ({ assert }) => {
     const user = await UserFactory.create({ fullName: 'Old Name' })
 
-    await profileService.update(user, {
-      email: user.email,
-      fullName: undefined,
-      locale: 'en',
-    })
+    await profileService.update(
+      user,
+      {
+        email: user.email,
+        fullName: undefined,
+        locale: 'en',
+      },
+      i18n as unknown as I18n
+    )
 
     await user.refresh()
     assert.equal(user.fullName, 'Old Name')
@@ -257,21 +286,29 @@ test.group('ProfileService', (group) => {
       locale: 'en',
     })
 
-    await profileService.update(user, {
-      email: 'test@example.com',
-      fullName: 'First Update',
-      locale: 'fr',
-    })
+    await profileService.update(
+      user,
+      {
+        email: 'test@example.com',
+        fullName: 'First Update',
+        locale: 'fr',
+      },
+      i18n as unknown as I18n
+    )
 
     await user.refresh()
     assert.equal(user.fullName, 'First Update')
     assert.equal(user.locale, 'fr')
 
-    await profileService.update(user, {
-      email: 'newemail@example.com',
-      fullName: 'Second Update',
-      locale: 'en',
-    })
+    await profileService.update(
+      user,
+      {
+        email: 'newemail@example.com',
+        fullName: 'Second Update',
+        locale: 'en',
+      },
+      i18n as unknown as I18n
+    )
 
     await user.refresh()
     assert.equal(user.fullName, 'Second Update')
@@ -308,11 +345,15 @@ test.group('ProfileService', (group) => {
       locale: 'en',
     })
 
-    const result = await profileService.update(user, {
-      email: 'test@example.com',
-      fullName: 'Test User',
-      locale: 'en',
-    })
+    const result = await profileService.update(
+      user,
+      {
+        email: 'test@example.com',
+        fullName: 'Test User',
+        locale: 'en',
+      },
+      i18n as unknown as I18n
+    )
 
     assert.isFalse(result.emailChanged)
     assert.isFalse(result.localeChanged)

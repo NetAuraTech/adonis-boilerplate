@@ -5,6 +5,8 @@ import Token, { TOKEN_TYPES } from '#core/models/token'
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
+import i18n from 'i18next'
+import { I18n } from '@adonisjs/i18n'
 
 test.group('EmailChangeService', (group) => {
   let emailChangeService: EmailChangeService
@@ -20,7 +22,7 @@ test.group('EmailChangeService', (group) => {
     mail.fake()
     const user = await UserFactory.create({ email: 'old@example.com' })
 
-    await emailChangeService.initiateEmailChange(user, 'new@example.com')
+    await emailChangeService.initiateEmailChange(user, 'new@example.com', i18n as unknown as I18n)
 
     await user.refresh()
     assert.equal(user.pendingEmail, 'new@example.com')
@@ -42,7 +44,7 @@ test.group('EmailChangeService', (group) => {
     const { mails } = mail.fake()
     const user = await UserFactory.create({ email: 'old@example.com' })
 
-    await emailChangeService.initiateEmailChange(user, 'new@example.com')
+    await emailChangeService.initiateEmailChange(user, 'new@example.com', i18n as unknown as I18n)
 
     mails.assertSentCount(2)
 
@@ -55,14 +57,18 @@ test.group('EmailChangeService', (group) => {
     mail.fake()
     const user = await UserFactory.create()
 
-    await emailChangeService.initiateEmailChange(user, 'first@example.com')
+    await emailChangeService.initiateEmailChange(user, 'first@example.com', i18n as unknown as I18n)
 
     const firstToken = await Token.query()
       .where('userId', user.id)
       .where('type', TOKEN_TYPES.EMAIL_CHANGE)
       .firstOrFail()
 
-    await emailChangeService.initiateEmailChange(user, 'second@example.com')
+    await emailChangeService.initiateEmailChange(
+      user,
+      'second@example.com',
+      i18n as unknown as I18n
+    )
 
     await firstToken.refresh()
     assert.isTrue(firstToken.expiresAt! < DateTime.now())
@@ -79,7 +85,7 @@ test.group('EmailChangeService', (group) => {
     mail.fake()
     const user = await UserFactory.create()
 
-    await emailChangeService.initiateEmailChange(user, 'new@example.com')
+    await emailChangeService.initiateEmailChange(user, 'new@example.com', i18n as unknown as I18n)
 
     const token = await Token.query()
       .where('userId', user.id)
@@ -246,11 +252,15 @@ test.group('EmailChangeService', (group) => {
     mail.fake()
     const user = await UserFactory.create({ email: 'original@example.com' })
 
-    await emailChangeService.initiateEmailChange(user, 'first@example.com')
+    await emailChangeService.initiateEmailChange(user, 'first@example.com', i18n as unknown as I18n)
     await user.refresh()
     assert.equal(user.pendingEmail, 'first@example.com')
 
-    await emailChangeService.initiateEmailChange(user, 'second@example.com')
+    await emailChangeService.initiateEmailChange(
+      user,
+      'second@example.com',
+      i18n as unknown as I18n
+    )
     await user.refresh()
     assert.equal(user.pendingEmail, 'second@example.com')
 
@@ -270,7 +280,7 @@ test.group('EmailChangeService', (group) => {
     mail.fake()
     const user = await UserFactory.create({ email: 'old@example.com' })
 
-    await emailChangeService.initiateEmailChange(user, 'new@example.com')
+    await emailChangeService.initiateEmailChange(user, 'new@example.com', i18n as unknown as I18n)
 
     const token = await Token.query()
       .where('userId', user.id)
@@ -297,7 +307,7 @@ test.group('EmailChangeService', (group) => {
     mail.fake()
     const user = await UserFactory.create({ email: 'old@example.com' })
 
-    await emailChangeService.initiateEmailChange(user, 'new@example.com')
+    await emailChangeService.initiateEmailChange(user, 'new@example.com', i18n as unknown as I18n)
     await emailChangeService.cancelEmailChange(user)
 
     await user.refresh()

@@ -5,6 +5,8 @@ import Token, { TOKEN_TYPES } from '#core/models/token'
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
+import i18n from 'i18next'
+import { I18n } from '@adonisjs/i18n'
 
 test.group('InvitationService', (group) => {
   let invitationService: InvitationService
@@ -20,11 +22,14 @@ test.group('InvitationService', (group) => {
     const { mails } = mail.fake()
     const role = await RoleFactory.create()
 
-    const user = await invitationService.sendInvitation({
-      email: 'newuser@example.com',
-      fullName: 'New User',
-      roleId: role.id,
-    })
+    const user = await invitationService.sendInvitation(
+      {
+        email: 'newuser@example.com',
+        fullName: 'New User',
+        roleId: role.id,
+      },
+      i18n as unknown as I18n
+    )
 
     assert.equal(user.email, 'newuser@example.com')
     assert.equal(user.fullName, 'New User')
@@ -55,11 +60,14 @@ test.group('InvitationService', (group) => {
       roleId: role1.id,
     })
 
-    const user = await invitationService.sendInvitation({
-      email: 'existing@example.com',
-      fullName: 'New Name',
-      roleId: role2.id,
-    })
+    const user = await invitationService.sendInvitation(
+      {
+        email: 'existing@example.com',
+        fullName: 'New Name',
+        roleId: role2.id,
+      },
+      i18n as unknown as I18n
+    )
 
     assert.equal(user.id, existingUser.id)
     assert.equal(user.fullName, 'New Name')
@@ -82,10 +90,13 @@ test.group('InvitationService', (group) => {
 
     await assert.rejects(
       async () =>
-        invitationService.sendInvitation({
-          email: 'verified@example.com',
-          fullName: 'Test',
-        }),
+        invitationService.sendInvitation(
+          {
+            email: 'verified@example.com',
+            fullName: 'Test',
+          },
+          i18n as unknown as I18n
+        ),
       'User already exists'
     )
 
@@ -101,20 +112,26 @@ test.group('InvitationService', (group) => {
 
     const user = await UserFactory.createUnverified()
 
-    await invitationService.sendInvitation({
-      email: user.email,
-      fullName: 'Test',
-    })
+    await invitationService.sendInvitation(
+      {
+        email: user.email,
+        fullName: 'Test',
+      },
+      i18n as unknown as I18n
+    )
 
     const firstToken = await Token.query()
       .where('userId', user.id)
       .where('type', TOKEN_TYPES.USER_INVITATION)
       .firstOrFail()
 
-    await invitationService.sendInvitation({
-      email: user.email,
-      fullName: 'Test',
-    })
+    await invitationService.sendInvitation(
+      {
+        email: user.email,
+        fullName: 'Test',
+      },
+      i18n as unknown as I18n
+    )
 
     const validTokens = await Token.query()
       .where('userId', user.id)
@@ -134,10 +151,13 @@ test.group('InvitationService', (group) => {
   test('sendInvitation: should create token with 7 days expiry', async ({ assert, cleanup }) => {
     const { mails } = mail.fake()
 
-    const user = await invitationService.sendInvitation({
-      email: 'test@example.com',
-      fullName: 'Test',
-    })
+    const user = await invitationService.sendInvitation(
+      {
+        email: 'test@example.com',
+        fullName: 'Test',
+      },
+      i18n as unknown as I18n
+    )
 
     const token = await Token.query()
       .where('userId', user.id)
@@ -159,9 +179,12 @@ test.group('InvitationService', (group) => {
   test('sendInvitation: should handle missing fullName', async ({ assert, cleanup }) => {
     const { mails } = mail.fake()
 
-    const user = await invitationService.sendInvitation({
-      email: 'test@example.com',
-    })
+    const user = await invitationService.sendInvitation(
+      {
+        email: 'test@example.com',
+      },
+      i18n as unknown as I18n
+    )
 
     assert.isNull(user.fullName)
     mails.assertSentCount(1)
@@ -174,10 +197,13 @@ test.group('InvitationService', (group) => {
   test('sendInvitation: should handle missing roleId', async ({ assert, cleanup }) => {
     const { mails } = mail.fake()
 
-    const user = await invitationService.sendInvitation({
-      email: 'test@example.com',
-      fullName: 'Test',
-    })
+    const user = await invitationService.sendInvitation(
+      {
+        email: 'test@example.com',
+        fullName: 'Test',
+      },
+      i18n as unknown as I18n
+    )
 
     assert.isNull(user.roleId)
     mails.assertSentCount(1)

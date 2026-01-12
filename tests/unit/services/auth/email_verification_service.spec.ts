@@ -5,6 +5,8 @@ import Token, { TOKEN_TYPES } from '#core/models/token'
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
+import i18n from 'i18next'
+import { I18n } from '@adonisjs/i18n'
 
 test.group('EmailVerificationService', (group) => {
   let emailVerificationService: EmailVerificationService
@@ -21,7 +23,7 @@ test.group('EmailVerificationService', (group) => {
 
     const user = await UserFactory.createUnverified()
 
-    await emailVerificationService.sendVerificationEmail(user)
+    await emailVerificationService.sendVerificationEmail(user, i18n as unknown as I18n)
 
     const tokens = await Token.query()
       .where('userId', user.id)
@@ -46,14 +48,14 @@ test.group('EmailVerificationService', (group) => {
 
     const user = await UserFactory.createUnverified()
 
-    await emailVerificationService.sendVerificationEmail(user)
+    await emailVerificationService.sendVerificationEmail(user, i18n as unknown as I18n)
 
     const firstToken = await Token.query()
       .where('userId', user.id)
       .where('type', TOKEN_TYPES.EMAIL_VERIFICATION)
       .firstOrFail()
 
-    await emailVerificationService.sendVerificationEmail(user)
+    await emailVerificationService.sendVerificationEmail(user, i18n as unknown as I18n)
 
     await firstToken.refresh()
     assert.isTrue(firstToken.expiresAt! < DateTime.now(), 'First token should be expired')

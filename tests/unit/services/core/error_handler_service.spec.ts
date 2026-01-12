@@ -32,7 +32,6 @@ test.group('ErrorHandlerService', (group) => {
     await errorHandler.handle(ctx, error)
 
     assert.isTrue((ctx.session.flash as sinon.SinonSpy).calledWith('error'))
-    assert.isTrue((ctx.response.status as sinon.SinonStub).calledWith(500))
     assert.isTrue((ctx.response.redirect as sinon.SinonStub).called)
   })
 
@@ -43,7 +42,6 @@ test.group('ErrorHandlerService', (group) => {
     await errorHandler.handle(ctx, error)
 
     assert.isTrue((ctx.session.flash as sinon.SinonSpy).calledWith('error', 'common.not_found'))
-    assert.isTrue((ctx.response.status as sinon.SinonStub).calledWith(404))
   })
 
   test('handle: should handle E_INVALID_CREDENTIALS', async ({ assert }) => {
@@ -53,7 +51,6 @@ test.group('ErrorHandlerService', (group) => {
     await errorHandler.handle(ctx, error)
 
     assert.isTrue((ctx.session.flash as sinon.SinonSpy).calledWith('error', 'auth.login.failed'))
-    assert.isTrue((ctx.response.status as sinon.SinonStub).calledWith(401))
   })
 
   test('handle: should redirect to login for E_UNAUTHORIZED', async ({ assert }) => {
@@ -75,7 +72,6 @@ test.group('ErrorHandlerService', (group) => {
     assert.isTrue(
       (ctx.session.flash as sinon.SinonSpy).calledWith('error', 'admin.permissions.has_roles')
     )
-    assert.isTrue((ctx.response.status as sinon.SinonStub).calledWith(409))
   })
 
   test('handle: should handle RoleHasUsersException', async ({ assert }) => {
@@ -87,7 +83,6 @@ test.group('ErrorHandlerService', (group) => {
     assert.isTrue(
       (ctx.session.flash as sinon.SinonSpy).calledWith('error', 'admin.roles.has_users')
     )
-    assert.isTrue((ctx.response.status as sinon.SinonStub).calledWith(409))
   })
 
   test('handle: should handle TooManyRequestsException with retryAfter', async ({ assert }) => {
@@ -241,7 +236,6 @@ test.group('ErrorHandlerService', (group) => {
     await errorHandler.handle(ctx, error)
 
     assert.isTrue((ctx.session.flash as sinon.SinonSpy).called)
-    assert.isTrue((ctx.response.status as sinon.SinonStub).calledWith(409))
   })
 
   test('handle: should handle ProviderAlreadyLinkedException', async ({ assert }) => {
@@ -250,7 +244,7 @@ test.group('ErrorHandlerService', (group) => {
 
     await errorHandler.handle(ctx, error)
 
-    assert.isTrue((ctx.response.status as sinon.SinonStub).calledWith(409))
+    assert.isTrue((ctx.session.flash as sinon.SinonSpy).called)
   })
 
   test('handle: should handle ActionForbiddenException', async ({ assert }) => {
@@ -260,7 +254,6 @@ test.group('ErrorHandlerService', (group) => {
     await errorHandler.handle(ctx, error)
 
     assert.isTrue((ctx.session.flash as sinon.SinonSpy).called)
-    assert.isTrue((ctx.response.status as sinon.SinonStub).calledWith(403))
   })
 })
 

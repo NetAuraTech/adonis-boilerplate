@@ -6,6 +6,8 @@ import { DateTime } from 'luxon'
 import BaseAdminService from '#core/services/base_admin_service'
 import InvitationService from '#auth/services/invitation_service'
 import { inject } from '@adonisjs/core'
+import { I18n } from '@adonisjs/i18n'
+import i18n from 'i18next'
 
 export interface UserListFilters {
   search?: string
@@ -138,11 +140,14 @@ export default class UserService extends BaseAdminService<
   }
 
   async create(data: CreateUserData) {
-    return await this.invitationService.sendInvitation({
-      email: data.email,
-      fullName: data.fullName,
-      roleId: data.role_id || null,
-    })
+    return await this.invitationService.sendInvitation(
+      {
+        email: data.email,
+        fullName: data.fullName,
+        roleId: data.role_id || null,
+      },
+      i18n as unknown as I18n
+    )
   }
   async update(userId: number, data: UpdateUserData) {
     const user = await User.findOrFail(userId)
