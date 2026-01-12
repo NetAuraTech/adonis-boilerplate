@@ -7,6 +7,7 @@ import { DbRememberMeTokensProvider } from '@adonisjs/auth/session'
 import Token from '#core/models/token'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import Role from '#core/models/role'
+import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -66,6 +67,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+
+  static accessTokens = DbAccessTokensProvider.forModel(User)
 
   get isEmailVerified(): boolean {
     return this.emailVerifiedAt !== null
