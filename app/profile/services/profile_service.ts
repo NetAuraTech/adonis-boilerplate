@@ -3,6 +3,7 @@ import hash from '@adonisjs/core/services/hash'
 import EmailChangeService from '#auth/services/email_change_service'
 import { Exception } from '@adonisjs/core/exceptions'
 import User from '#auth/models/user'
+import i18n from 'i18next'
 
 interface UpdatePayload {
   email: string
@@ -25,7 +26,10 @@ export default class ProfileService {
 
   async update(user: User, payload: UpdatePayload) {
     if (!user.isEmailVerified) {
-      throw new Exception(undefined, { code: 'E_EMAIL_NOT_VERIFIED', status: 400 })
+      throw new Exception(i18n.t('auth.verify_email.required'), {
+        code: 'E_EMAIL_NOT_VERIFIED',
+        status: 403,
+      })
     }
 
     const emailChanged = user.email !== payload.email
@@ -33,16 +37,18 @@ export default class ProfileService {
       await this.emailChangeService.initiateEmailChange(user, payload.email)
     }
 
+    const localeChanged = user.locale !== payload.locale
+
     user.merge({ fullName: payload.fullName, locale: payload.locale })
     await user.save()
-    return { emailChanged, localeChanged: user.locale !== payload.locale }
+    return { emailChanged, localeChanged: localeChanged }
   }
 
   async updatePassword(user: User, payload: UpdatePasswordPayload) {
     const isPasswordValid = await hash.verify(user.password!, payload.current_password)
 
     if (!isPasswordValid) {
-      throw new Exception(undefined, {
+      throw new Exception(i18n.t('profile.password.incorrect_current'), {
         code: 'E_INVALID_CURRENT_PASSWORD',
         status: 400,
       })
@@ -56,7 +62,7 @@ export default class ProfileService {
     const isPasswordValid = await hash.verify(user.password!, payload.password)
 
     if (!isPasswordValid) {
-      throw new Exception(undefined, {
+      throw new Exception(i18n.t('profile.password.incorrect_password'), {
         code: 'E_INVALID_PASSWORD',
         status: 400,
       })
