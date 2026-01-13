@@ -23,6 +23,7 @@ const inertiaConfig = defineConfig({
         info: ctx.session?.flashMessages.get('info'),
       }
     },
+    csrfToken: (ctx) => ctx.request.csrfToken,
   },
 
   /**

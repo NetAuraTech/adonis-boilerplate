@@ -9,7 +9,6 @@
 
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
-import ErrorHandlerService from '#core/services/error_handler_service'
 
 // region Controller imports
 const LoginController = () => import('#auth/controllers/login_controller')
@@ -300,15 +299,11 @@ router
   .use(middleware.auth())
   .use(middleware.verified())
 
-router
-  .get('/debug-sentry', async (ctx) => {
-    const errorHandler = new ErrorHandlerService()
-
-    try {
-      // On simule une erreur imprévue (une variable qui n'existe pas par exemple)
-      throw new Error('Test de crash manuel pour Sentry')
-    } catch (error) {
-      return await errorHandler.handle(ctx, error)
-    }
+router.post('/theme', async ({ request, response }) => {
+  const { theme } = request.only(['theme'])
+  response.cookie('theme', theme, {
+    maxAge: 365 * 24 * 60 * 60,
+    httpOnly: false,
   })
-  .use(({ auth }, next) => auth.authenticate().then(next))
+  return response.json({ success: true })
+})
