@@ -2,6 +2,7 @@ import { Button } from '~/components/elements/button'
 import { Head } from '@inertiajs/react'
 import { ResourceAction } from '~/types/admin'
 import { CanAccess } from '~/components/auth/can_access'
+import { Heading } from '~/components/elements/heading'
 
 interface AdminMainProps {
   title?: string
@@ -17,7 +18,7 @@ export function AdminMain(props: AdminMainProps) {
     <section className="grid gap-4">
       <Head title={title} />
       <div className="flex-group justify-content-space-between align-items-center w-full">
-        <h2 className="heading-2 flex-group align-items-center">
+        <Heading level={2} className="flex-group align-items-center">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -27,7 +28,7 @@ export function AdminMain(props: AdminMainProps) {
             className="w-4 h-4"
           />
           {title}
-        </h2>
+        </Heading>
         <CanAccess permission={add_action?.permission}>
           {add_action &&  (
             <Button href={add_action.path()} fitContent>

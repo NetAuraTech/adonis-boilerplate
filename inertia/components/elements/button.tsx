@@ -32,14 +32,14 @@ export function Button(props: ButtonProps) {
   const baseClass = `display-flex align-items-center fs-400 ${padding} justify-content-center fw-bold transition:bg-300 transition:clr-300 cursor-pointer`
 
   const variantClasses = {
-    primary: "border-0 border-radius-2 bg-primary-400 clr-neutral-1000 hover:clr-neutral-1000 hover:bg-primary-500",
-    accent: "border-0 border-radius-2 bg-accent-400 clr-neutral-1000 hover:clr-neutral-1000 hover:bg-accent-500",
-    danger: "border-0 border-radius-2 bg-red-400 clr-neutral-1000 hover:clr-neutral-1000 hover:bg-red-500",
-    success: "border-0 border-radius-2 bg-green-400 clr-neutral-1000 hover:clr-neutral-1000 hover:bg-green-500",
-    outline: "border-0 border-radius-2 bg-transparent border-solid border-2 border-primary-500 clr-neutral-1000 hover:bg-primary-500 hover:clr-neutral-1000",
-    transparent: "border-0 border-radius-2 bg-transparent clr-neutral-700 hover:clr-primary-400",
-    icon: "bg-transparent clr-neutral-700 hover:clr-primary-400",
-    social: "border-0 border-radius-2 bg-neutral-1000 clr-neutral-200 border-solid border-1 border-neutral-200 hover:bg-neutral-800 hover:clr-neutral-000"
+    primary: "border-0 border-radius-2 bg-primary-700 clr-neutral-100 hover:clr-neutral-100 hover:bg-primary-800 box-shadow-1",
+    accent: "border-0 border-radius-2 bg-accent-700 clr-neutral-100 hover:clr-neutral-100 hover:bg-accent-800 box-shadow-1",
+    danger: "border-0 border-radius-2 bg-red-400 clr-neutral-1000 hover:clr-neutral-1000 hover:bg-red-500 box-shadow-1",
+    success: "border-0 border-radius-2 bg-green-400 clr-neutral-1000 hover:clr-neutral-1000 hover:bg-green-500 box-shadow-1",
+    outline: "border-2 border-radius-2 bg-transparent border-solid border-primary-800 clr-neutral-1000 hover:bg-primary-500 hover:clr-neutral-1000 box-shadow-1",
+    transparent: "border-0 border-radius-2 bg-transparent clr-neutral-700 hover:clr-accent-800",
+    icon: "bg-transparent clr-neutral-700 hover:clr-primary-700 box-shadow-1",
+    social: "border-0 border-radius-2 bg-neutral-100 clr-neutral-800 border-solid border-1 border-neutral-200 hover:clr-neutral-800 hover:border-primary-700 transition:border-300 box-shadow-1"
   }
 
   const classes = `

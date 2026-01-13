@@ -19,13 +19,13 @@ export function UserStatus(props: UserStatusProps) {
   const { t } = useTranslation('admin')
 
   const statuses = {
-    UNVERIFIED: <span className="padding-1 padding-inline-2 bg-red-100 clr-red-700 border-radius-1 fs-300">
+    UNVERIFIED: <span className="padding-1 padding-inline-2 bg-red-100 clr-red-700 border-1 border-solid border-red-700 border-radius-1 fs-300">
                   {t('users.status.unverified')}
                 </span>,
-    VERIFIED: <span className="padding-1 padding-inline-2 bg-green-100 clr-green-700 border-radius-1 fs-300">
+    VERIFIED: <span className="padding-1 padding-inline-2 bg-green-100 clr-green-700 border-1 border-solid border-green-700 border-radius-1 fs-300">
                 {t('users.status.verified')}
               </span>,
-    PENDING_INVITE: <span className="padding-1 padding-inline-2 bg-purple-100 clr-purple-700 border-radius-1 fs-300">
+    PENDING_INVITE: <span className="padding-1 padding-inline-2 bg-purple-100 clr-purple-700 border-1 border-solid border-purple-700 border-radius-1 fs-300">
                       {t('users.status.pending_invite')}
                     </span>
   }

@@ -243,5 +243,6 @@
       "dashboard": "Tableau de bord",
       "access_control": "Contrôle d'accès"
     }
-  }
+  },
+  "welcome": "Bon retour, {name}!"
 }

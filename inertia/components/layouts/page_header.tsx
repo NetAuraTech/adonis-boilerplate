@@ -4,6 +4,7 @@ import type { SharedProps } from '@adonisjs/inertia/types'
 import { NavLink } from '~/components/elements/nav_link'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ThemeSwitcher } from '~/components/elements/theme_switcher'
 
 export function PageHeader() {
   const { t } = useTranslation('common')
@@ -37,7 +38,7 @@ export function PageHeader() {
 
   return (
     <header
-      className="header sticky flex justify-content-space-between align-items-center bg-neutral-200 clr-primary-100 padding-2 md:padding-block-6 md:padding-inline-12"
+      className="header sticky flex justify-content-space-between align-items-center bg-neutral-100 box-shadow-1 clr-primary-100 padding-2 md:padding-block-6 md:padding-inline-12"
       data-state={menuState}
       aria-expanded={isExpanded}
     >
@@ -47,7 +48,7 @@ export function PageHeader() {
 
       <nav
         id="primary-navigation"
-        className="header__nav grid gap-3 md:gap-6 fixed padding-4 bg-neutral-200 fs-600 border-radius-bottom-left-2 md:relative md:display-flex transition:all-500"
+        className="header__nav grid gap-3 md:gap-6 fixed padding-4 bg-neutral-100 box-shadow-1 md:box-shadow-0 fs-600 border-radius-bottom-left-2 md:relative md:display-flex transition:all-500 transition:bg-000"
         data-state={menuState}
         aria-expanded={isExpanded}
       >
@@ -55,17 +56,15 @@ export function PageHeader() {
 
         {pageProps.currentUser ? (
           <>
-            <span className="fs-400 fw-bold">
-              {t('header.greeting', { name: pageProps.currentUser.fullName })}
-            </span>
           </>
         ) : (
           <NavLink href="/login" label={t('header.login')} fs={600} />
         )}
+        <ThemeSwitcher initialTheme={pageProps.theme} />
       </nav>
 
       <button
-        className="header__burger clr-primary-100 md:display-hidden"
+        className="header__burger clr-primary-900 md:display-hidden"
         aria-controls="primary-navigation"
         aria-expanded={isExpanded}
         data-state={menuState}

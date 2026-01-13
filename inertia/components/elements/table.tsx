@@ -123,7 +123,7 @@ const Actions = (props: ActionsProps) => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              className="w-3 h-3 clr-neutral-800 hover:clr-primary-400 transition:clr-300"
+              className="w-3 h-3 clr-neutral-800 hover:clr-primary-700 transition:clr-300"
               viewBox="0 0 24 24"
             >
               <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
@@ -149,7 +149,7 @@ const Actions = (props: ActionsProps) => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              className="w-3 h-3 clr-neutral-800 hover:clr-primary-400 transition:clr-300"
+              className="w-3 h-3 clr-neutral-800 hover:clr-primary-700 transition:clr-300"
               viewBox="0 0 24 24"
             >
               <circle cx="12" cy="12" r="10" />
@@ -175,7 +175,7 @@ const Actions = (props: ActionsProps) => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              className="w-3 h-3 clr-neutral-800 hover:clr-primary-400 transition:clr-300"
+              className="w-3 h-3 clr-neutral-800 hover:clr-primary-700 transition:clr-300"
               viewBox="0 0 24 24"
             >
               <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />

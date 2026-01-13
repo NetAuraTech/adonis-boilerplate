@@ -44,6 +44,14 @@ i18n.use(initReactI18next).init({
     escapeValue: false,
     prefix: '{',
     suffix: '}',
+    format: (value, format: 'long' | 'full' | 'medium' | 'short' | undefined, lng) => {
+      if (value instanceof Date) {
+        return new Intl.DateTimeFormat(lng, {
+          dateStyle: format || 'long',
+        }).format(value)
+      }
+      return value
+    },
   },
   react: {
     useSuspense: false,

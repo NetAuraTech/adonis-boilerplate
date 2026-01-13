@@ -94,7 +94,7 @@ export function Pagination(props: PaginationProps) {
                 href={buildPaginationUrl(baseUrl, page as number, filters)}
                 className={`padding-2 padding-inline-3 border-radius-1 fs-300 ${
                   page === currentPage
-                    ? 'bg-primary-500 clr-neutral-000 fw-semi-bold'
+                    ? 'bg-primary-800 clr-neutral-000 fw-semi-bold'
                     : 'bg-neutral-100 hover:bg-neutral-200 clr-neutral-700'
                 }`}
               >

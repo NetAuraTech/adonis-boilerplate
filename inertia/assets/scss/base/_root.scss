@@ -1,39 +1,33 @@
 @use "../abstracts" as *;
 
 html {
-    color-scheme: dark light;
+    color-scheme: light dark;
 }
 
 :root {
-    @each $color, $shade-map in $active-theme {
-        @each $shade, $value in $shade-map {
-            --#{$color}-#{$shade}: #{$value};
-        }
-    }
+  @include generate-theme-vars($active-theme);
 
-    @if ($enable-media-query-dark-mode) {
-        @media (prefers-color-scheme: dark) {
-            @each $color, $shade-map in $dark {
-                @each $shade, $value in $shade-map {
-                    --#{$color}-#{$shade}: #{$value};
-                }
-            }
-        }
+  // Dark mode via media query
+  @if ($enable-media-query-dark-mode) {
+    @media (prefers-color-scheme: dark) {
+      @include generate-theme-vars($dark);
     }
+  }
 
-    @each $screen-size, $size-map in $font-sizes {
-        @if $screen-size == sm {
-            @each $size-name, $size-value in $size-map {
-                --fs-#{$size-name}: #{$size-value};
-            }
-        } @else {
-            @include mq($screen-size) {
-                @each $size-name, $size-value in $size-map {
-                    --fs-#{$size-name}: #{$size-value};
-                }
-            }
+  // Responsive font sizes
+  @each $screen-size, $size-map in $font-sizes {
+    @if $screen-size == sm {
+      @each $size-name, $size-value in $size-map {
+        --fs-#{$size-name}: #{$size-value};
+      }
+    } @else {
+      @include mq($screen-size) {
+        @each $size-name, $size-value in $size-map {
+          --fs-#{$size-name}: #{$size-value};
         }
+      }
     }
+  }
 }
 
 :root:has(#theme-switcher:checked) {

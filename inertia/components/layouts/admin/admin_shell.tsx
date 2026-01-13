@@ -3,6 +3,8 @@ import { AdminHeader } from '~/components/layouts/admin/admin_header'
 import { AdminNav } from '~/components/layouts/admin/admin_nav'
 import { buildAdminNav } from '~/helpers/admin'
 import { FlashMessages } from '~/components/elements/flash_messages'
+import { Head, usePage } from '@inertiajs/react'
+import type { SharedProps } from '@adonisjs/inertia/types'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -11,6 +13,7 @@ interface LayoutProps {
 export default function AdminShell({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  const pageProps = usePage<SharedProps>().props
   const handleNavButtonClick = () => {
     setSidebarOpen(!sidebarOpen)
     if (document.activeElement instanceof HTMLElement) {
@@ -25,10 +28,15 @@ export default function AdminShell({ children }: LayoutProps) {
     }
   }
 
+  const navWidth = 350
+
   return (
-    <div className="display-flex min-h-screen bg-neutral-000">
+    <div className="display-flex min-h-screen bg-neutral-100">
+      <Head>
+        <meta name="csrf-token" content={pageProps.csrfToken} />
+      </Head>
       <FlashMessages />
-      <AdminNav sidebarOpen={sidebarOpen} categories={buildAdminNav()} setIsMenuOpen={closeMenu} />
+      <AdminNav sidebarOpen={sidebarOpen} categories={buildAdminNav()} setIsMenuOpen={closeMenu} width={navWidth}/>
       <div
         className="main-content"
         style={{
@@ -57,8 +65,8 @@ export default function AdminShell({ children }: LayoutProps) {
             transform: translateX(0) !important;
           }
           .main-content {
-            margin-left: 250px !important;
-            width: calc(100% - 250px) !important;
+            margin-left: ${navWidth}px !important;
+            width: calc(100% - ${navWidth}px) !important;
           }
         }
       `}</style>

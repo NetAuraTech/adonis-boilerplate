@@ -175,11 +175,11 @@ export default function AdminUsersIndexPage(props: AdminUsersIndexProps) {
                       </Table.Cell>
                       <Table.Cell>
                         {user.role ? (
-                          <span className="padding-1 padding-inline-2 bg-primary-100 clr-primary-700 border-radius-1 fs-300">
+                          <span className="padding-1 padding-inline-2 bg-accent-100 clr-accent-800 border-1 border-solid border-accent-800 border-radius-1 fs-300">
                             {user.role.name}
                           </span>
                         ) : (
-                          <span className="clr-neutral-500 fs-300">{t('users.badges.no_role')}</span>
+                          <span className="padding-1 padding-inline-2 bg-neutral-100 clr-neutral-800 border-1 border-solid border-neutral-800 border-radius-1 fs-300">{t('users.empty.no_role_assigned')}</span>
                         )}
                       </Table.Cell>
                       <Table.Cell>

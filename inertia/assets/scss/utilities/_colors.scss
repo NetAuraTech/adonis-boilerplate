@@ -50,6 +50,37 @@
     .border-bottom-#{$color}-#{$shade} { border-bottom-color: $variable; outline: none; }
     .border-right-#{$color}-#{$shade} { border-right-color: $variable; outline: none; }
 
+    .hover\:border-#{$color}-#{$shade} {
+      &:is(:hover, :focus-visible)
+      {
+        border-color: $variable;
+        outline: none;
+      }
+    }
+    .hover\:border-top-#{$color}-#{$shade} {
+      &:is(:hover, :focus-visible) {
+        border-top-color: $variable; outline: none;
+      }
+    }
+    .hover\:border-left-#{$color}-#{$shade} {
+      &:is(:hover, :focus-visible) {
+        border-left-color: $variable; outline: none;
+      }
+    }
+    .hover\:border-bottom-#{$color}-#{$shade} {
+      &:is(:hover, :focus-visible)
+      {
+        border-bottom-color: $variable;
+        outline: none;
+      }
+    }
+    .hover\:border-right-#{$color}-#{$shade} {
+      &:is(:hover, :focus-visible) {
+        border-right-color: $variable;
+        outline: none;
+      }
+    }
+
     .focus\:border-#{$color}-#{$shade} {
       &:is(:focus, :focus-visible, :focus-within) { border-color: $variable; outline: none; }
     }

@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next'
 import i18n from 'i18next'
 import { useFormValidation } from '~/hooks/use_form_validation'
 import { presets, rules } from '~/helpers/validation_rules'
+import { Heading } from '~/components/elements/heading'
+import { Banner } from '~/components/elements/banner'
 
 interface LinkedProviders {
   github: boolean
@@ -117,7 +119,7 @@ export default function ProfilePage(props: ProfilePageProps) {
       <Head title={t('title')} />
       <div className="container padding-block-8">
         <div className="text-center margin-block-end-8">
-          <h1 className="heading-1">{t('title')}</h1>
+          <Heading level={1}>{t('title')}</Heading>
           <p className="clr-neutral-600">{t('subtitle')}</p>
         </div>
         <div className="grid gap-8">
@@ -144,7 +146,6 @@ export default function ProfilePage(props: ProfilePageProps) {
                 }}
                 sanitize
               />
-
               <InputGroup
                 label={t('sections.profile_info.email')}
                 name="email"
@@ -165,17 +166,13 @@ export default function ProfilePage(props: ProfilePageProps) {
                 sanitize
               />
               {pageProps.currentUser?.pendingEmail && (
-                <div
-                  className="bg-yellow-100 border-yellow-600 border-solid border-3 padding-4 border-radius-2 margin-block-start-3"
+                <Banner
+                  type="warning"
+                  title={<>⏳ { t('sections.profile_info.pending_email_title') }</>}
+                  message={t('sections.profile_info.pending_email_message', {
+                    email: pageProps.currentUser?.pendingEmail,
+                  })}
                 >
-                  <h4 className="heading-4 margin-block-end-1 clr-neutral-200">
-                    ⏳ {t('sections.profile_info.pending_email_title')}
-                  </h4>
-                  <p className="fs-300 clr-yellow-800 margin-block-end-2">
-                    {t('sections.profile_info.pending_email_message', {
-                      email: pageProps.currentUser?.pendingEmail
-                    })}
-                  </p>
                   <Button
                     type="button"
                     variant="danger"
@@ -184,7 +181,7 @@ export default function ProfilePage(props: ProfilePageProps) {
                   >
                     {t('sections.profile_info.cancel_email_change')}
                   </Button>
-                </div>
+                </Banner>
               )}
               <InputGroup
                 label={t_common('language.selector_label')}
@@ -202,7 +199,6 @@ export default function ProfilePage(props: ProfilePageProps) {
                 }}
                 required
               />
-
               <Button loading={profileForm.processing} fitContent>
                 {t('sections.profile_info.submit')}
               </Button>
@@ -286,14 +282,14 @@ export default function ProfilePage(props: ProfilePageProps) {
                 required
                 sanitize={false}
               />
-
               <InputGroup
                 label={t('sections.update_password.new_password')}
                 name="password"
                 type="password"
                 value={passwordForm.data.password}
                 errorMessage={
-                  passwordForm.errors.password || passwordValidation.getValidationMessage('password')
+                  passwordForm.errors.password ||
+                  passwordValidation.getValidationMessage('password')
                 }
                 onChange={(e) => {
                   passwordForm.setData('password', e.target.value)
@@ -307,7 +303,6 @@ export default function ProfilePage(props: ProfilePageProps) {
                 helpText={t('sections.update_password.password_help')}
                 helpClassName={passwordValidation.getHelpClassName('password')}
               />
-
               <InputGroup
                 label={t('sections.update_password.confirm_password')}
                 name="password_confirmation"
@@ -329,7 +324,6 @@ export default function ProfilePage(props: ProfilePageProps) {
                 helpText={t('sections.update_password.confirmation_help')}
                 helpClassName={passwordValidation.getHelpClassName('password_confirmation')}
               />
-
               <Button loading={passwordForm.processing} fitContent>
                 {t('sections.update_password.submit')}
               </Button>
@@ -353,7 +347,6 @@ export default function ProfilePage(props: ProfilePageProps) {
                     {t('sections.delete_account.confirm_subtitle')}
                   </p>
                 </div>
-
                 <InputGroup
                   label={t('sections.delete_account.password')}
                   name="password"
@@ -373,7 +366,6 @@ export default function ProfilePage(props: ProfilePageProps) {
                   required
                   sanitize={false}
                 />
-
                 <div className="flex gap-3">
                   <Button
                     type="button"

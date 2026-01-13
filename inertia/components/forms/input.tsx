@@ -35,10 +35,10 @@ export function Input(props: InputProps) {
   } = props
 
   const baseInputClass =
-    'bg-neutral-100 clr-neutral-800 fs-400 padding-2 border-radius-2 border-1 border-solid border-neutral-300 focus:border-primary-400'
+    'bg-neutral-100 clr-neutral-800 fs-400 padding-2 border-radius-2 border-1 border-solid border-neutral-300 focus:border-primary-700'
 
   const checkableClass =
-    'cursor-pointer border-1 border-solid border-neutral-400 accent-accent-500 focus:border-accent-500'
+    'cursor-pointer border-1 border-solid border-neutral-400 accent-accent-800 focus:border-accent-800'
 
   switch (type) {
     case 'textarea':

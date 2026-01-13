@@ -6,6 +6,7 @@ import { Panel } from '~/components/elements/panel'
 import { Button } from '~/components/elements/button'
 import { getAdminResource } from '~/helpers/admin'
 import { InputGroup } from '~/components/forms/input_group'
+import { Banner } from '~/components/elements/banner'
 
 interface Role {
   id: number
@@ -108,33 +109,35 @@ export default function AdminUsersFormPage(props: AdminUsersFormProps) {
             </div>
           </Panel>
           {
-            !isEditing && <div className="padding-4 bg-blue-200 border-1 border-solid border-blue-300 border-radius-2">
-              <div className="flex-group gap-2 align-items-start">
-                <svg
-                  className="w-3 h-3 clr-blue-700 flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <div>
-                  <p className="fs-400 fw-semi-bold clr-blue-800">
-                    {t('users.invitation_info.title')}
-                  </p>
-                  <ul className="fs-300 clr-blue-700 margin-block-start-2 padding-inline-start-4">
-                    {(t('users.invitation_info.steps', { returnObjects: true }) as Array<string>).map((step: string, index: number) => (
-                      <li key={index}>{step}</li>
-                    ))}
-                  </ul>
+            !isEditing &&
+            <Banner
+              type="info"
+              title={
+                <div className="flex align-items-center gap-2">
+                  <svg
+                    className="w-3 h-3 clr-blue-700 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  {t('users.invitation_info.title')}
                 </div>
-              </div>
-            </div>
+              }
+              message={
+                <ul className="fs-300 clr-blue-700 margin-block-start-2 padding-inline-start-4">
+                  {(t('users.invitation_info.steps', { returnObjects: true }) as Array<string>).map((step: string, index: number) => (
+                    <li key={index}>{step}</li>
+                  ))}
+                </ul>
+              }
+            />
           }
           <div className="flex-group justify-content-flex-end gap-3">
             <Button

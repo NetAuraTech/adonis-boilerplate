@@ -14,7 +14,7 @@ interface NavLinkProps {
 }
 
 export function NavLink(props: NavLinkProps) {
-  const { href, label, method, fs = 400, color = "neutral-900", hover_color = "primary-400", current_page_color = "accent-400", children, onClick } = props
+  const { href, label, method, fs = 400, color = "primary-900", hover_color = "accent-700", current_page_color = "accent-700", children, onClick } = props
 
   const { url } = usePage();
   const isActive = url === href || url.startsWith(`${href}/`);

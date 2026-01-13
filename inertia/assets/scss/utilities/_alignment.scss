@@ -5,6 +5,10 @@
     align-items: center;
   }
 
+  .#{$prefix}align-items-end {
+    align-items: end;
+  }
+
   .#{$prefix}justify-content-space-between {
     justify-content: space-between;
   }

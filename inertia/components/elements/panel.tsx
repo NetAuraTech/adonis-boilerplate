@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import { Heading } from '~/components/elements/heading'
 
 interface PanelProps {
   children: ReactNode
@@ -20,14 +21,14 @@ export function Panel(props: PanelProps) {
   } = props
 
   return (
-    <div className={"grid gap-6 border-radius-2 bg-neutral-000 clr-neutral-800 padding-block-8 box-shadow-1"}>
+    <div className={"grid gap-6 border-radius-2 bg-neutral-000 clr-neutral-800 bg-neutral-100 padding-block-8 box-shadow-5"}>
       {(header || title) && (
         <div className="padding-inline-8 border-solid border-0 border-bottom-1 border-neutral-300 padding-block-end-4">
           {header ? (
             header
           ) : (
             <div>
-              {title && <h3 className="heading-3">{title}</h3>}
+              {title && <Heading level={3}>{title}</Heading>}
               {subtitle && <p className="fs-400 clr-neutral-600">{subtitle}</p>}
             </div>
           )}

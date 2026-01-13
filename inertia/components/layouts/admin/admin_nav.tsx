@@ -3,15 +3,25 @@ import logo from '~/assets/logo.png'
 import { AdminNavCategoryDisplay } from '~/types/admin'
 import { useEffect } from 'react'
 import { CanAccess } from '~/components/auth/can_access'
+import { Panel } from '~/components/elements/panel'
+import { Heading } from '~/components/elements/heading'
+import { useTranslation } from 'react-i18next'
+import type { SharedProps } from '@adonisjs/inertia/types'
+import { ThemeSwitcher } from '~/components/elements/theme_switcher'
 
 interface AdminNavProps {
   sidebarOpen: boolean
   categories: AdminNavCategoryDisplay[]
-  setIsMenuOpen: (value: boolean) => void
+  setIsMenuOpen: (value: boolean) => void,
+  width: number
 }
 
 export function AdminNav(props: AdminNavProps) {
-  const { sidebarOpen, categories, setIsMenuOpen } = props
+  const { sidebarOpen, categories, setIsMenuOpen, width } = props
+
+  const pageProps = usePage<SharedProps>().props
+
+  const { t, i18n } = useTranslation('admin')
 
   const { url } = usePage();
   const isActive = (href: string) => {
@@ -31,14 +41,13 @@ export function AdminNav(props: AdminNavProps) {
 
   return (
     <aside
-      className={`sidebar ${sidebarOpen ? 'sidebar--open' : ''}`}
+      className={`sidebar padding-4 ${sidebarOpen ? 'sidebar--open' : ''} flex flex-column gap-3 bg-neutral-100`}
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
         bottom: 0,
-        width: '250px',
-        backgroundColor: 'hsl(230, 24%, 18%)',
+        width: width,
         color: 'white',
         overflowY: 'auto',
         transition: 'transform 0.3s ease',
@@ -46,36 +55,49 @@ export function AdminNav(props: AdminNavProps) {
         transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
       }}
     >
-      <div className="padding-6 border-bottom-1 border-neutral-700">
-        <Link href="/admin" className="display-flex align-items-center">
-          <img src={logo} alt="Logo" />
-        </Link>
-      </div>
-      <nav className="padding-4">
-        {
-          categories && categories.map(category => <div key={`admin-category-${category.label}`} className="margin-block-end-4">
-            <h4 className="heading-4 clr-neutral-1000 uppercase padding-inline-3 margin-block-end-2">
-              { category.label }
-            </h4>
-            <ul className="display-flex flex-column gap-1">
-              {
-                category.links && category.links.map(link => <li key={`admin-category-${category.label}-${link.label}`}>
-                  <CanAccess permission={link.permission}>
-                    <Link
-                      href={link.path}
-                      className="display-flex align-items-center gap-2 padding-3 border-radius-1 clr-neutral-800 hover:clr-neutral-1000 hover:bg-primary-500 current:bg-primary-500 current:clr-neutral-1000 transition:bg-300 transition:clr-300"
-                      aria-current={isActive(link.path) ? 'page' : undefined}
-                    >
-                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} dangerouslySetInnerHTML={{ __html: link.icon }}/>
-                      { link.label }
-                    </Link>
-                  </CanAccess>
-                </li>)
-              }
-            </ul>
-          </div>)
-        }
-      </nav>
+      <Link href="/admin" className="flex gap-2 align-items-center clr-neutral-900">
+        <img src={logo} className="w-10" alt="Logo" />
+        <Heading level={3} className="fs-500">{ "APPNAME" }</Heading>
+      </Link>
+      <Panel>
+        <div className="grid gap-4">
+          <div className="flex align-items-center justify-content-space-between">
+            <div className="flex align-items-center justify-content-center border-radius-5 w-5 h-5 bg-blue-300">A</div>
+            <ThemeSwitcher initialTheme={pageProps.theme} />
+          </div>
+          <span className="uppercase">
+            {i18n.format(new Date())}
+          </span>
+          <strong className="fs-700">{t('welcome', {name: pageProps.currentUser!.fullName})}</strong>
+        </div>
+      </Panel>
+      <Panel>
+        <nav>
+          {
+            categories && categories.map(category => <div key={`admin-category-${category.label}`} className="margin-block-end-4">
+              <Heading level={4} className="uppercase padding-inline-3 margin-block-end-2">
+                { category.label }
+              </Heading>
+              <ul className="display-flex flex-column gap-1">
+                {
+                  category.links && category.links.map(link => <li key={`admin-category-${category.label}-${link.label}`}>
+                    <CanAccess permission={link.permission}>
+                      <Link
+                        href={link.path}
+                        className="display-flex align-items-center gap-2 padding-3 border-radius-1 clr-neutral-800 hover:clr-neutral-100 hover:bg-primary-700 current:bg-primary-700 current:clr-neutral-100 transition:bg-300 transition:clr-300"
+                        aria-current={isActive(link.path) ? 'page' : undefined}
+                      >
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} dangerouslySetInnerHTML={{ __html: link.icon }}/>
+                        { link.label }
+                      </Link>
+                    </CanAccess>
+                  </li>)
+                }
+              </ul>
+            </div>)
+          }
+        </nav>
+      </Panel>
     </aside>
   )
 }

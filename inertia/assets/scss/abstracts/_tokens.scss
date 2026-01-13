@@ -1,6 +1,7 @@
 @use "colors" as *;
 @use "typography" as *;
 @use "sizes" as *;
+@use "functions" as *;
 
 $active-theme: $light;
 $enable-media-query-dark-mode: false;
@@ -17,20 +18,15 @@ $letter-spacing-loose: 0;
 $border-radius-1: $size-2;
 $border-radius-2: $size-4;
 
-$box-shadow-1: 0px 3px 2px rgb(255, 255, 255, 0.012),
-0px 5px 4px rgb(255, 255, 255, 0.018), 0px 25px 20px rgb(255, 255, 255, 0.03);
+$box-shadow-1: #{generate-shadow("1")};
 
-$box-shadow-2: 0px 3px 2px rgb(255, 255, 255, 0.016),
-0px 5px 4px rgb(255, 255, 255, 0.024), 0px 25px 20px rgb(255, 255, 255, 0.04);
+$box-shadow-2: #{generate-shadow("2")};
 
-$box-shadow-3: 0px 3px 2px rgb(255, 255, 255, 0.02), 0px 5px 4px rgb(255, 255, 255, 0.03),
-0px 25px 20px rgb(255, 255, 255, 0.05);
+$box-shadow-3: #{generate-shadow("3")};
 
-$box-shadow-4: 0px 3px 2px rgb(255, 255, 255, 0.03), 0px 5px 4px rgb(255, 255, 255, 0.042),
-0px 25px 20px rgb(255, 255, 255, 0.07);
+$box-shadow-4: #{generate-shadow("4")};
 
-$box-shadow-5: 0px 3px 2px rgb(255, 255, 255, 0.04), 0px 5px 4px rgb(255, 255, 255, 0.06),
-0px 25px 20px rgb(255, 255, 255, 0.1);
+$box-shadow-5: #{generate-shadow("5")};
 
 // body
 $body-font-family: $font-family-base;

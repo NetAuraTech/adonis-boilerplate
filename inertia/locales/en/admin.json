@@ -243,5 +243,6 @@
       "dashboard": "Dashboard",
       "access_control": "Access Control"
     }
-  }
+  },
+  "welcome": "Welcome back, {name}!"
 }
