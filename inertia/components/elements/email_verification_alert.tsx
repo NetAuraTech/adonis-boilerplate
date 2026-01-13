@@ -21,12 +21,12 @@ export function EmailVerificationAlert({ isVisible }: EmailVerificationAlertProp
 
   return (
     <div className="bg-yellow-100 border-yellow-400 padding-block-4">
-      <div className="container flex gap-3" style={{ alignItems: 'center' }}>
-        <div className="flex-1">
-          <p className="fs-400 fw-semi-bold clr-yellow-900" style={{ margin: 0 }}>
+      <div className="container flex flex-wrap gap-3 align-items-center justify-content-space-between">
+        <div className="grid gap-1">
+          <strong className="clr-yellow-800">
             ⚠️ {t('verify_email.alert_title')}
-          </p>
-          <p className="fs-300 clr-yellow-800" style={{ margin: 0, marginTop: '0.25rem' }}>
+          </strong>
+          <p className="fs-300 clr-yellow-800">
             {t('verify_email.alert_message')}
           </p>
         </div>
