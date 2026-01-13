@@ -28,24 +28,14 @@ export default function AdminShell({ children }: LayoutProps) {
     }
   }
 
-  const navWidth = 350
-
   return (
-    <div className="display-flex min-h-screen bg-neutral-100">
+    <div className="admin flex min-h-screen bg-neutral-100">
       <Head>
         <meta name="csrf-token" content={pageProps.csrfToken} />
       </Head>
       <FlashMessages />
-      <AdminNav sidebarOpen={sidebarOpen} categories={buildAdminNav()} setIsMenuOpen={closeMenu} width={navWidth}/>
-      <div
-        className="main-content"
-        style={{
-          marginLeft: '0',
-          width: '100%',
-          minHeight: '100vh',
-          transition: 'margin-left 0.3s ease',
-        }}
-      >
+      <AdminNav sidebarOpen={sidebarOpen} categories={buildAdminNav()} setIsMenuOpen={closeMenu}/>
+      <div className="main">
         <AdminHeader handleClick={handleNavButtonClick} />
         <main className="padding-6">
           {children}
@@ -53,23 +43,11 @@ export default function AdminShell({ children }: LayoutProps) {
       </div>
       {sidebarOpen && (
         <div
-          className="display-block lg:display-hidden fixed inset-0 bg-neutral-1000 opacity-50"
+          className="block lg:display-hidden fixed inset-0 bg-neutral-1000 opacity-50"
           style={{ zIndex: 90 }}
           onClick={() => closeMenu()}
         />
       )}
-
-      <style>{`
-        @media (min-width: 65em) {
-          .sidebar {
-            transform: translateX(0) !important;
-          }
-          .main-content {
-            margin-left: ${navWidth}px !important;
-            width: calc(100% - ${navWidth}px) !important;
-          }
-        }
-      `}</style>
     </div>
   )
 }

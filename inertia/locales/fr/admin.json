@@ -1,4 +1,21 @@
 {
+  "dashboard": {
+    "title": "Tableau de bord",
+    "stats": {
+      "total_users": "Utilisateurs totaux",
+      "users_this_month": "Nouveaux utilisateurs ce mois",
+      "total_roles": "Rôles totaux",
+      "total_permissions": "Permissions totales"
+    },
+    "charts": {
+      "users_by_role": "Utilisateurs par rôle"
+    },
+    "recent_users": {
+      "title": "Utilisateurs récents",
+      "no_users": "Aucun utilisateur récent",
+      "no_name": "Sans nom"
+    }
+  },
   "permissions": {
     "title": "Permissions",
     "create": "Créer une permission",

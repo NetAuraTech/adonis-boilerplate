@@ -1,6 +1,5 @@
 @use "../abstracts" as *;
 
-
 .table {
   border-collapse: collapse;
   width: 100%;
@@ -9,6 +8,11 @@
   thead {
     background-color: var(--white);
     border: 0;
+    display: none;
+
+    @include mq(lg) {
+      display: table-header-group;
+    }
 
     th {
       text-transform: uppercase;
@@ -17,15 +21,18 @@
       text-align: left;
 
       &.center {
-        text-align: center;
+        @include mq(lg) {
+          text-align: center;
+        }
       }
 
       &:last-child {
-        text-align: right;
+        @include mq(lg) {
+          text-align: right;
+        }
       }
     }
   }
-
 
   tbody {
     a {
@@ -37,20 +44,63 @@
       }
     }
 
-    td {
-      vertical-align: middle;
-      padding: 1rem 0;
+    tr {
+      display: block;
+      margin-bottom: 1.5rem;
+      border: 1px solid $color-neutral-200;
+      border-radius: 0.5rem;
+      padding: 1rem;
+
+      @include mq(lg) {
+        display: table-row;
+        margin-bottom: 0;
+        border: none;
+        border-bottom: 1px solid $color-neutral-200;
+        border-radius: 0;
+        padding: 0;
+      }
 
       &:last-child {
-        text-align: right;
+        border: 1px solid $color-neutral-200;
+
+        @include mq(lg) {
+          border: none;
+        }
       }
     }
 
-    tr {
-      border-bottom: 1px solid $color-neutral-200;
+    td {
+      display: block;
+      text-align: left;
+      padding: 0.5rem 0;
+      border: none;
+      vertical-align: middle;
+
+      &::before {
+        content: attr(data-label);
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.85em;
+        opacity: 0.6;
+        display: block;
+        margin-bottom: 0.25rem;
+
+        @include mq(lg) {
+          display: none;
+        }
+      }
+
+      @include mq(lg) {
+        display: table-cell;
+        padding: 1rem 0;
+      }
 
       &:last-child {
-        border: none;
+        > * {
+          @include mq(lg) {
+            justify-content: flex-end;
+          }
+        }
       }
     }
   }

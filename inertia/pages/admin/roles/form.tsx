@@ -8,6 +8,7 @@ import { getAdminResource } from '~/helpers/admin'
 import { InputGroup } from '~/components/forms/input_group'
 import { useFormValidation } from '~/hooks/use_form_validation'
 import { rules } from '~/helpers/validation_rules'
+import { AdminForm } from '~/components/admin/admin_form'
 
 interface Permission {
   id: number
@@ -120,12 +121,16 @@ export default function AdminRolesFormPage(props: AdminRolesFormProps) {
   }
 
   const pageTitle = isEditing ? resource.edit?.label(role.name) : resource.create?.label()
-  const submitLabel = isEditing ? resource.update?.label() : resource.store?.label()
 
   return (
     <>
       <AdminMain title={pageTitle} icon={resource.icon}>
-        <form onSubmit={handleSubmit} className="grid gap-6">
+        <AdminForm
+          form={form}
+          resource={resource}
+          isEditing={isEditing}
+          onSubmit={handleSubmit}
+        >
           <Panel
             title={t('roles.basic_info')}
           >
@@ -259,20 +264,7 @@ export default function AdminRolesFormPage(props: AdminRolesFormProps) {
               </div>
             </div>
           </Panel>
-          <div className="flex-group justify-content-flex-end gap-3 border-top-1 border-neutral-300 padding-block-start-6">
-            <Button
-              type="button"
-              variant="outline"
-              href={resource.index?.path()}
-              fitContent
-            >
-              {t('common.actions.cancel')}
-            </Button>
-            <Button type="submit" variant="primary" loading={form.processing} fitContent>
-              {submitLabel}
-            </Button>
-          </div>
-        </form>
+        </AdminForm>
       </AdminMain>
     </>
   )

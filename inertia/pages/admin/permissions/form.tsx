@@ -3,11 +3,11 @@ import { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AdminMain } from '~/components/layouts/admin/admin_main'
 import { Panel } from '~/components/elements/panel'
-import { Button } from '~/components/elements/button'
 import { getAdminResource } from '~/helpers/admin'
 import { InputGroup } from '~/components/forms/input_group'
 import { useFormValidation } from '~/hooks/use_form_validation'
 import { rules } from '~/helpers/validation_rules'
+import { AdminForm } from '~/components/admin/admin_form'
 
 interface Permission {
   id: number
@@ -72,12 +72,16 @@ export default function AdminPermissionsFormPage(props: AdminPermissionsFormProp
   const pageTitle = isEditing
     ? t('permissions.edit', { name: permission.name })
     : t('permissions.create')
-  const submitLabel = isEditing ? t('common.actions.update') : t('common.actions.create')
 
   return (
     <>
       <AdminMain title={pageTitle} icon={resource.icon}>
-        <form onSubmit={handleSubmit} className="grid gap-6">
+        <AdminForm
+          form={form}
+          resource={resource}
+          isEditing={isEditing}
+          onSubmit={handleSubmit}
+        >
           <Panel title={t('permissions.details')}>
             <div className="grid gap-4">
               <InputGroup
@@ -150,20 +154,7 @@ export default function AdminPermissionsFormPage(props: AdminPermissionsFormProp
               />
             </div>
           </Panel>
-          <div className="flex-group justify-content-flex-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              href={resource.index?.path()}
-              fitContent
-            >
-              {t('common.actions.cancel')}
-            </Button>
-            <Button type="submit" variant="primary" loading={form.processing} fitContent>
-              {submitLabel}
-            </Button>
-          </div>
-        </form>
+        </AdminForm>
       </AdminMain>
     </>
   )

@@ -68,16 +68,16 @@ export default function AdminRolesIndexPage(props: AdminRolesIndexProps) {
               ) : (
                 roles.data.map((role) => (
                     <Table.Row key={`user-${role.id}`}>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('roles.fields.name')}>
                         <span>{role.name}</span>
                       </Table.Cell>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('roles.fields.description')}>
                         <span>{role.description}</span>
                       </Table.Cell>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('roles.fields.users_count')}>
                         <span>{role.usersCount}</span>
                       </Table.Cell>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('roles.fields.actions')}>
                         <Table.Actions
                           resource_id={role.id}
                           resource_label={role.name}

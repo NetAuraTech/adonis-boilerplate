@@ -3,10 +3,10 @@ import { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AdminMain } from '~/components/layouts/admin/admin_main'
 import { Panel } from '~/components/elements/panel'
-import { Button } from '~/components/elements/button'
 import { getAdminResource } from '~/helpers/admin'
 import { InputGroup } from '~/components/forms/input_group'
 import { Banner } from '~/components/elements/banner'
+import { AdminForm } from '~/components/admin/admin_form'
 
 interface Role {
   id: number
@@ -60,12 +60,16 @@ export default function AdminUsersFormPage(props: AdminUsersFormProps) {
   const pageTitle = isEditing
     ? t('users.edit', { name: user.fullName || t('users.empty.no_name') })
     : t('users.create')
-  const submitLabel = isEditing ? t('common.actions.update') : t('common.actions.create')
 
   return (
     <>
       <AdminMain title={pageTitle} icon={resource.icon}>
-        <form onSubmit={handleSubmit} className="grid gap-6">
+        <AdminForm
+          form={form}
+          resource={resource}
+          isEditing={isEditing}
+          onSubmit={handleSubmit}
+        >
           <Panel
             title={isEditing ? '' : t('users.invitation_details')}
             subtitle={isEditing ? '' : t('users.invitation_subtitle')}
@@ -139,20 +143,7 @@ export default function AdminUsersFormPage(props: AdminUsersFormProps) {
               }
             />
           }
-          <div className="flex-group justify-content-flex-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              href={resource.index?.path()}
-              fitContent
-            >
-              {t('common.actions.cancel')}
-            </Button>
-            <Button type="submit" variant="primary" loading={form.processing} fitContent>
-              {submitLabel}
-            </Button>
-          </div>
-        </form>
+        </AdminForm>
       </AdminMain>
     </>
   )

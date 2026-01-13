@@ -78,7 +78,7 @@ export default function AdminUsersIndexPage(props: AdminUsersIndexProps) {
       >
         <Panel
           header={
-            <form onSubmit={handleSearch} className="display-flex gap-3 align-items-end">
+            <form onSubmit={handleSearch} className="grid md:flex gap-3 align-items-end">
               <InputGroup
                 label={t('common.actions.search')}
                 name="search"
@@ -167,13 +167,13 @@ export default function AdminUsersIndexPage(props: AdminUsersIndexProps) {
               ) : (
                 users.data.map((user) => (
                     <Table.Row key={`user-${user.id}`}>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('users.fields.user')}>
                         <div>
                           <div className="fw-semi-bold">{user.fullName || t('users.empty.no_name')}</div>
                           <div className="fs-300 clr-neutral-600">{user.email}</div>
                         </div>
                       </Table.Cell>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('users.fields.role')}>
                         {user.role ? (
                           <span className="padding-1 padding-inline-2 bg-accent-100 clr-accent-800 border-1 border-solid border-accent-800 border-radius-1 fs-300">
                             {user.role.name}
@@ -182,15 +182,15 @@ export default function AdminUsersIndexPage(props: AdminUsersIndexProps) {
                           <span className="padding-1 padding-inline-2 bg-neutral-100 clr-neutral-800 border-1 border-solid border-neutral-800 border-radius-1 fs-300">{t('users.empty.no_role_assigned')}</span>
                         )}
                       </Table.Cell>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('users.fields.status')}>
                         <div className="flex gap-3">
                           <UserStatus status={user.status} id={user.id} />
                         </div>
                       </Table.Cell>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('users.fields.joined')}>
                         {formatDate(user.createdAt)}
                       </Table.Cell>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('users.fields.actions')}>
                         <Table.Actions
                           resource_id={user.id}
                           resource_label={user.fullName || t('users.empty.no_name')}

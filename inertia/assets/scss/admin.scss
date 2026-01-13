@@ -1,3 +1,39 @@
-.admin {
+@use "./abstracts" as *;
 
+.admin  {
+  --sidebar-width: 350px;
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    color: white;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    z-index: 100;
+    transform: translateX(-100%);
+    width: var(--sidebar-width);
+
+    &.open {
+      transform: translateX(0);
+    }
+
+
+    @include mq(lg) {
+      transform: translateX(0) !important;
+    }
+  }
+
+  .main {
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+    margin-left: 0;
+    width: 100%;
+
+    @include mq(lg) {
+      margin-left: var(--sidebar-width);
+      width: calc(100% - var(--sidebar-width)) !important;
+    }
+  }
 }

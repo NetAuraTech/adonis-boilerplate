@@ -61,11 +61,11 @@ export function Pagination(props: PaginationProps) {
   }
 
   return (
-    <div className="display-flex justify-content-space-between align-items-center padding-4 border-top-1 border-neutral-200">
+    <div className="flex flex-wrap gap-4 justify-content-space-between align-items-center padding-4 border-top-1 border-neutral-200">
       <div className="fs-300 clr-neutral-600">
         Showing {startItem} to {endItem} of {total} results
       </div>
-      <div className="display-flex gap-2">
+      <div className="flex gap-2">
         {currentPage > 1 ? (
           <Link
             href={buildPaginationUrl(baseUrl, currentPage - 1, filters)}
@@ -78,7 +78,7 @@ export function Pagination(props: PaginationProps) {
             Previous
           </span>
         )}
-        <div className="display-flex gap-1">
+        <div className="flex gap-1">
           {generatePageNumbers().map((page, index) => {
             if (page === '...') {
               return (

@@ -13,11 +13,10 @@ interface AdminNavProps {
   sidebarOpen: boolean
   categories: AdminNavCategoryDisplay[]
   setIsMenuOpen: (value: boolean) => void,
-  width: number
 }
 
 export function AdminNav(props: AdminNavProps) {
-  const { sidebarOpen, categories, setIsMenuOpen, width } = props
+  const { sidebarOpen, categories, setIsMenuOpen } = props
 
   const pageProps = usePage<SharedProps>().props
 
@@ -41,19 +40,7 @@ export function AdminNav(props: AdminNavProps) {
 
   return (
     <aside
-      className={`sidebar padding-4 ${sidebarOpen ? 'sidebar--open' : ''} flex flex-column gap-3 bg-neutral-100`}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        bottom: 0,
-        width: width,
-        color: 'white',
-        overflowY: 'auto',
-        transition: 'transform 0.3s ease',
-        zIndex: 100,
-        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-      }}
+      className={`sidebar padding-4 ${sidebarOpen ? 'open' : ''} flex flex-column gap-3 bg-neutral-100`}
     >
       <Link href="/admin" className="flex gap-2 align-items-center clr-neutral-900">
         <img src={logo} className="w-10" alt="Logo" />

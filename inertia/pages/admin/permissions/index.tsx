@@ -58,7 +58,7 @@ export default function AdminPermissionsIndexPage(props: AdminPermissionsIndexPr
       >
         <Panel
           header={
-            <form onSubmit={handleSearch} className="display-flex gap-3 align-items-end">
+            <form onSubmit={handleSearch} className="grid md:flex gap-3 align-items-end">
               <InputGroup
                 label={t('common.actions.search')}
                 name="search"
@@ -146,19 +146,19 @@ export default function AdminPermissionsIndexPage(props: AdminPermissionsIndexPr
               ) : (
                 permissions.data.map((permission) => (
                     <Table.Row key={`user-${permission.id}`}>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('permissions.fields.name')}>
                         <span>{permission.name}</span>
                       </Table.Cell>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('permissions.fields.slug')}>
                         <span>{permission.slug}</span>
                       </Table.Cell>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('permissions.fields.description')}>
                         <span>{permission.description}</span>
                       </Table.Cell>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('permissions.fields.category')}>
                         <span>{permission.category}</span>
                       </Table.Cell>
-                      <Table.Cell>
+                      <Table.Cell data-label={t('permissions.fields.actions')}>
                         <Table.Actions
                           resource_id={permission.id}
                           resource_label={permission.name}

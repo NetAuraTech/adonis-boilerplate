@@ -10,6 +10,7 @@ import AdminShell from '~/components/layouts/admin/admin_shell'
 import i18n from '~/lib/i18n'
 
 import '../assets/scss/app.scss'
+import '../assets/scss/admin.scss'
 
 const appName = import.meta.env.VITE_APP_NAME || 'AdonisJS'
 

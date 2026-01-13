@@ -105,7 +105,7 @@ const Actions = (props: ActionsProps) => {
   }
 
   return (
-    <div className="flex-group align-items-center justify-content-flex-end w-full padding-block-4">
+    <div className="flex-group align-items-center w-full padding-block-4">
       <CanAccess permission={show_action?.permission}>
         {show_action && (
           <Button

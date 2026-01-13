@@ -1,4 +1,21 @@
 {
+  "dashboard": {
+    "title": "Dashboard",
+    "stats": {
+      "total_users": "Total Users",
+      "users_this_month": "New Users This Month",
+      "total_roles": "Total Roles",
+      "total_permissions": "Total Permissions"
+    },
+    "charts": {
+      "users_by_role": "Users by Role"
+    },
+    "recent_users": {
+      "title": "Recent Users",
+      "no_users": "No recent users",
+      "no_name": "No name"
+    }
+  },
   "permissions": {
     "title": "Permissions",
     "create": "Create Permission",
