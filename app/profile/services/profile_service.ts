@@ -5,6 +5,7 @@ import { Exception } from '@adonisjs/core/exceptions'
 import User from '#auth/models/user'
 import i18n from 'i18next'
 import { I18n } from '@adonisjs/i18n'
+import NotificationService from '#notification/services/notification_service'
 
 interface UpdatePayload {
   email: string
@@ -23,7 +24,10 @@ interface DeletePayload {
 
 @inject()
 export default class ProfileService {
-  constructor(protected emailChangeService: EmailChangeService) {}
+  constructor(
+    protected emailChangeService: EmailChangeService,
+    protected notificationService: NotificationService
+  ) {}
 
   async update(user: User, payload: UpdatePayload, translator: I18n) {
     if (!user.isEmailVerified) {
@@ -73,8 +77,6 @@ export default class ProfileService {
   }
 
   async cleanNotification(user: User) {
-    console.log(user)
-    // TODO
-    // await user.related('notifications').query().delete()
+    return await this.notificationService.deleteAllForUser(user.id)
   }
 }

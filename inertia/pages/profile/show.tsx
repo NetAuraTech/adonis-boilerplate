@@ -12,6 +12,8 @@ import { useFormValidation } from '~/hooks/use_form_validation'
 import { presets, rules } from '~/helpers/validation_rules'
 import { Heading } from '~/components/elements/heading'
 import { Banner } from '~/components/elements/banner'
+import { UserPreference } from '~/types/user_preference'
+import { Notification } from '~/types/notification'
 
 interface LinkedProviders {
   github: boolean
@@ -20,15 +22,16 @@ interface LinkedProviders {
 }
 
 interface ProfilePageProps {
-  notifications: any[]
+  notifications: Notification[]
   providers: OAuthProvider[]
   linkedProviders: LinkedProviders
+  preferences: UserPreference
 }
 
 export default function ProfilePage(props: ProfilePageProps) {
   const { t } = useTranslation('profile')
   const { t: t_common } = useTranslation('common')
-  const { providers, linkedProviders } = props
+  const { providers, linkedProviders, preferences } = props
   const pageProps = usePage<SharedProps>().props
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
@@ -74,7 +77,7 @@ export default function ProfilePage(props: ProfilePageProps) {
 
     const localeChanged = profileForm.data.locale !== pageProps.currentUser?.locale
 
-    profileForm.put('/profile', {
+    profileForm.patch('/profile', {
       onSuccess: () => {
         if (localeChanged) {
           i18n.changeLanguage(profileForm.data.locale)
@@ -89,7 +92,7 @@ export default function ProfilePage(props: ProfilePageProps) {
     const isValid = passwordValidation.validateAll(passwordForm.data)
     if (!isValid) return
 
-    passwordForm.put('/profile/password', {
+    passwordForm.patch('/profile/password', {
       onSuccess: () => {
         passwordForm.reset()
         passwordValidation.reset()

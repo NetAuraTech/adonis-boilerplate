@@ -3,10 +3,14 @@ import { getEnabledProviders } from '#auth/helpers/oauth'
 import { UserPresenter } from '#auth/presenters/user_presenter'
 import ErrorHandlerService from '#core/services/error_handler_service'
 import { inject } from '@adonisjs/core'
+import UserPreferenceService from '#profile/services/user_preference_service'
 
 @inject()
 export default class ProfileShowController {
-  constructor(protected errorHandler: ErrorHandlerService) {}
+  constructor(
+    protected errorHandler: ErrorHandlerService,
+    protected userPreferenceService: UserPreferenceService
+  ) {}
 
   async render(ctx: HttpContext) {
     const { auth, inertia } = ctx
@@ -14,14 +18,15 @@ export default class ProfileShowController {
     try {
       const user = auth.getUserOrFail()
 
-      // TODO
-      // const notifications = await user.related('notifications').query()
-      const notifications: any[] = []
+      const notifications = await user.related('notifications').query()
+
+      const preferences = await this.userPreferenceService.getOrCreate(user.id)
 
       return inertia.render('profile/show', {
         notifications,
         providers: getEnabledProviders(),
         linkedProviders: UserPresenter.getLinkedProviders(user),
+        preferences,
       })
     } catch (error) {
       return this.errorHandler.handle(ctx, error)

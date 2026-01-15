@@ -1,13 +1,15 @@
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import { compose } from '@adonisjs/core/helpers'
-import { BaseModel, belongsTo, column, computed, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, computed, hasMany, hasOne } from '@adonisjs/lucid/orm'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbRememberMeTokensProvider } from '@adonisjs/auth/session'
 import Token from '#core/models/token'
-import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import Role from '#core/models/role'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
+import UserPreference from '#core/models/user_preference'
+import Notification from '#notification/models/notification'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -55,6 +57,12 @@ export default class User extends compose(BaseModel, AuthFinder) {
     onQuery: (query) => query.where('type', 'PASSWORD_RESET'),
   })
   declare public passwordResetTokens: HasMany<typeof Token>
+
+  @hasMany(() => Notification)
+  declare notifications: HasMany<typeof Notification>
+
+  @hasOne(() => UserPreference)
+  declare preference: HasOne<typeof UserPreference>
 
   @column()
   declare roleId: number | null
