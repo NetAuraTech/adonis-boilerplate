@@ -9,6 +9,8 @@
 
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
+import transmit from '@adonisjs/transmit/services/main'
+import UserPreferenceUpdateController from '#profile/controllers/user_preference_update_controller'
 
 // region Controller imports
 const LoginController = () => import('#auth/controllers/login_controller')
@@ -151,12 +153,12 @@ router
     router.get('/', [ProfileShowController, 'render']).as('profile.show')
 
     router
-      .put('/', [ProfileUpdateController, 'execute'])
+      .patch('/', [ProfileUpdateController, 'execute'])
       .as('profile.update')
       .use(middleware.verified())
 
     router
-      .put('/password', [ProfileUpdatePasswordController, 'execute'])
+      .patch('/password', [ProfileUpdatePasswordController, 'execute'])
       .as('profile.password.update')
       .use(middleware.verified())
 
@@ -168,6 +170,11 @@ router
     router
       .delete('/notifications', [ProfileCleanNotificationsController, 'execute'])
       .as('profile.notifications.clean')
+      .use(middleware.verified())
+
+    router
+      .patch('/preferences', [UserPreferenceUpdateController, 'execute'])
+      .as('preferences.update')
       .use(middleware.verified())
   })
   .prefix('profile')
@@ -307,3 +314,5 @@ router.post('/theme', async ({ request, response }) => {
   })
   return response.json({ success: true })
 })
+
+transmit.registerRoutes()
