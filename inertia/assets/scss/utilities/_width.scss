@@ -11,6 +11,8 @@
 
   @for $i from 1 through 10 {
     .#{$prefix}w-#{$i} { width: #{$i * 0.5rem}; }
+
+    .#{$prefix}w-max-#{$i} { max-width: #{$i * 0.5rem}; }
   }
 
   .#{$prefix}h-full        { height: 100%; }
@@ -20,6 +22,8 @@
 
   @for $i from 1 through 10 {
     .#{$prefix}h-#{$i} { height: #{$i * 0.5rem}; }
+
+    .#{$prefix}h-max-#{$i} { max-height: #{$i * 0.5rem}; }
   }
 
   .#{$prefix}max-w-full    { max-width: 100%; }
@@ -29,6 +33,9 @@
   @each $size-name, $size-value in $sizes {
     .#{$prefix}w-size-#{$size-name} { width: $size-value; }
     .#{$prefix}h-size-#{$size-name} { height: $size-value; }
+
+    .#{$prefix}w-size-max-#{$size-name} { max-width: $size-value; }
+    .#{$prefix}h-size-max-#{$size-name} { max-height: $size-value; }
   }
 }
 

@@ -5,6 +5,7 @@ import { NavLink } from '~/components/elements/nav_link'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ThemeSwitcher } from '~/components/elements/theme_switcher'
+import { Notifications } from '~/components/notifications/notifications'
 
 export function PageHeader() {
   const { t } = useTranslation('common')
@@ -60,6 +61,7 @@ export function PageHeader() {
         ) : (
           <NavLink href="/login" label={t('header.login')} fs={600} />
         )}
+        <Notifications />
         <ThemeSwitcher initialTheme={pageProps.theme} />
       </nav>
 

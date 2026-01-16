@@ -3,7 +3,6 @@
 .header {
   z-index: 1000;
   top: 0;
-  overflow: hidden;
 
   &[aria-expanded=true] {
     overflow: initial;

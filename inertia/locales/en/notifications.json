@@ -1,0 +1,15 @@
+{
+  "title": "Notifications",
+  "mark_all_read": "Mark all as read",
+  "mark_read": "Mark as read",
+  "no_notifications": "No notifications yet",
+  "view_all": "View all notifications",
+  "delete": "Delete notification",
+  "time": {
+    "just_now": "Just now",
+    "minutes_ago": "{count}m ago",
+    "hours_ago": "{count}h ago",
+    "days_ago": "{count}d ago",
+    "weeks_ago": "{count}w ago"
+  }
+}

@@ -35,6 +35,9 @@
 
   .#{$prefix}visible   { visibility: visible; }
   .#{$prefix}invisible { visibility: hidden; }
+
+  .#{$prefix}overflow-auto { overflow: auto; }
+  .#{$prefix}overflow-hidden { overflow: hidden; }
 }
 
 @each $breakpoint-name, $breakpoint-value in $breakpoints {

@@ -11,6 +11,7 @@ import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import transmit from '@adonisjs/transmit/services/main'
 import UserPreferenceUpdateController from '#profile/controllers/user_preference_update_controller'
+import TestNotificationController from '#notification/controllers/test_notification_controller'
 
 // region Controller imports
 const LoginController = () => import('#auth/controllers/login_controller')
@@ -314,5 +315,16 @@ router.post('/theme', async ({ request, response }) => {
   })
   return response.json({ success: true })
 })
+
+if (process.env.NODE_ENV === 'development') {
+  router
+    .group(() => {
+      router
+        .get('/notifications/random', [TestNotificationController, 'execute'])
+        .as('test.notifications.random')
+    })
+    .prefix('/test')
+    .use(middleware.auth())
+}
 
 transmit.registerRoutes()

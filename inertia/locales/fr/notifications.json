@@ -1,0 +1,15 @@
+{
+  "title": "Notifications",
+  "mark_all_read": "Tout marquer comme lu",
+  "mark_read": "Marquer comme lu",
+  "no_notifications": "Aucune notification pour le moment",
+  "view_all": "Voir toutes les notifications",
+  "delete": "Supprimer la notification",
+  "time": {
+    "just_now": "À l'instant",
+    "minutes_ago": "Il y a {count}m",
+    "hours_ago": "Il y a {count}h",
+    "days_ago": "Il y a {count}j",
+    "weeks_ago": "Il y a {count}sem"
+  }
+}

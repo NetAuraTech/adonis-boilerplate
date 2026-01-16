@@ -38,7 +38,7 @@ export function Button(props: ButtonProps) {
     success: "border-0 border-radius-2 bg-green-400 clr-neutral-1000 hover:clr-neutral-1000 hover:bg-green-500 box-shadow-1",
     outline: "border-2 border-radius-2 bg-transparent border-solid border-primary-800 clr-neutral-1000 hover:bg-primary-500 hover:clr-neutral-1000 box-shadow-1",
     transparent: "border-0 border-radius-2 bg-transparent clr-neutral-700 hover:clr-accent-800",
-    icon: "bg-transparent clr-neutral-700 hover:clr-primary-700 box-shadow-1",
+    icon: "bg-transparent clr-neutral-700 hover:clr-primary-700",
     social: "border-0 border-radius-2 bg-neutral-100 clr-neutral-800 border-solid border-1 border-neutral-200 hover:clr-neutral-800 hover:border-primary-700 transition:border-300 box-shadow-1"
   }
 

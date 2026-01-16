@@ -218,7 +218,7 @@ export default class NotificationService {
    */
   private async broadcastNotification(notification: Notification): Promise<void> {
     try {
-      await transmit.broadcast(`user:${notification.userId}:notifications`, {
+      transmit.broadcast(`user:${notification.userId}:notifications`, {
         type: 'notification.created',
         notification: notification.serialize(),
       })

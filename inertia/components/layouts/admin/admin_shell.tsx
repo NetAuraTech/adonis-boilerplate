@@ -44,7 +44,7 @@ export default function AdminShell({ children }: LayoutProps) {
       {sidebarOpen && (
         <div
           className="block lg:display-hidden fixed inset-0 bg-neutral-1000 opacity-50"
-          style={{ zIndex: 90 }}
+          style={{ zIndex: 49 }}
           onClick={() => closeMenu()}
         />
       )}

@@ -19,10 +19,7 @@ export default class Notification extends BaseModel {
   @column()
   declare message: string
 
-  @column({
-    prepare: (value: Record<string, any> | null) => (value ? JSON.stringify(value) : null),
-    consume: (value: string | null) => (value ? JSON.parse(value) : null),
-  })
+  @column()
   declare data: Record<string, any> | null
 
   @column.dateTime()

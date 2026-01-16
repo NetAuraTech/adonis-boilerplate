@@ -7,6 +7,7 @@ import enProfile from '~/locales/en/profile.json'
 import enCommon from '~/locales/en/common.json'
 import enErrors from '~/locales/en/errors.json'
 import enValidation from '~/locales/en/validation.json'
+import enNotifications from '~/locales/en/notifications.json'
 
 import frAdmin from '~/locales/fr/admin.json'
 import frAuth from '~/locales/fr/auth.json'
@@ -14,6 +15,7 @@ import frProfile from '~/locales/fr/profile.json'
 import frCommon from '~/locales/fr/common.json'
 import frErrors from '~/locales/fr/errors.json'
 import frValidation from '~/locales/fr/validation.json'
+import frNotifications from '~/locales/fr/notifications.json'
 
 const resources = {
   en: {
@@ -23,6 +25,7 @@ const resources = {
     common: enCommon,
     errors: enErrors,
     validation: enValidation,
+    notifications: enNotifications,
   },
   fr: {
     admin: frAdmin,
@@ -31,6 +34,7 @@ const resources = {
     common: frCommon,
     errors: frErrors,
     validation: frValidation,
+    notifications: frNotifications,
   },
 }
 
@@ -39,7 +43,7 @@ i18n.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',
   defaultNS: 'common',
-  ns: ['admin', 'auth', 'profile', 'common', 'errors', 'validation'],
+  ns: ['admin', 'auth', 'profile', 'common', 'errors', 'validation', 'notifications'],
   interpolation: {
     escapeValue: false,
     prefix: '{',
