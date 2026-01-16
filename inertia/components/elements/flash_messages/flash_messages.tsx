@@ -32,7 +32,6 @@ export function FlashMessages() {
     }, EXIT_SPEED)
   }, [removeFlash])
 
-  // Handle session flash messages (from backend)
   useEffect(() => {
     const msg = flash?.success || flash?.error || flash?.warning || flash?.info
     if (!msg) return
@@ -58,7 +57,6 @@ export function FlashMessages() {
     return () => clearTimeout(timer)
   }, [flash, handleClose])
 
-  // Handle context messages (from client-side)
   useEffect(() => {
     messages.forEach((msg) => {
       const exists = displayMessages.some((m) => m.id === msg.id)
