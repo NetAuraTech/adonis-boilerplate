@@ -1,6 +1,7 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import NotificationService from '#notification/services/notification_service'
+import ErrorHandlerService from '#core/services/error_handler_service'
 
 /**
  * Controller for creating random test notifications
@@ -8,7 +9,10 @@ import NotificationService from '#notification/services/notification_service'
  */
 @inject()
 export default class TestNotificationController {
-  constructor(protected notificationService: NotificationService) {}
+  constructor(
+    protected notificationService: NotificationService,
+    protected errorHandler: ErrorHandlerService
+  ) {}
 
   async execute(ctx: HttpContext) {
     const { auth, response } = ctx
@@ -127,10 +131,7 @@ export default class TestNotificationController {
         notification,
       })
     } catch (error) {
-      return response.internalServerError({
-        message: 'Failed to create test notification',
-        error: error.message,
-      })
+      return this.errorHandler.handleApi(ctx, error)
     }
   }
 }

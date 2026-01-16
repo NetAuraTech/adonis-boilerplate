@@ -1,11 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import axios from 'axios'
 import { Transmit } from '@adonisjs/transmit-client'
+import { useTranslation } from 'react-i18next'
 import type {
   Notification,
   NotificationPaginatedResponse,
   UnreadCountResponse,
 } from '~/types/notification'
+import { useFlash } from '~/components/elements/flash_messages/flash_context'
 
 interface UseNotificationsReturn {
   notifications: Notification[]
@@ -24,6 +26,8 @@ export function useNotifications(userId?: number): UseNotificationsReturn {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
+  const { error: showError } = useFlash()
+  const { t } = useTranslation('notifications')
 
   /**
    * Fetch notifications from API
@@ -40,11 +44,11 @@ export function useNotifications(userId?: number): UseNotificationsReturn {
       })
       setNotifications(data.data || [])
     } catch (error) {
-      console.error('Failed to fetch notifications:', error)
+      showError(t('errors.fetch_failed'))
     } finally {
       setIsLoading(false)
     }
-  }, [userId])
+  }, [userId, showError, t])
 
   /**
    * Fetch unread count
@@ -56,25 +60,28 @@ export function useNotifications(userId?: number): UseNotificationsReturn {
       const { data } = await axios.get<UnreadCountResponse>('/api/notifications/unread-count')
       setUnreadCount(data.count || 0)
     } catch (error) {
-      console.error('Failed to fetch unread count:', error)
+      showError(t('errors.count_failed'))
     }
-  }, [userId])
+  }, [userId, showError, t])
 
   /**
    * Mark notification as read
    */
-  const markAsRead = useCallback(async (id: number) => {
-    try {
-      await axios.patch(`/api/notifications/${id}/read`)
+  const markAsRead = useCallback(
+    async (id: number) => {
+      try {
+        await axios.patch(`/api/notifications/${id}/read`)
 
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n))
-      )
-      setUnreadCount((prev) => Math.max(0, prev - 1))
-    } catch (error) {
-      console.error('Failed to mark notification as read:', error)
-    }
-  }, [])
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n))
+        )
+        setUnreadCount((prev) => Math.max(0, prev - 1))
+      } catch (error) {
+        showError(t('errors.mark_read_failed'))
+      }
+    },
+    [showError, t]
+  )
 
   /**
    * Mark all notifications as read
@@ -86,9 +93,9 @@ export function useNotifications(userId?: number): UseNotificationsReturn {
       setNotifications((prev) => prev.map((n) => ({ ...n, readAt: new Date().toISOString() })))
       setUnreadCount(0)
     } catch (error) {
-      console.error('Failed to mark all as read:', error)
+      showError(t('errors.mark_all_read_failed'))
     }
-  }, [])
+  }, [showError, t])
 
   /**
    * Delete notification
@@ -104,10 +111,10 @@ export function useNotifications(userId?: number): UseNotificationsReturn {
           setUnreadCount((prev) => Math.max(0, prev - 1))
         }
       } catch (error) {
-        console.error('Failed to delete notification:', error)
+        showError(t('errors.delete_failed'))
       }
     },
-    [notifications]
+    [notifications, showError, t]
   )
 
   /**

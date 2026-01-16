@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { AdminHeader } from '~/components/layouts/admin/admin_header'
 import { AdminNav } from '~/components/layouts/admin/admin_nav'
 import { buildAdminNav } from '~/helpers/admin'
-import { FlashMessages } from '~/components/elements/flash_messages'
+import { FlashMessages } from '~/components/elements/flash_messages/flash_messages'
 import { Head, usePage } from '@inertiajs/react'
 import type { SharedProps } from '@adonisjs/inertia/types'
 
