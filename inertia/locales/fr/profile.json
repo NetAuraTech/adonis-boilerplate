@@ -1,6 +1,10 @@
 {
   "title": "Mon Profil",
   "subtitle": "Gérez les paramètres et préférences de votre compte",
+  "tabs": {
+    "profile": "Paramètres du profil",
+    "preferences": "Préférences"
+  },
   "sections": {
     "profile_info": {
       "title": "Informations du Profil",
@@ -44,6 +48,92 @@
       "password_placeholder": "Entrez votre mot de passe pour confirmer",
       "cancel": "Annuler",
       "confirm_delete": "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible."
+    }
+  },
+  "preferences": {
+    "save": "Enregistrer les préférences",
+    "tabs": {
+      "notifications": "Notifications",
+      "interface": "Interface",
+      "privacy": "Confidentialité"
+    },
+    "notifications": {
+      "title": "Préférences de notification",
+      "subtitle": "Contrôlez quelles notifications vous recevez et à quelle fréquence.",
+      "email": {
+        "title": "Notifications par Email",
+        "subtitle": "Choisissez pour quels événements vous souhaitez recevoir des notifications par email."
+      },
+      "inApp": {
+        "title": "Notifications In-App",
+        "subtitle": "Choisissez pour quels événements vous souhaitez recevoir des notifications dans l'application."
+      },
+      "categories": {
+        "security": {
+          "label": "Notifications de sécurité",
+          "description": "Événements de sécurité importants (vérification email, changements de mot de passe, alertes de connexion)"
+        },
+        "account": {
+          "label": "Notifications de compte",
+          "description": "Mises à jour liées au compte (changements d'email, suppression de compte)"
+        },
+        "social": {
+          "label": "Notifications sociales",
+          "description": "Invitations, mentions et messages d'autres utilisateurs"
+        }
+      },
+      "frequency": {
+        "title": "Fréquence des emails",
+        "subtitle": "Contrôlez la fréquence de réception des notifications par email.",
+        "help": "Choisissez la fréquence de réception des notifications par email",
+        "options": {
+          "immediate": "Immédiat - Recevez les emails au fur et à mesure",
+          "daily_digest": "Résumé quotidien - Un email par jour avec toutes les notifications",
+          "weekly_digest": "Résumé hebdomadaire - Un email par semaine avec toutes les notifications"
+        }
+      }
+    },
+    "interface": {
+      "title": "Préférences d'Interface",
+      "subtitle": "Personnalisez votre expérience utilisateur.",
+      "theme": {
+        "label": "Thème",
+        "options": {
+          "light": "Clair",
+          "dark": "Sombre",
+          "auto": "Auto (suivre le système)"
+        },
+        "help": "Choisissez votre schéma de couleurs préféré"
+      },
+      "density": {
+        "label": "Densité d'affichage",
+        "options": {
+          "compact": "Compact - Plus de contenu visible",
+          "comfortable": "Confortable - Espacement équilibré",
+          "spacious": "Spacieux - Lisibilité maximale"
+        },
+        "help": "Ajustez l'espacement et la taille des éléments de l'interface"
+      }
+    },
+    "privacy": {
+      "title": "Paramètres de Confidentialité",
+      "subtitle": "Contrôlez votre confidentialité et ce que les autres peuvent voir.",
+      "profile_visibility": {
+        "label": "Visibilité du profil",
+        "options": {
+          "public": "Public - Tout le monde peut voir votre profil",
+          "private": "Privé - Vous seul pouvez voir votre profil"
+        },
+        "help": "Contrôlez qui peut voir les informations de votre profil"
+      },
+      "show_email": {
+        "label": "Afficher l'adresse email sur le profil",
+        "help": "Lorsqu'activé, votre email sera visible par les autres utilisateurs"
+      },
+      "show_activity": {
+        "label": "Afficher le statut d'activité",
+        "help": "Lorsqu'activé, les autres peuvent voir quand vous êtes actif"
+      }
     }
   }
 }

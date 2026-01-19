@@ -10,12 +10,53 @@
     background-color: transparent;
   }
 
+  .border-transparent { border-color: transparent; outline: none; }
+  .border-top-transparent { border-top-color: transparent; outline: none; }
+  .border-left-transparent { border-left-color: transparent; outline: none; }
+  .border-bottom-transparent { border-bottom-color: transparent; outline: none; }
+  .border-right-transparent { border-right-color: transparent; outline: none; }
+
   .hover\:clr-transparent {
-    color: transparent;
+    &:is(:hover, :focus-visible) {
+      color: transparent;
+    }
   }
 
   .hover\:bg-transparent {
-    background-color: transparent;
+    &:is(:hover, :focus-visible) {
+      background-color: transparent;
+    }
+  }
+
+  .hover\:border-transparent {
+    &:is(:hover, :focus-visible)
+    {
+      border-color: transparent;
+      outline: none;
+    }
+  }
+  .hover\:border-top-transparent {
+    &:is(:hover, :focus-visible) {
+      border-top-color: transparent; outline: none;
+    }
+  }
+  .hover\:border-left-transparent {
+    &:is(:hover, :focus-visible) {
+      border-left-color: transparent; outline: none;
+    }
+  }
+  .hover\:border-bottom-transparent {
+    &:is(:hover, :focus-visible)
+    {
+      border-bottom-color: transparent;
+      outline: none;
+    }
+  }
+  .hover\:border-right-transparent {
+    &:is(:hover, :focus-visible) {
+      border-right-color: transparent;
+      outline: none;
+    }
   }
 
   @each $shade, $value in $shade-map {

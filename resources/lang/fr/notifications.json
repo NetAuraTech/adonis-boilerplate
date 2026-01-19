@@ -1,0 +1,22 @@
+{
+  "email_verification": {
+    "title": "Vérification d'email requise",
+    "message": "Veuillez vérifier votre adresse email pour accéder à toutes les fonctionnalités."
+  },
+  "email_change_requested": {
+    "title": "Changement d'email demandé",
+    "message": "Vous avez demandé à changer votre email pour {newEmail}. Veuillez vérifier votre boîte de réception pour confirmer."
+  },
+  "email_changed": {
+    "title": "Email modifié avec succès",
+    "message": "Votre email a été modifié avec succès pour {newEmail}."
+  },
+  "password_reset_requested": {
+    "title": "Réinitialisation de mot de passe demandée",
+    "message": "Vous avez demandé une réinitialisation de mot de passe. Cliquez sur le lien dans votre email pour continuer."
+  },
+  "password_changed": {
+    "title": "Mot de passe modifié",
+    "message": "Votre mot de passe a été modifié avec succès."
+  }
+}

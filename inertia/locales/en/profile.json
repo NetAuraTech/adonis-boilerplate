@@ -1,6 +1,10 @@
 {
   "title": "My Profile",
   "subtitle": "Manage your account settings and preferences",
+  "tabs": {
+    "profile": "Profile Settings",
+    "preferences": "Preferences"
+  },
   "sections": {
     "profile_info": {
       "title": "Profile Information",
@@ -44,6 +48,92 @@
       "password_placeholder": "Enter your password to confirm",
       "cancel": "Cancel",
       "confirm_delete": "Are you sure you want to delete your account? This action is irreversible."
+    }
+  },
+  "preferences": {
+    "save": "Save Preferences",
+    "tabs": {
+      "notifications": "Notifications",
+      "interface": "Interface",
+      "privacy": "Privacy"
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "subtitle": "Control which notifications you receive and how often.",
+      "email": {
+        "title": "Email Notifications",
+        "subtitle": "Choose which events you want to receive email notifications for."
+      },
+      "inApp": {
+        "title": "In-App Notifications",
+        "subtitle": "Choose which events you want to receive in-app notifications for."
+      },
+      "categories": {
+        "security": {
+          "label": "Security notifications",
+          "description": "Important security events (email verification, password changes, login alerts)"
+        },
+        "account": {
+          "label": "Account notifications",
+          "description": "Account-related updates (email changes, account deletion)"
+        },
+        "social": {
+          "label": "Social notifications",
+          "description": "Invitations, mentions, and messages from other users"
+        }
+      },
+      "frequency": {
+        "title": "Email Frequency",
+        "subtitle": "Control how often you receive email notifications.",
+        "help": "Choose how often you want to receive email notifications",
+        "options": {
+          "immediate": "Immediate - Receive emails as events happen",
+          "daily_digest": "Daily Digest - One email per day with all notifications",
+          "weekly_digest": "Weekly Digest - One email per week with all notifications"
+        }
+      }
+    },
+    "interface": {
+      "title": "Interface Preferences",
+      "subtitle": "Customize your user interface experience.",
+      "theme": {
+        "label": "Theme",
+        "options": {
+          "light": "Light",
+          "dark": "Dark",
+          "auto": "Auto (follow system)"
+        },
+        "help": "Choose your preferred color scheme"
+      },
+      "density": {
+        "label": "Display Density",
+        "options": {
+          "compact": "Compact - More content visible",
+          "comfortable": "Comfortable - Balanced spacing",
+          "spacious": "Spacious - Maximum readability"
+        },
+        "help": "Adjust the spacing and size of UI elements"
+      }
+    },
+    "privacy": {
+      "title": "Privacy Settings",
+      "subtitle": "Control your privacy and what others can see.",
+      "profile_visibility": {
+        "label": "Profile Visibility",
+        "options": {
+          "public": "Public - Anyone can view your profile",
+          "private": "Private - Only you can view your profile"
+        },
+        "help": "Control who can see your profile information"
+      },
+      "show_email": {
+        "label": "Show email address on profile",
+        "help": "When enabled, your email will be visible to other users"
+      },
+      "show_activity": {
+        "label": "Show activity status",
+        "help": "When enabled, others can see when you're active"
+      }
     }
   }
 }

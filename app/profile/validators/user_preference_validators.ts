@@ -2,15 +2,12 @@ import vine from '@vinejs/vine'
 
 /**
  * Validators for user preference endpoints
- * Supports flexible JSON structure while validating known categories
+ * Updated to use categories instead of individual notification types
  */
 export default class UserPreferenceValidators {
   /**
    * Validator for updating user preferences
    * Supports partial updates with deep merge
-   *
-   * Known categories: notifications, interface, privacy
-   * Additional categories are allowed for extensibility
    */
   static update = () => {
     return vine.compile(
@@ -18,8 +15,20 @@ export default class UserPreferenceValidators {
         .object({
           notifications: vine
             .object({
-              email: vine.record(vine.any()).optional(),
-              inApp: vine.record(vine.any()).optional(),
+              email: vine
+                .object({
+                  security: vine.boolean().optional(),
+                  account: vine.boolean().optional(),
+                  social: vine.boolean().optional(),
+                })
+                .optional(),
+              inApp: vine
+                .object({
+                  security: vine.boolean().optional(),
+                  account: vine.boolean().optional(),
+                  social: vine.boolean().optional(),
+                })
+                .optional(),
               emailFrequency: vine.enum(['immediate', 'daily_digest', 'weekly_digest']).optional(),
             })
             .optional(),
@@ -27,7 +36,6 @@ export default class UserPreferenceValidators {
           interface: vine
             .object({
               theme: vine.enum(['light', 'dark', 'auto']).optional(),
-              language: vine.enum(['en', 'fr']).optional(),
               density: vine.enum(['compact', 'comfortable', 'spacious']).optional(),
             })
             .optional(),
@@ -46,9 +54,6 @@ export default class UserPreferenceValidators {
 
   /**
    * Validator for setting a specific preference by path
-   * Allows any path and value for maximum flexibility
-   *
-   * Example: { path: 'notifications.email.email_verified', value: false }
    */
   static setPreference = () => {
     return vine.compile(
@@ -61,7 +66,6 @@ export default class UserPreferenceValidators {
 
   /**
    * Validator for getting a specific preference by path
-   * Path is passed as URL parameter
    */
   static getPreference = () => {
     return vine.compile(
@@ -73,7 +77,6 @@ export default class UserPreferenceValidators {
 
   /**
    * Validator for resetting a preference category
-   * Category must be one of the known types
    */
   static resetCategory = () => {
     return vine.compile(

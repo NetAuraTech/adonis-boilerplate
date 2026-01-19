@@ -1,21 +1,44 @@
+import { InertiaFormProps } from '@inertiajs/react'
+import { FormEvent } from 'react'
+
+export interface NotificationCategoryPreferences {
+  security: boolean
+  account: boolean
+  social: boolean
+}
+
+export interface NotificationPreferences {
+  email: NotificationCategoryPreferences
+  inApp: NotificationCategoryPreferences
+  emailFrequency: 'immediate' | 'daily_digest' | 'weekly_digest'
+}
+
+export interface InterfacePreferences {
+  theme: 'light' | 'dark' | 'auto'
+  density: 'compact' | 'comfortable' | 'spacious'
+}
+
+export interface PrivacyPreferences {
+  profileVisibility: 'public' | 'private'
+  showEmail: boolean
+  showActivity: boolean
+}
+
+export interface UserPreferencesData {
+  notifications: NotificationPreferences
+  interface: InterfacePreferences
+  privacy: PrivacyPreferences
+}
+
 export interface UserPreference {
   id: number
-  user_id: number
-  preferences: {
-    notifications?: {
-      email: Record<string, boolean>
-      inApp: Record<string, boolean>
-      emailFrequency: 'immediate' | 'daily_digest' | 'weekly_digest'
-    }
-    interface?: {
-      theme: 'light' | 'dark' | 'auto'
-      language: 'en' | 'fr'
-      density: 'compact' | 'comfortable' | 'spacious'
-    }
-    privacy?: {
-      profileVisibility: 'public' | 'private'
-      showEmail: boolean
-      showActivity: boolean
-    }
-  }
+  userId: number
+  preferences: UserPreferencesData
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PreferencesSectionProps {
+  form: InertiaFormProps<UserPreferencesData>
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void
 }

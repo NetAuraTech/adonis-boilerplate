@@ -1,0 +1,22 @@
+{
+  "email_verification": {
+    "title": "Email Verification Required",
+    "message": "Please verify your email address to access all features."
+  },
+  "email_change_requested": {
+    "title": "Email Change Requested",
+    "message": "You requested to change your email to {newEmail}. Please check your inbox to confirm."
+  },
+  "email_changed": {
+    "title": "Email Changed Successfully",
+    "message": "Your email has been successfully changed to {newEmail}."
+  },
+  "password_reset_requested": {
+    "title": "Password Reset Requested",
+    "message": "You requested a password reset. Click the link in your email to proceed."
+  },
+  "password_changed": {
+    "title": "Password Changed",
+    "message": "Your password has been successfully changed."
+  }
+}
