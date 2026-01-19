@@ -7,12 +7,15 @@ import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import i18n from 'i18next'
 import { I18n } from '@adonisjs/i18n'
+import NotificationService from '#notification/services/notification_service'
 
 test.group('EmailVerificationService', (group) => {
   let emailVerificationService: EmailVerificationService
+  let notificationService: NotificationService
 
   group.setup(() => {
-    emailVerificationService = new EmailVerificationService()
+    notificationService = new NotificationService()
+    emailVerificationService = new EmailVerificationService(notificationService)
   })
 
   test('sendVerificationEmail: should create email verification token', async ({

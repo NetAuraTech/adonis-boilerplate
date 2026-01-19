@@ -35,7 +35,6 @@ export default class UserPreferenceService {
   async update(userId: number, updates: Partial<UserPreferencesData>): Promise<UserPreference> {
     const preferences = await this.getOrCreate(userId)
 
-    // Deep merge preferences
     preferences.preferences = this.deepMerge(preferences.preferences, updates)
     await preferences.save()
 
@@ -61,11 +60,7 @@ export default class UserPreferenceService {
     preferences.set(path, value)
     await preferences.save()
 
-    logger.info('User preference set', {
-      userId,
-      path,
-      value,
-    })
+    logger.info('User preference set', { userId, path, value })
 
     return preferences
   }
@@ -140,28 +135,19 @@ export default class UserPreferenceService {
     return {
       notifications: {
         email: {
-          email_verified: true,
-          email_change_requested: true,
-          email_changed: true,
-          password_reset_requested: true,
-          password_changed: true,
-          user_invited: true,
-          account_deleted: true,
+          security: true,
+          account: true,
+          social: true,
         },
         inApp: {
-          email_verified: true,
-          email_change_requested: true,
-          email_changed: true,
-          password_reset_requested: true,
-          password_changed: true,
-          user_invited: true,
-          account_deleted: true,
+          security: true,
+          account: true,
+          social: true,
         },
         emailFrequency: 'immediate',
       },
       interface: {
         theme: 'light',
-        language: 'fr',
         density: 'comfortable',
       },
       privacy: {

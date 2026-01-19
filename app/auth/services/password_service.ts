@@ -1,6 +1,5 @@
 import User from '#auth/models/user'
 import Token from '#core/models/token'
-import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
@@ -9,6 +8,8 @@ import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
 import ResetPasswordMail from '#auth/mails/reset_password_mail'
 import { I18n } from '@adonisjs/i18n'
+import { inject } from '@adonisjs/core'
+import NotificationService from '#notification/services/notification_service'
 
 interface ResetPasswordPayload {
   token: string
@@ -18,7 +19,10 @@ interface ResetPasswordPayload {
 /**
  * Service for handling password reset workflows
  */
+@inject()
 export default class PasswordService {
+  constructor(protected notificationService: NotificationService) {}
+
   /**
    * Send password reset link to user's email
    *
@@ -52,7 +56,15 @@ export default class PasswordService {
     const resetLink = `${env.get('DOMAIN')}/reset-password/${fullToken}`
 
     try {
-      await mail.send(new ResetPasswordMail(user, resetLink, translator))
+      await this.notificationService.notify(new ResetPasswordMail(user, resetLink, translator))
+
+      await this.notificationService.notify({
+        userId: user.id,
+        type: 'security',
+        title: translator.t('notifications.password_reset_requested.title'),
+        message: translator.t('notifications.password_reset_requested.message'),
+        data: { resetLink },
+      })
 
       logger.info('Password reset email sent', {
         userId: user.id,
@@ -107,10 +119,11 @@ export default class PasswordService {
    * Resets a user's password.
    *
    * @param payload - ResetPasswordPayload.
+   * @param translator
    * @returns The user with the updated password.
    * @throws Exception if the token is invalid or if the attempts are exceeded.
    */
-  async resetPassword(payload: ResetPasswordPayload): Promise<User> {
+  async resetPassword(payload: ResetPasswordPayload, translator: I18n): Promise<User> {
     await Token.incrementAttempts(payload.token)
 
     const exceededAttempts = await Token.hasExceededAttempts(payload.token)
@@ -144,6 +157,13 @@ export default class PasswordService {
     logger.info('Password reset successful', {
       userId: user.id,
       token: maskToken(payload.token),
+    })
+
+    await this.notificationService.notify({
+      userId: user.id,
+      type: 'security',
+      title: translator.t('notifications.password_changed.title'),
+      message: translator.t('notifications.password_changed.message'),
     })
 
     return user

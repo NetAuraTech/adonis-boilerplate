@@ -5,6 +5,8 @@ import logger from '@adonisjs/core/services/logger'
 import transmit from '@adonisjs/transmit/services/main'
 import { DateTime } from 'luxon'
 import type { ModelPaginatorContract } from '@adonisjs/lucid/types/model'
+import { BaseMail } from '@adonisjs/mail'
+import mail from '@adonisjs/mail/services/main'
 
 export interface CreateNotificationData {
   userId: number
@@ -23,6 +25,14 @@ export interface GetNotificationsOptions {
 
 @inject()
 export default class NotificationService {
+  async notify(data: CreateNotificationData | BaseMail) {
+    if (data instanceof BaseMail) {
+      await mail.send(data)
+    } else {
+      await this.create(data)
+    }
+  }
+
   /**
    * Create a new notification
    * Checks user preferences before creating in-app notification
@@ -34,7 +44,6 @@ export default class NotificationService {
   async create(data: CreateNotificationData): Promise<Notification | null> {
     const userPrefs = await UserPreference.query().where('user_id', data.userId).first()
 
-    // Check if user wants to receive this type of notification in-app
     const inAppEnabled = userPrefs?.get(`notifications.inApp.${data.type}`, true)
 
     if (!inAppEnabled) {

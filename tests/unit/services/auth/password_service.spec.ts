@@ -7,12 +7,15 @@ import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import i18n from 'i18next'
 import { I18n } from '@adonisjs/i18n'
+import NotificationService from '#notification/services/notification_service'
 
 test.group('PasswordService', (group) => {
   let passwordService: PasswordService
+  let notificationService: NotificationService
 
   group.setup(() => {
-    passwordService = new PasswordService()
+    notificationService = new NotificationService()
+    passwordService = new PasswordService(notificationService)
   })
 
   test('sendResetPasswordLink: should create password reset token', async ({ assert, cleanup }) => {
@@ -97,10 +100,13 @@ test.group('PasswordService', (group) => {
     const { selector, validator } = await createPasswordResetToken(user)
     const fullToken = `${selector}.${validator}`
 
-    const updatedUser = await passwordService.resetPassword({
-      token: fullToken,
-      password: 'newpassword123',
-    })
+    const updatedUser = await passwordService.resetPassword(
+      {
+        token: fullToken,
+        password: 'newpassword123',
+      },
+      i18n as unknown as I18n
+    )
 
     await updatedUser.refresh()
     const isValid = await hash.verify(updatedUser.password!, 'newpassword123')
@@ -112,10 +118,13 @@ test.group('PasswordService', (group) => {
     const { selector, validator } = await createPasswordResetToken(user)
     const fullToken = `${selector}.${validator}`
 
-    await passwordService.resetPassword({
-      token: fullToken,
-      password: 'newpassword123',
-    })
+    await passwordService.resetPassword(
+      {
+        token: fullToken,
+        password: 'newpassword123',
+      },
+      i18n as unknown as I18n
+    )
 
     const tokens = await Token.query()
       .where('userId', user.id)
@@ -132,10 +141,13 @@ test.group('PasswordService', (group) => {
 
     // Attempt with wrong token
     await assert.rejects(async () =>
-      passwordService.resetPassword({
-        token: wrongToken,
-        password: 'newpassword123',
-      })
+      passwordService.resetPassword(
+        {
+          token: wrongToken,
+          password: 'newpassword123',
+        },
+        i18n as unknown as I18n
+      )
     )
 
     const token = await Token.query()
@@ -153,10 +165,13 @@ test.group('PasswordService', (group) => {
 
     await assert.rejects(
       async () =>
-        passwordService.resetPassword({
-          token: fullToken,
-          password: 'newpassword123',
-        }),
+        passwordService.resetPassword(
+          {
+            token: fullToken,
+            password: 'newpassword123',
+          },
+          i18n as unknown as I18n
+        ),
       'Max attempts exceeded'
     )
   })
@@ -170,10 +185,13 @@ test.group('PasswordService', (group) => {
 
     await assert.rejects(
       async () =>
-        passwordService.resetPassword({
-          token: fullToken,
-          password: 'newpassword123',
-        }),
+        passwordService.resetPassword(
+          {
+            token: fullToken,
+            password: 'newpassword123',
+          },
+          i18n as unknown as I18n
+        ),
       'Invalid token'
     )
   })

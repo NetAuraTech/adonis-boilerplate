@@ -118,7 +118,7 @@ export default class TestNotificationController {
       const randomTemplate = typeTemplates[Math.floor(Math.random() * typeTemplates.length)]
 
       // Create the notification
-      const notification = await this.notificationService.create({
+      const notification = await this.notificationService.notify({
         userId: user.id,
         type: randomType,
         title: randomTemplate.title,

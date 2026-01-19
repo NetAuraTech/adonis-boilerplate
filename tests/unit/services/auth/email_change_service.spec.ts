@@ -7,12 +7,15 @@ import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import i18n from 'i18next'
 import { I18n } from '@adonisjs/i18n'
+import NotificationService from '#notification/services/notification_service'
 
 test.group('EmailChangeService', (group) => {
   let emailChangeService: EmailChangeService
+  let notificationService: NotificationService
 
   group.setup(() => {
-    emailChangeService = new EmailChangeService()
+    notificationService = new NotificationService()
+    emailChangeService = new EmailChangeService(notificationService)
   })
 
   test('initiateEmailChange: should set pending email and create token', async ({
@@ -110,7 +113,10 @@ test.group('EmailChangeService', (group) => {
     const { selector, validator } = await createEmailChangeToken(user)
     const fullToken = `${selector}.${validator}`
 
-    const confirmedUser = await emailChangeService.confirmEmailChange(fullToken)
+    const confirmedUser = await emailChangeService.confirmEmailChange(
+      fullToken,
+      i18n as unknown as I18n
+    )
 
     assert.isNotNull(confirmedUser)
     assert.equal(confirmedUser!.email, 'new@example.com')
@@ -125,7 +131,10 @@ test.group('EmailChangeService', (group) => {
     const { selector, validator } = await createEmailChangeToken(user)
     const fullToken = `${selector}.${validator}`
 
-    const confirmedUser = await emailChangeService.confirmEmailChange(fullToken)
+    const confirmedUser = await emailChangeService.confirmEmailChange(
+      fullToken,
+      i18n as unknown as I18n
+    )
 
     assert.isNotNull(confirmedUser!.emailVerifiedAt)
   })
@@ -138,7 +147,7 @@ test.group('EmailChangeService', (group) => {
     const { selector, validator } = await createEmailChangeToken(user)
     const fullToken = `${selector}.${validator}`
 
-    await emailChangeService.confirmEmailChange(fullToken)
+    await emailChangeService.confirmEmailChange(fullToken, i18n as unknown as I18n)
 
     const validTokens = await Token.query()
       .where('userId', user.id)
@@ -149,7 +158,10 @@ test.group('EmailChangeService', (group) => {
   })
 
   test('confirmEmailChange: should return null for invalid token', async ({ assert }) => {
-    const result = await emailChangeService.confirmEmailChange('invalid.token')
+    const result = await emailChangeService.confirmEmailChange(
+      'invalid.token',
+      i18n as unknown as I18n
+    )
 
     assert.isNull(result)
   })
@@ -164,7 +176,7 @@ test.group('EmailChangeService', (group) => {
     })
     const fullToken = `${selector}.${validator}`
 
-    const result = await emailChangeService.confirmEmailChange(fullToken)
+    const result = await emailChangeService.confirmEmailChange(fullToken, i18n as unknown as I18n)
 
     assert.isNull(result)
   })
@@ -177,7 +189,7 @@ test.group('EmailChangeService', (group) => {
     const { selector, validator } = await createEmailChangeToken(user)
     const fullToken = `${selector}.${validator}`
 
-    const result = await emailChangeService.confirmEmailChange(fullToken)
+    const result = await emailChangeService.confirmEmailChange(fullToken, i18n as unknown as I18n)
 
     assert.isNull(result)
   })
@@ -190,7 +202,7 @@ test.group('EmailChangeService', (group) => {
     const { selector } = await createEmailChangeToken(user)
     const fullToken = `${selector}.wrong-validator`
 
-    const result = await emailChangeService.confirmEmailChange(fullToken)
+    const result = await emailChangeService.confirmEmailChange(fullToken, i18n as unknown as I18n)
 
     assert.isNull(result)
   })
@@ -292,7 +304,10 @@ test.group('EmailChangeService', (group) => {
     await token.save()
 
     const fullToken = `${token.selector}.${validator}`
-    const confirmedUser = await emailChangeService.confirmEmailChange(fullToken)
+    const confirmedUser = await emailChangeService.confirmEmailChange(
+      fullToken,
+      i18n as unknown as I18n
+    )
 
     assert.equal(confirmedUser!.email, 'new@example.com')
     assert.isNull(confirmedUser!.pendingEmail)

@@ -27,7 +27,7 @@ export default class EmailChangeController {
     const { params, response, session, auth, i18n } = ctx
 
     try {
-      const user = await this.emailChangeService.confirmEmailChange(params.token)
+      const user = await this.emailChangeService.confirmEmailChange(params.token, i18n)
 
       if (!user) {
         session.flash('error', i18n.t('auth.email_change.invalid_token'))

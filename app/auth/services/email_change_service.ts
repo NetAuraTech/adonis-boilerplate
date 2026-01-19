@@ -1,7 +1,6 @@
 import User from '#auth/models/user'
 import Token, { TOKEN_TYPES } from '#core/models/token'
 import { generateSplitToken } from '#core/helpers/crypto'
-import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
@@ -9,11 +8,16 @@ import logger from '@adonisjs/core/services/logger'
 import ChangeEmailNotificationMail from '#auth/mails/change_email_notification_mail'
 import ChangeEmailConfirmationMail from '#auth/mails/change_email_confirmation_mail'
 import { I18n } from '@adonisjs/i18n'
+import { inject } from '@adonisjs/core'
+import NotificationService from '#notification/services/notification_service'
 
 /**
  * Service for handling email change workflows
  */
+@inject()
 export default class EmailChangeService {
+  constructor(protected notificationService: NotificationService) {}
+
   /**
    * Initiate email change process
    *
@@ -48,9 +52,23 @@ export default class EmailChangeService {
     const confirmationLink = `${env.get('DOMAIN')}/email/change/${fullToken}`
 
     try {
-      await mail.send(new ChangeEmailConfirmationMail(user, newEmail, confirmationLink, translator))
+      await this.notificationService.notify(
+        new ChangeEmailConfirmationMail(user, newEmail, confirmationLink, translator)
+      )
 
-      await mail.send(new ChangeEmailNotificationMail(user, oldEmail, newEmail, translator))
+      await this.notificationService.notify(
+        new ChangeEmailNotificationMail(user, oldEmail, newEmail, translator)
+      )
+
+      await this.notificationService.notify({
+        userId: user.id,
+        type: 'account',
+        title: translator.t('notifications.email_change_requested.title'),
+        message: translator.t('notifications.email_change_requested.message', {
+          newEmail,
+        }),
+        data: { oldEmail, newEmail, confirmationLink },
+      })
 
       logger.info('Email change initiated', {
         userId: user.id,
@@ -77,9 +95,10 @@ export default class EmailChangeService {
    * - Clears pending_email
    *
    * @param fullToken - Complete token in format "selector.validator"
+   * @param translator
    * @returns User if email change successful, null if token is invalid or expired
    */
-  async confirmEmailChange(fullToken: string): Promise<User | null> {
+  async confirmEmailChange(fullToken: string, translator: I18n): Promise<User | null> {
     const user = await Token.getEmailChangeUser(fullToken)
 
     if (!user || !user.pendingEmail) {
@@ -100,6 +119,16 @@ export default class EmailChangeService {
       userId: user.id,
       oldEmail,
       newEmail,
+    })
+
+    await this.notificationService.notify({
+      userId: user.id,
+      type: 'email_changed',
+      title: translator.t('notifications.email_changed.title'),
+      message: translator.t('notifications.email_changed.message', {
+        newEmail,
+      }),
+      data: { oldEmail, newEmail },
     })
 
     return user

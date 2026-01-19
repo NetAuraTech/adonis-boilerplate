@@ -46,7 +46,7 @@ export default class ResetPasswordController {
     try {
       const payload = await request.validateUsing(AuthValidators.resetPassword())
 
-      const user = await this.passwordService.resetPassword(payload)
+      const user = await this.passwordService.resetPassword(payload, i18n)
 
       await auth.use('web').login(user)
 

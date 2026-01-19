@@ -17,7 +17,6 @@ export interface NotificationPreferences {
  */
 export interface InterfacePreferences {
   theme: 'light' | 'dark' | 'auto'
-  language: 'en' | 'fr'
   density: 'compact' | 'comfortable' | 'spacious'
 }
 
@@ -159,7 +158,6 @@ export default class UserPreference extends BaseModel {
   private getDefaultInterfacePreferences(): InterfacePreferences {
     return {
       theme: 'light',
-      language: 'fr',
       density: 'comfortable',
     }
   }

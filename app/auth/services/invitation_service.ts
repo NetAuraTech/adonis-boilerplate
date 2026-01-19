@@ -1,7 +1,6 @@
 import User from '#auth/models/user'
 import Token, { TOKEN_TYPES } from '#core/models/token'
 import { generateSplitToken } from '#core/helpers/crypto'
-import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
@@ -9,6 +8,8 @@ import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
 import InvitationMail from '#auth/mails/invitation_mail'
 import { I18n } from '@adonisjs/i18n'
+import { inject } from '@adonisjs/core'
+import NotificationService from '#notification/services/notification_service'
 
 export interface CreateInvitationData {
   email: string
@@ -19,7 +20,10 @@ export interface CreateInvitationData {
 /**
  * Service for handling user invitation workflows
  */
+@inject()
 export default class InvitationService {
+  constructor(protected notificationService: NotificationService) {}
+
   /**
    * Create and send user invitation
    *
@@ -80,7 +84,7 @@ export default class InvitationService {
     const invitationLink = `${env.get('DOMAIN')}/accept-invitation/${fullToken}`
 
     try {
-      await mail.send(new InvitationMail(user, invitationLink, translator))
+      await this.notificationService.notify(new InvitationMail(user, invitationLink, translator))
 
       logger.info('User invitation sent', {
         userId: user.id,

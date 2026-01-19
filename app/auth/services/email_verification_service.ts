@@ -1,7 +1,6 @@
 import User from '#auth/models/user'
 import Token, { TOKEN_TYPES } from '#core/models/token'
 import { generateSplitToken } from '#core/helpers/crypto'
-import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
@@ -9,11 +8,16 @@ import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
 import VerifyEmailMail from '#auth/mails/verify_email_mail'
 import { I18n } from '@adonisjs/i18n'
+import { inject } from '@adonisjs/core'
+import NotificationService from '#notification/services/notification_service'
 
 /**
  * Service for handling email verification workflows
  */
+@inject()
 export default class EmailVerificationService {
+  constructor(protected notificationService: NotificationService) {}
+
   /**
    * Generate and send email verification link
    *
@@ -41,7 +45,15 @@ export default class EmailVerificationService {
     const verificationLink = `${env.get('DOMAIN')}/email/verify/${fullToken}`
 
     try {
-      await mail.send(new VerifyEmailMail(user, verificationLink, translator))
+      await this.notificationService.notify(new VerifyEmailMail(user, verificationLink, translator))
+
+      await this.notificationService.notify({
+        userId: user.id,
+        type: 'security',
+        title: translator.t('notifications.email_verification.title'),
+        message: translator.t('notifications.email_verification.message'),
+        data: { verificationLink },
+      })
 
       logger.info('Email verification sent', {
         userId: user.id,
