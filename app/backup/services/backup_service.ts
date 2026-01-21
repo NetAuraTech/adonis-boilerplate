@@ -16,6 +16,7 @@ import { createGunzip, createGzip } from 'node:zlib'
 import { pipeline } from 'node:stream/promises'
 import { DateTime } from 'luxon'
 import env from '#start/env'
+import { Exception } from '@adonisjs/core/exceptions'
 
 export interface BackupResult {
   success: boolean
@@ -244,7 +245,8 @@ export default class BackupService {
       const encryptedPath = await this.encryptFile(compressedPath)
 
       // Step 6: Get file size
-      const { size } = require('node:fs').statSync(encryptedPath)
+      const fileStats = await stat(encryptedPath)
+      const size = fileStats.size
 
       // Step 7: Create manifest
       await this.createManifest(filename, {
@@ -466,7 +468,7 @@ export default class BackupService {
         if (!available) {
           logger.warn('Storage not available', { storage: storage.name })
           results[storage.name] = false
-          continue
+          throw new Exception(`Storage not available. Path: ${localPath}`)
         }
 
         results[storage.name] = await storage.upload(localPath, filename)
@@ -476,6 +478,7 @@ export default class BackupService {
           error: error.message,
         })
         results[storage.name] = false
+        throw error
       }
     }
 
@@ -843,7 +846,7 @@ export default class BackupService {
 
       // Decrypt
       const decryptedPath = tempPath.replace(/\.enc$/, '')
-      console.log(decryptedPath)
+
       if (backupConfig.encryption.enabled) {
         await this.decryptFile(tempPath, decryptedPath)
         await unlink(tempPath)

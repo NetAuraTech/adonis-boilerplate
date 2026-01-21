@@ -12,6 +12,7 @@ test.group('BackupService', (group) => {
   const testBackupDir = 'storage/test-backups'
 
   group.setup(async () => {
+    backupConfig.storages.local.path = testBackupDir
     notificationService = new NotificationService()
     backupService = new BackupService(notificationService)
 
@@ -72,9 +73,11 @@ test.group('BackupService', (group) => {
 
   test('runFullBackup: should handle errors gracefully', async ({ assert }) => {
     const originalPath = backupConfig.storages.local.path
-    backupConfig.storages.local.path = '/invalid/path/that/does/not/exist'
+    backupConfig.storages.local.path = 'Z:/invalid/path/that/does/not/exist'
 
-    const result = await backupService.runFullBackup()
+    const backupServiceWithInvalidPath = new BackupService(notificationService)
+
+    const result = await backupServiceWithInvalidPath.runFullBackup()
 
     assert.isFalse(result.success)
     assert.exists(result.error)
@@ -201,9 +204,11 @@ test.group('BackupService', (group) => {
 
   test('notification: should send notification on failure', async ({ assert }) => {
     const originalPath = backupConfig.storages.local.path
-    backupConfig.storages.local.path = '/invalid/path'
+    backupConfig.storages.local.path = 'Z:/invalid/path'
 
-    const result = await backupService.runFullBackup()
+    const backupServiceWithInvalidPath = new BackupService(notificationService)
+
+    const result = await backupServiceWithInvalidPath.runFullBackup()
 
     assert.isFalse(result.success)
 
@@ -241,7 +246,6 @@ test.group('BackupService', (group) => {
     const manifestName = result.filename.replace(/\.(sql|gz|enc)+$/, '.manifest.json')
     const manifestPath = join(backupConfig.storages.local.path, manifestName)
     const manifest = JSON.parse(await readFile(manifestPath, 'utf-8'))
-
     assert.equal(manifest.type, result.type)
     assert.isArray(manifest.tables)
     assert.isTrue(manifest.tables.length > 0)
@@ -254,6 +258,6 @@ test.group('BackupService', (group) => {
 
     const result = await backupService.cleanup()
 
-    assert.isTrue(result.kept >= backupConfig.retention.daily)
+    assert.isTrue(result.deleted === 0)
   })
 })

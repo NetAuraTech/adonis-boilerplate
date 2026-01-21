@@ -35,3 +35,6 @@ package-lock.json
 # Test Coverage
 coverage/
 .nyc_output/
+
+# Storage
+storage/

@@ -45,9 +45,9 @@ test.group('Backup Commands', () => {
   })
 
   test('backup:restore should require filename argument', async ({ assert }) => {
-    const command = await ace.exec('backup:restore', [])
-
-    assert.equal(command.exitCode, 1)
+    await assert.rejects(async () => {
+      await ace.exec('backup:restore', [])
+    }, /Missing required argument "filename"/)
   })
 
   test('backup:restore with --force should skip confirmation', async ({ assert }) => {
