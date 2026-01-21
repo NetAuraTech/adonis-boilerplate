@@ -91,5 +91,74 @@ export default await Env.create(new URL('../', import.meta.url), {
   | Variables for configuring @rlanz/sentry package
   |----------------------------------------------------------
   */
-  SENTRY_DSN: Env.schema.string()
+  SENTRY_DSN: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for Backup Configuration
+  |----------------------------------------------------------
+  */
+  BACKUP_TIME: Env.schema.string.optional(),
+  BACKUP_ENCRYPTION_ENABLED: Env.schema.boolean.optional(),
+  BACKUP_LOCAL_PATH: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for Backup Configuration: S3 Storage
+  |----------------------------------------------------------
+  */
+  BACKUP_S3_ENABLED: Env.schema.boolean.optional(),
+  BACKUP_S3_BUCKET: Env.schema.string.optional(),
+  BACKUP_S3_REGION: Env.schema.string.optional(),
+  BACKUP_S3_ENDPOINT: Env.schema.string.optional(),
+  BACKUP_S3_ACCESS_KEY_ID: Env.schema.string.optional(),
+  BACKUP_S3_SECRET_ACCESS_KEY: Env.schema.string.optional(),
+  BACKUP_S3_PATH: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for Backup Configuration: Nextcloud Storage
+  |----------------------------------------------------------
+  */
+  BACKUP_NEXTCLOUD_ENABLED: Env.schema.boolean.optional(),
+  BACKUP_NEXTCLOUD_URL: Env.schema.string.optional(),
+  BACKUP_NEXTCLOUD_USERNAME: Env.schema.string.optional(),
+  BACKUP_NEXTCLOUD_PASSWORD: Env.schema.string.optional(),
+  BACKUP_NEXTCLOUD_PATH: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for Backup Configuration: Retention
+  |----------------------------------------------------------
+  */
+  BACKUP_RETENTION_DAILY: Env.schema.number.optional(),
+  BACKUP_RETENTION_WEEKLY: Env.schema.number.optional(),
+  BACKUP_RETENTION_MONTHLY: Env.schema.number.optional(),
+  BACKUP_RETENTION_YEARLY: Env.schema.number.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for Backup Configuration: Health Check
+  |----------------------------------------------------------
+  */
+  BACKUP_MAX_AGE_HOURS: Env.schema.number.optional(),
+  BACKUP_MAX_SIZE_MB: Env.schema.number.optional(),
+  BACKUP_MIN_FREE_SPACE_GB: Env.schema.number.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for Backup Configuration: Notifications
+  |----------------------------------------------------------
+  */
+  BACKUP_NOTIFICATION_EMAIL: Env.schema.string.optional(),
+  BACKUP_NOTIFY_SUCCESS: Env.schema.boolean.optional(),
+  BACKUP_NOTIFY_FAILURE: Env.schema.boolean.optional(),
+  BACKUP_NOTIFY_HEALTH_CHECK: Env.schema.boolean.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for Backup Configuration: Differential
+  |----------------------------------------------------------
+  */
+  BACKUP_EXCLUDED_TABLES: Env.schema.string.optional(),
 })

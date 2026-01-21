@@ -22,6 +22,7 @@
     "#core/*": "./app/core/*.js",
     "#components/*": "./inertia/components/*.jsx",
     "#controllers/*": "./app/controllers/*.js",
+    "#backup/*": "./app/backup/*.js",
     "#exceptions/*": "./app/exceptions/*.js",
     "#models/*": "./app/models/*.js",
     "#mails/*": "./app/mails/*.js",
@@ -81,6 +82,8 @@
     "@adonisjs/transmit": "^2.0.2",
     "@adonisjs/transmit-client": "^1.0.0",
     "@adonisjs/vite": "^4.0.0",
+    "@aws-sdk/client-s3": "^3.971.0",
+    "@aws-sdk/lib-storage": "^3.971.0",
     "@inertiajs/react": "^2.3.2",
     "@rlanz/sentry": "^0.3.3",
     "@vinejs/vine": "^3.0.1",
@@ -92,7 +95,8 @@
     "react-dom": "^19.2.3",
     "react-i18next": "^16.5.0",
     "reflect-metadata": "^0.2.2",
-    "sinon": "^21.0.1"
+    "sinon": "^21.0.1",
+    "webdav": "^5.8.0"
   },
   "hotHook": {
     "boundaries": [
