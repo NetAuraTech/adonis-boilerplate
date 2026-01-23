@@ -9,20 +9,30 @@ import backupConfig from '#config/backup'
 test.group('BackupService', (group) => {
   let backupService: BackupService
   let notificationService: NotificationService
-  const testBackupDir = 'storage/test-backups'
+  const testBackupDir = join(process.cwd(), 'storage/test-backups')
+  let originalLocalPath: string
 
   group.setup(async () => {
+    originalLocalPath = backupConfig.storages.local.path
     backupConfig.storages.local.path = testBackupDir
+
     notificationService = new NotificationService()
     backupService = new BackupService(notificationService)
-
-    await mkdir(testBackupDir, { recursive: true })
   })
 
   group.teardown(async () => {
+    backupConfig.storages.local.path = originalLocalPath
     if (existsSync(testBackupDir)) {
       await rm(testBackupDir, { recursive: true, force: true })
     }
+  })
+
+  group.each.setup(async () => {
+    if (existsSync(testBackupDir)) {
+      await rm(testBackupDir, { recursive: true, force: true })
+    }
+    await mkdir(testBackupDir, { recursive: true })
+    backupConfig.storages.local.path = testBackupDir
   })
 
   test('runFullBackup: should create encrypted compressed backup', async ({ assert }) => {
@@ -72,8 +82,8 @@ test.group('BackupService', (group) => {
   })
 
   test('runFullBackup: should handle errors gracefully', async ({ assert }) => {
-    const originalPath = backupConfig.storages.local.path
-    backupConfig.storages.local.path = 'Z:/invalid/path/that/does/not/exist'
+    backupConfig.storages.local.path =
+      process.platform === 'win32' ? 'Z:/invalid/path' : '/root/invalid_path'
 
     const backupServiceWithInvalidPath = new BackupService(notificationService)
 
@@ -81,8 +91,6 @@ test.group('BackupService', (group) => {
 
     assert.isFalse(result.success)
     assert.exists(result.error)
-
-    backupConfig.storages.local.path = originalPath
   })
 
   test('runDifferentialBackup: should create differential backup with modified tables', async ({
@@ -100,9 +108,6 @@ test.group('BackupService', (group) => {
   test('runDifferentialBackup: should fallback to full backup if no previous full backup', async ({
     assert,
   }) => {
-    await rm(backupConfig.storages.local.path, { recursive: true, force: true })
-    await mkdir(backupConfig.storages.local.path, { recursive: true })
-
     const result = await backupService.runDifferentialBackup()
 
     assert.isTrue(result.success)
@@ -142,9 +147,6 @@ test.group('BackupService', (group) => {
   })
 
   test('healthCheck: should detect missing backups', async ({ assert }) => {
-    await rm(backupConfig.storages.local.path, { recursive: true, force: true })
-    await mkdir(backupConfig.storages.local.path, { recursive: true })
-
     const result = await backupService.healthCheck()
 
     assert.isFalse(result.healthy)
@@ -203,16 +205,14 @@ test.group('BackupService', (group) => {
   })
 
   test('notification: should send notification on failure', async ({ assert }) => {
-    const originalPath = backupConfig.storages.local.path
-    backupConfig.storages.local.path = 'Z:/invalid/path'
+    backupConfig.storages.local.path =
+      process.platform === 'win32' ? 'Z:/invalid/path' : '/root/invalid_path'
 
     const backupServiceWithInvalidPath = new BackupService(notificationService)
 
     const result = await backupServiceWithInvalidPath.runFullBackup()
 
     assert.isFalse(result.success)
-
-    backupConfig.storages.local.path = originalPath
   })
 
   test('edge case: backup size exceeds warning threshold', async ({ assert }) => {
