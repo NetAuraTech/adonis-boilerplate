@@ -51,10 +51,10 @@ test.group('DashboardService', (group) => {
 
   test('getStatistics: should count total permissions correctly', async ({ assert }) => {
     await Permission.query().delete()
-    await PermissionFactory.create({ slug: 'perm1' })
-    await PermissionFactory.create({ slug: 'perm2' })
-    await PermissionFactory.create({ slug: 'perm3' })
-    await PermissionFactory.create({ slug: 'perm4' })
+    await PermissionFactory.create({ name: 'Permission 1', slug: 'perm1' })
+    await PermissionFactory.create({ name: 'Permission 2', slug: 'perm2' })
+    await PermissionFactory.create({ name: 'Permission 3', slug: 'perm3' })
+    await PermissionFactory.create({ name: 'Permission 4', slug: 'perm4' })
 
     const stats = await dashboardService.getStatistics()
 
