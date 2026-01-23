@@ -12,7 +12,7 @@
     "docker:down": "docker compose down",
     "test": "node ace test",
     "test:coverage": "c8 --reporter=html npm run test",
-    "lint": "eslint .",
+    "lint": "eslint . --fix",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit"
   },

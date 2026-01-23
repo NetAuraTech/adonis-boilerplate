@@ -10,8 +10,10 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import transmit from '@adonisjs/transmit/services/main'
-import UserPreferenceUpdateController from '#profile/controllers/user_preference_update_controller'
-import TestNotificationController from '#notification/controllers/test_notification_controller'
+const UserPreferenceUpdateController = () =>
+  import('#profile/controllers/user_preference_update_controller')
+const TestNotificationController = () =>
+  import('#notification/controllers/test_notification_controller')
 
 // region Controller imports
 const LoginController = () => import('#auth/controllers/login_controller')
