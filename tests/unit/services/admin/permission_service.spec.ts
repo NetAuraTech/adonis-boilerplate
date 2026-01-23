@@ -53,9 +53,21 @@ test.group('PermissionService', (group) => {
   })
 
   test('list: should filter by category', async ({ assert }) => {
-    await PermissionFactory.create({ category: 'users', slug: 'users-perm' })
-    await PermissionFactory.create({ category: 'posts', slug: 'posts-perm' })
-    await PermissionFactory.create({ category: 'users', slug: 'users-perm2' })
+    await PermissionFactory.create({
+      category: 'users',
+      name: 'Users Permission',
+      slug: 'users-perm',
+    })
+    await PermissionFactory.create({
+      category: 'posts',
+      name: 'Posts permission',
+      slug: 'posts-perm',
+    })
+    await PermissionFactory.create({
+      category: 'users',
+      name: 'Users Permission 2',
+      slug: 'users-perm2',
+    })
 
     const result = await service.list({ category: 'users' })
 
