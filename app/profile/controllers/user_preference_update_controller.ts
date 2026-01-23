@@ -22,6 +22,7 @@ export default class UserPreferenceUpdateController {
       const user = auth.getUserOrFail()
       const payload = await request.validateUsing(UserPreferenceValidators.update())
 
+      //@ts-ignore
       await this.preferenceService.update(user.id, payload)
 
       session.flash('success', i18n.t('profile.preferences.success'))
