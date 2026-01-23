@@ -6,13 +6,14 @@ const redisConfig = defineConfig({
 
   connections: {
     main: {
-      host: env.get('REDIS_HOST'),
-      port: env.get('REDIS_PORT'),
+      ...(env.get('REDIS_SOCKET')
+        ? { path: env.get('REDIS_SOCKET') }
+        : { host: env.get('REDIS_HOST'), port: env.get('REDIS_PORT') }),
+
       password: env.get('REDIS_PASSWORD'),
       db: 0,
       keyPrefix: '',
       retryStrategy(times) {
-        // Retry 3 times max, then fallback
         if (times > 3) {
           return null
         }
@@ -21,7 +22,6 @@ const redisConfig = defineConfig({
       lazyConnect: true,
     },
 
-    // Local fallback (never used, just for config validation)
     local: {
       host: '127.0.0.1',
       port: 6379,
