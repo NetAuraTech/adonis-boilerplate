@@ -4,12 +4,12 @@ import env from '#start/env'
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import { generateSplitToken, maskToken } from '#core/helpers/crypto'
-import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
 import ResetPasswordMail from '#auth/mails/reset_password_mail'
 import { I18n } from '@adonisjs/i18n'
 import { inject } from '@adonisjs/core'
 import NotificationService from '#notification/services/notification_service'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 interface ResetPasswordPayload {
   token: string
@@ -21,7 +21,10 @@ interface ResetPasswordPayload {
  */
 @inject()
 export default class PasswordService {
-  constructor(protected notificationService: NotificationService) {}
+  constructor(
+    protected notificationService: NotificationService,
+    protected logService: LogService
+  ) {}
 
   /**
    * Send password reset link to user's email
@@ -66,15 +69,19 @@ export default class PasswordService {
         data: { resetLink },
       })
 
-      logger.info('Password reset email sent', {
+      this.logService.logAuth('password_reset.requested', {
         userId: user.id,
-        email: user.email,
+        userEmail: user.email,
       })
     } catch (error) {
-      logger.error('Failed to send password reset email', {
-        userId: user.id,
-        email: user.email,
-        error: error.message,
+      this.logService.error({
+        message: 'Failed to send password reset email',
+        category: LogCategory.AUTH,
+        error,
+        context: {
+          userId: user.id,
+          userEmail: user.email,
+        },
       })
       throw error
     }
@@ -94,7 +101,7 @@ export default class PasswordService {
       const exceededAttempts = await Token.hasExceededAttempts(token)
 
       if (exceededAttempts) {
-        logger.warn('Password reset token exceeded max attempts', {
+        this.logService.logSecurity('Password reset token exceeded max attempts', {
           token: maskToken(token),
         })
         throw new Exception('Max attempts exceeded', {
@@ -103,7 +110,7 @@ export default class PasswordService {
         })
       }
 
-      logger.warn('Invalid or expired password reset token', {
+      this.logService.logAuth('Invalid or expired password reset token', {
         token: maskToken(token),
       })
       throw new Exception('Invalid or expired token', {
@@ -128,7 +135,7 @@ export default class PasswordService {
 
     const exceededAttempts = await Token.hasExceededAttempts(payload.token)
     if (exceededAttempts) {
-      logger.error('Password reset max attempts exceeded', {
+      this.logService.logSecurity('Password reset max attempts exceeded', {
         token: maskToken(payload.token),
       })
       throw new Exception('Max attempts exceeded', {
@@ -140,7 +147,7 @@ export default class PasswordService {
     const user = await Token.getPasswordResetUser(payload.token)
 
     if (!user) {
-      logger.warn('Failed password reset - invalid token', {
+      this.logService.logAuth('Failed password reset - invalid token', {
         token: maskToken(payload.token),
       })
       throw new Exception('Invalid token', {
@@ -154,7 +161,7 @@ export default class PasswordService {
 
     await Token.expirePasswordResetTokens(user)
 
-    logger.info('Password reset successful', {
+    this.logService.logAuth('Password reset successful', {
       userId: user.id,
       token: maskToken(payload.token),
     })

@@ -43,6 +43,7 @@ router.use([
   () => import('#auth/middleware/silent_auth_middleware'),
   () => import('#core/middleware/detect_user_locale_middleware'),
   () => import('#core/middleware/theme_middleware'),
+  () => import('#core/middleware/log_request_middleware'),
 ])
 
 /**

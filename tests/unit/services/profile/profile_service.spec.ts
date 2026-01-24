@@ -8,16 +8,19 @@ import User from '#auth/models/user'
 import i18n from 'i18next'
 import { I18n } from '@adonisjs/i18n'
 import NotificationService from '#notification/services/notification_service'
+import LogService from '#core/services/log_service'
 
 test.group('ProfileService', (group) => {
   let profileService: ProfileService
   let emailChangeService: EmailChangeService
   let notificationService: NotificationService
+  let logService: LogService
 
   group.setup(() => {
-    notificationService = new NotificationService()
-    emailChangeService = new EmailChangeService(notificationService)
-    profileService = new ProfileService(emailChangeService, notificationService)
+    logService = new LogService()
+    notificationService = new NotificationService(logService)
+    emailChangeService = new EmailChangeService(notificationService, logService)
+    profileService = new ProfileService(emailChangeService, notificationService, logService)
   })
 
   test('update: should update fullName and locale', async ({ assert }) => {

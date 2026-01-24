@@ -1,6 +1,5 @@
 import { inject } from '@adonisjs/core'
 import db from '@adonisjs/lucid/services/db'
-import logger from '@adonisjs/core/services/logger'
 import backupConfig from '#config/backup'
 import { createEncryptionHelper } from '#core/helpers/encryption'
 import LocalStorageAdapter from '#backup/storage/local_storage_adapter'
@@ -17,6 +16,7 @@ import { pipeline } from 'node:stream/promises'
 import { DateTime } from 'luxon'
 import env from '#start/env'
 import { Exception } from '@adonisjs/core/exceptions'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 export interface BackupResult {
   success: boolean
@@ -43,7 +43,10 @@ export default class BackupService {
   private encryptionHelper = createEncryptionHelper(backupConfig.encryption.key)
   private tempDir = 'storage/temp/backups'
 
-  constructor(protected notificationService: NotificationService) {
+  constructor(
+    protected notificationService: NotificationService,
+    protected logService: LogService
+  ) {
     this.initializeStorages()
   }
 
@@ -82,8 +85,12 @@ export default class BackupService {
       )
     }
 
-    logger.info('Backup storage adapters initialized', {
-      storages: this.storages.map((s) => s.name),
+    this.logService.info({
+      message: 'Backup storage adapters initialized',
+      category: LogCategory.SYSTEM,
+      metadata: {
+        storages: this.storages.map((s) => s.name),
+      },
     })
   }
 
@@ -100,20 +107,22 @@ export default class BackupService {
   /**
    * Run a full database backup
    */
-
   async runFullBackup(): Promise<BackupResult> {
     const startTime = Date.now()
     const filename = this.generateFilename('full')
     const tempPath = join(this.tempDir, filename)
 
-    logger.info('Starting full backup', { filename })
+    this.logService.info({
+      message: 'Starting full backup',
+      category: LogCategory.SYSTEM,
+      metadata: { filename },
+    })
 
     try {
       // Ensure temp directory exists
       await mkdir(this.tempDir, { recursive: true })
 
       // Step 1: Create database dump
-      //const dumpPath = join(this.tempDir, `${filename.split('.')[0]}.sql`)
       const dumpPath = tempPath.replace(/\.(gz\.enc|enc|gz)$/, '.sql')
       await this.createDatabaseDump(dumpPath)
 
@@ -144,11 +153,9 @@ export default class BackupService {
 
       const duration = Date.now() - startTime
 
-      logger.info('Full backup completed', {
+      this.logService.logPerformance('backup.full', duration, {
         filename,
         size,
-        duration,
-        storages: storageResults,
       })
 
       // Step 8: Check if backup is too large
@@ -172,10 +179,11 @@ export default class BackupService {
     } catch (error) {
       const duration = Date.now() - startTime
 
-      logger.error('Full backup failed', {
-        filename,
-        error: error.message,
-        stack: error.stack,
+      this.logService.error({
+        message: 'Full backup failed',
+        category: LogCategory.SYSTEM,
+        error,
+        context: { filename, duration },
       })
 
       await this.notifyFailure(filename, error)
@@ -200,7 +208,11 @@ export default class BackupService {
     const filename = this.generateFilename('differential')
     const tempPath = join(this.tempDir, filename)
 
-    logger.info('Starting differential backup', { filename })
+    this.logService.info({
+      message: 'Starting differential backup',
+      category: LogCategory.SYSTEM,
+      metadata: { filename },
+    })
 
     try {
       // Ensure temp directory exists
@@ -209,7 +221,10 @@ export default class BackupService {
       // Step 1: Find last full backup
       const lastFullBackup = await this.findLastFullBackup()
       if (!lastFullBackup) {
-        logger.warn('No full backup found, running full backup instead')
+        this.logService.warn({
+          message: 'No full backup found, running full backup instead',
+          category: LogCategory.SYSTEM,
+        })
         return this.runFullBackup()
       }
 
@@ -217,7 +232,10 @@ export default class BackupService {
       const modifiedTables = await this.getModifiedTables(lastFullBackup.createdAt)
 
       if (modifiedTables.length === 0) {
-        logger.info('No tables modified since last backup, skipping')
+        this.logService.info({
+          message: 'No tables modified since last backup, skipping',
+          category: LogCategory.SYSTEM,
+        })
         return {
           success: true,
           filename: '',
@@ -228,9 +246,13 @@ export default class BackupService {
         }
       }
 
-      logger.info('Found modified tables', {
-        count: modifiedTables.length,
-        tables: modifiedTables,
+      this.logService.info({
+        message: 'Found modified tables',
+        category: LogCategory.SYSTEM,
+        metadata: {
+          count: modifiedTables.length,
+          tables: modifiedTables,
+        },
       })
 
       // Step 3: Create differential dump
@@ -264,12 +286,10 @@ export default class BackupService {
 
       const duration = Date.now() - startTime
 
-      logger.info('Differential backup completed', {
+      this.logService.logPerformance('backup.differential', duration, {
         filename,
         size,
-        duration,
-        tables: modifiedTables.length,
-        storages: storageResults,
+        tablesCount: modifiedTables.length,
       })
 
       return {
@@ -283,10 +303,11 @@ export default class BackupService {
     } catch (error) {
       const duration = Date.now() - startTime
 
-      logger.error('Differential backup failed', {
-        filename,
-        error: error.message,
-        stack: error.stack,
+      this.logService.error({
+        message: 'Differential backup failed',
+        category: LogCategory.SYSTEM,
+        error,
+        context: { filename, duration },
       })
 
       await this.notifyFailure(filename, error)
@@ -318,7 +339,7 @@ export default class BackupService {
         '-d',
         env.get('DB_DATABASE'),
         '-F',
-        'p', // Plain format
+        'p',
         '-f',
         outputPath,
       ]
@@ -365,12 +386,11 @@ export default class BackupService {
         '-d',
         env.get('DB_DATABASE'),
         '-F',
-        'p', // Plain format
+        'p',
         '-f',
         outputPath,
       ]
 
-      // Add each table to dump
       for (const table of tables) {
         args.push('-t', table)
       }
@@ -466,16 +486,22 @@ export default class BackupService {
       try {
         const available = await storage.isAvailable()
         if (!available) {
-          logger.warn('Storage not available', { storage: storage.name })
+          this.logService.warn({
+            message: 'Storage not available',
+            category: LogCategory.SYSTEM,
+            metadata: { storage: storage.name },
+          })
           results[storage.name] = false
           throw new Exception(`Storage not available. Path: ${localPath}`)
         }
 
         results[storage.name] = await storage.upload(localPath, filename)
       } catch (error) {
-        logger.error('Failed to upload to storage', {
-          storage: storage.name,
-          error: error.message,
+        this.logService.error({
+          message: 'Failed to upload to storage',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { storage: storage.name },
         })
         results[storage.name] = false
         throw error
@@ -515,14 +541,15 @@ export default class BackupService {
 
     await writeFile(manifestPath, JSON.stringify(data, null, 2))
 
-    // Upload manifest to all storages
     for (const storage of this.storages) {
       try {
         await storage.upload(manifestPath, manifestFilename)
       } catch (error) {
-        logger.error('Failed to upload manifest', {
-          storage: storage.name,
-          error: error.message,
+        this.logService.error({
+          message: 'Failed to upload manifest',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { storage: storage.name },
         })
       }
     }
@@ -548,37 +575,34 @@ export default class BackupService {
   private async getModifiedTables(since: Date): Promise<string[]> {
     const connection = db.connection(backupConfig.database.connection)
 
-    // Query pg_stat_user_tables to find modified tables
     const result = await connection.rawQuery(
       `
-      SELECT
-        schemaname || '.' || relname as table_name,
-        last_vacuum,
-        last_autovacuum,
-        last_analyze,
-        last_autoanalyze
-      FROM pg_stat_user_tables
-      WHERE
-        schemaname = 'public'
-        AND (
+        SELECT
+          schemaname || '.' || relname as table_name,
+          last_vacuum,
+          last_autovacuum,
+          last_analyze,
+          last_autoanalyze
+        FROM pg_stat_user_tables
+        WHERE
+          schemaname = 'public'
+          AND (
           last_vacuum > ? OR
           last_autovacuum > ? OR
           last_analyze > ? OR
           last_autoanalyze > ?
-        )
-      ORDER BY relname
+          )
+        ORDER BY relname
       `,
       [since, since, since, since]
     )
 
     const modifiedFromStats = result.rows.map((row: any) => row.table_name.replace('public.', ''))
 
-    // Also check tables with updated_at column
     const allTables = await this.getAllTables()
     const modifiedFromUpdatedAt: string[] = []
 
     for (const table of allTables) {
-      // Skip excluded tables
       if (backupConfig.differential.excludedTables.includes(table)) {
         continue
       }
@@ -586,11 +610,11 @@ export default class BackupService {
       try {
         const hasUpdatedAt = await connection.rawQuery(
           `
-          SELECT column_name
-          FROM information_schema.columns
-          WHERE table_schema = 'public'
-            AND table_name = ?
-            AND column_name = 'updated_at'
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = ?
+              AND column_name = 'updated_at'
           `,
           [table]
         )
@@ -606,14 +630,14 @@ export default class BackupService {
           }
         }
       } catch (error) {
-        logger.warn('Failed to check table for modifications', {
-          table,
-          error: error.message,
+        this.logService.warn({
+          message: 'Failed to check table for modifications',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { table },
         })
       }
     }
-
-    // Merge both sources and deduplicate
 
     return [...new Set([...modifiedFromStats, ...modifiedFromUpdatedAt])]
   }
@@ -622,7 +646,6 @@ export default class BackupService {
    * Find the last full backup
    */
   private async findLastFullBackup(): Promise<BackupMetadata | null> {
-    // Try to get from local storage first
     const localStorage = this.storages.find((s) => s.name === 'local')
     if (!localStorage) return null
 
@@ -631,7 +654,6 @@ export default class BackupService {
 
     if (fullBackups.length === 0) return null
 
-    // Return most recent
     return fullBackups[0]
   }
 
@@ -643,7 +665,10 @@ export default class BackupService {
     kept: number
     errors: number
   }> {
-    logger.info('Starting backup cleanup')
+    this.logService.info({
+      message: 'Starting backup cleanup',
+      category: LogCategory.SYSTEM,
+    })
 
     let deleted = 0
     let kept = 0
@@ -659,33 +684,47 @@ export default class BackupService {
             const success = await storage.delete(backup.filename)
             if (success) {
               deleted++
-              logger.info('Backup deleted', {
-                storage: storage.name,
-                filename: backup.filename,
+              this.logService.debug({
+                message: 'Backup deleted',
+                category: LogCategory.SYSTEM,
+                metadata: {
+                  storage: storage.name,
+                  filename: backup.filename,
+                },
               })
             } else {
               errors++
             }
           } catch (error) {
             errors++
-            logger.error('Failed to delete backup', {
-              storage: storage.name,
-              filename: backup.filename,
-              error: error.message,
+            this.logService.error({
+              message: 'Failed to delete backup',
+              category: LogCategory.SYSTEM,
+              error,
+              metadata: {
+                storage: storage.name,
+                filename: backup.filename,
+              },
             })
           }
         }
 
         kept += backups.length - toDelete.length
       } catch (error) {
-        logger.error('Failed to cleanup storage', {
-          storage: storage.name,
-          error: error.message,
+        this.logService.error({
+          message: 'Failed to cleanup storage',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { storage: storage.name },
         })
       }
     }
 
-    logger.info('Backup cleanup completed', { deleted, kept, errors })
+    this.logService.info({
+      message: 'Backup cleanup completed',
+      category: LogCategory.SYSTEM,
+      metadata: { deleted, kept, errors },
+    })
 
     return { deleted, kept, errors }
   }
@@ -697,28 +736,21 @@ export default class BackupService {
     const now = DateTime.now()
     const toKeep = new Set<string>()
 
-    // Sort by date (newest first)
     const sorted = [...backups].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
-    // Keep daily backups
     const dailyBackups = sorted.filter(
       (b) => DateTime.fromJSDate(b.createdAt) > now.minus({ days: backupConfig.retention.daily })
     )
     dailyBackups.forEach((b) => toKeep.add(b.filename))
 
-    // Keep weekly backups (Sundays)
     const weeklyBackups = sorted
       .filter((b) => {
         const date = DateTime.fromJSDate(b.createdAt)
-        return (
-          date.weekday === 7 && // Sunday
-          date > now.minus({ weeks: backupConfig.retention.weekly })
-        )
+        return date.weekday === 7 && date > now.minus({ weeks: backupConfig.retention.weekly })
       })
       .slice(0, backupConfig.retention.weekly)
     weeklyBackups.forEach((b) => toKeep.add(b.filename))
 
-    // Keep monthly backups (1st of month)
     const monthlyBackups = sorted
       .filter((b) => {
         const date = DateTime.fromJSDate(b.createdAt)
@@ -727,7 +759,6 @@ export default class BackupService {
       .slice(0, backupConfig.retention.monthly)
     monthlyBackups.forEach((b) => toKeep.add(b.filename))
 
-    // Keep yearly backups (1st January)
     const yearlyBackups = sorted
       .filter((b) => {
         const date = DateTime.fromJSDate(b.createdAt)
@@ -740,7 +771,6 @@ export default class BackupService {
       .slice(0, backupConfig.retention.yearly)
     yearlyBackups.forEach((b) => toKeep.add(b.filename))
 
-    // Return backups not in keep set
     return sorted.filter((b) => !toKeep.has(b.filename))
   }
 
@@ -756,7 +786,6 @@ export default class BackupService {
     const issues: string[] = []
     const storageStatus: { [key: string]: boolean } = {}
 
-    // Check storage availability
     for (const storage of this.storages) {
       const available = await storage.isAvailable()
       storageStatus[storage.name] = available
@@ -765,7 +794,6 @@ export default class BackupService {
         issues.push(`Storage ${storage.name} is not available`)
       }
 
-      // Check free space for local storage
       if (storage.name === 'local') {
         const freeSpace = await storage.getFreeSpace()
         if (freeSpace !== null) {
@@ -779,7 +807,6 @@ export default class BackupService {
       }
     }
 
-    // Check last backup age
     const localStorage = this.storages.find((s) => s.name === 'local')
     let lastBackup: BackupMetadata | null = null
 
@@ -819,10 +846,13 @@ export default class BackupService {
    * Restore a backup
    */
   async restore(filename: string): Promise<{ success: boolean; error?: string }> {
-    logger.info('Starting backup restoration', { filename })
+    this.logService.info({
+      message: 'Starting backup restoration',
+      category: LogCategory.SYSTEM,
+      metadata: { filename },
+    })
 
     try {
-      // Find backup in storages
       const localStorage = this.storages.find((s) => s.name === 'local')
       if (!localStorage) {
         throw new Error('Local storage not available for restoration')
@@ -833,9 +863,6 @@ export default class BackupService {
         throw new Error(`Backup file not found: ${filename}`)
       }
 
-      logger.info('Backup file found')
-
-      // Download to temp
       const tempPath = join(this.tempDir, filename)
       await mkdir(this.tempDir, { recursive: true })
 
@@ -844,7 +871,6 @@ export default class BackupService {
         throw new Error('Failed to download backup file')
       }
 
-      // Decrypt
       const decryptedPath = tempPath.replace(/\.enc$/, '')
 
       if (backupConfig.encryption.enabled) {
@@ -852,31 +878,29 @@ export default class BackupService {
         await unlink(tempPath)
       }
 
-      logger.info('Backup file decrypted')
-
-      // Decompress
       const decompressedPath = decryptedPath.replace(/\.gz$/, '')
       if (backupConfig.compression.enabled) {
         await this.decompressFile(decryptedPath, decompressedPath)
         await unlink(decryptedPath)
       }
 
-      logger.info('Backup file decompressed')
-
-      // Restore database
       await this.restoreDatabase(decompressedPath)
 
-      // Cleanup
       await unlink(decompressedPath)
 
-      logger.info('Backup restoration completed', { filename })
+      this.logService.info({
+        message: 'Backup restoration completed',
+        category: LogCategory.SYSTEM,
+        metadata: { filename },
+      })
 
       return { success: true }
     } catch (error) {
-      logger.error('Backup restoration failed', {
-        filename,
-        error: error.message,
-        stack: error.stack,
+      this.logService.error({
+        message: 'Backup restoration failed',
+        category: LogCategory.SYSTEM,
+        error,
+        metadata: { filename },
       })
 
       return {
@@ -931,21 +955,26 @@ export default class BackupService {
     })
   }
 
-  // Notification methods...
-
   private async notifySuccess(filename: string, size: number, duration: number): Promise<void> {
-    // Only log, don't send email for success
-    logger.info('Backup completed successfully', { filename, size, duration })
+    this.logService.info({
+      message: 'Backup completed successfully',
+      category: LogCategory.SYSTEM,
+      metadata: { filename, size, duration },
+    })
   }
 
   private async notifyFailure(filename: string, error: Error): Promise<void> {
     if (!backupConfig.notifications.onFailure) return
 
-    logger.error('Sending backup failure notification', { filename })
+    this.logService.error({
+      message: 'Sending backup failure notification',
+      category: LogCategory.SYSTEM,
+      error,
+      metadata: { filename },
+    })
 
-    // Send notification via NotificationService (will be email)
     await this.notificationService.notify({
-      userId: 1, // Admin user - TODO: make configurable
+      userId: 1,
       type: 'error',
       title: 'Backup Failed',
       message: `Database backup failed: ${filename}`,
@@ -958,10 +987,14 @@ export default class BackupService {
   }
 
   private async notifyLargeBackup(filename: string, size: number): Promise<void> {
-    logger.warn('Large backup detected', { filename, size })
+    this.logService.warn({
+      message: 'Large backup detected',
+      category: LogCategory.SYSTEM,
+      metadata: { filename, size },
+    })
 
     await this.notificationService.notify({
-      userId: 1, // Admin user
+      userId: 1,
       type: 'warning',
       title: 'Large Backup Detected',
       message: `Backup ${filename} is unusually large (${(size / 1024 / 1024).toFixed(2)}MB)`,
@@ -974,10 +1007,14 @@ export default class BackupService {
   }
 
   private async notifyHealthCheckFailure(issues: string[]): Promise<void> {
-    logger.error('Backup health check failed', { issues })
+    this.logService.error({
+      message: 'Backup health check failed',
+      category: LogCategory.SYSTEM,
+      metadata: { issues },
+    })
 
     await this.notificationService.notify({
-      userId: 1, // Admin user
+      userId: 1,
       type: 'error',
       title: 'Backup Health Check Failed',
       message: `Backup system has ${issues.length} issue(s)`,

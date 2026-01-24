@@ -2,12 +2,15 @@ import { test } from '@japa/runner'
 import RoleService from '#admin/services/role_service'
 import { RoleFactory, PermissionFactory, UserFactory } from '#tests/helpers/factories'
 import Role from '#core/models/role'
+import LogService from '#core/services/log_service'
 
 test.group('RoleService', (group) => {
   let service: RoleService
+  let logService: LogService
 
   group.setup(async () => {
-    service = new RoleService()
+    logService = new LogService()
+    service = new RoleService(logService)
   })
 
   test('list: should return paginated roles', async ({ assert }) => {

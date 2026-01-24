@@ -4,6 +4,8 @@ import { DEFAULT_PAGINATION } from '#core/helpers/pagination'
 import BaseAdminService from '#core/services/base_admin_service'
 import { Exception } from '@adonisjs/core/exceptions'
 import PermissionHasRolesException from '#core/exceptions/permission_has_roles_exception'
+import { inject } from '@adonisjs/core'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 export interface CreatePermissionData {
   name: string
@@ -42,6 +44,7 @@ export interface PermissionListFilters {
   perPage?: number
 }
 
+@inject()
 export default class PermissionService extends BaseAdminService<
   typeof Permission,
   PermissionListFilters,
@@ -50,6 +53,10 @@ export default class PermissionService extends BaseAdminService<
   PermissionDetails
 > {
   protected model = Permission
+
+  constructor(protected logService: LogService) {
+    super()
+  }
 
   async list(filters: PermissionListFilters): Promise<ModelPaginatorContract<Permission>> {
     const page = filters.page || DEFAULT_PAGINATION.page
@@ -99,23 +106,46 @@ export default class PermissionService extends BaseAdminService<
   }
 
   async create(data: CreatePermissionData): Promise<Permission> {
-    return Permission.create({
+    const permission = await Permission.create({
       name: data.name,
       slug: data.slug,
       category: data.category.toLowerCase(),
       description: data.description,
       isSystem: false,
     })
+
+    this.logService.logBusiness(
+      'permission.created',
+      {},
+      {
+        permissionId: permission.id,
+        name: permission.name,
+        slug: permission.slug,
+        category: permission.category,
+      }
+    )
+
+    return permission
   }
 
   async update(permissionId: number, data: UpdatePermissionData): Promise<Permission> {
     const permission = await Permission.findOrFail(permissionId)
 
     if (!permission.canBeModified) {
+      this.logService.logSecurity('Attempt to modify system permission', {
+        permissionId,
+      })
+
       throw new Exception('Cannot modify system permission', {
         status: 403,
         code: 'CANNOT_MODIFY_SYSTEM_PERMISSION',
       })
+    }
+
+    const oldData = {
+      name: permission.name,
+      slug: permission.slug,
+      category: permission.category,
     }
 
     permission.merge({
@@ -126,6 +156,21 @@ export default class PermissionService extends BaseAdminService<
     })
 
     await permission.save()
+
+    this.logService.logBusiness(
+      'permission.updated',
+      {},
+      {
+        permissionId: permission.id,
+        oldData,
+        newData: {
+          name: permission.name,
+          slug: permission.slug,
+          category: permission.category,
+        },
+      }
+    )
+
     return permission
   }
 
@@ -136,6 +181,10 @@ export default class PermissionService extends BaseAdminService<
       .firstOrFail()
 
     if (!permission.canBeDeleted) {
+      this.logService.logSecurity('Attempt to delete system permission', {
+        permissionId,
+      })
+
       throw new Exception('Cannot delete system permission', {
         status: 403,
         code: 'CANNOT_DELETE_SYSTEM_PERMISSION',
@@ -143,10 +192,29 @@ export default class PermissionService extends BaseAdminService<
     }
 
     if (permission.roles.length > 0) {
+      this.logService.warn({
+        message: 'Cannot delete permission with roles',
+        category: LogCategory.BUSINESS,
+        context: {
+          permissionId,
+          rolesCount: permission.roles.length,
+        },
+      })
+
       throw new PermissionHasRolesException(permission.roles.length)
     }
 
     await permission.delete()
+
+    this.logService.logBusiness(
+      'permission.deleted',
+      {},
+      {
+        permissionId,
+        name: permission.name,
+        slug: permission.slug,
+      }
+    )
   }
 
   async getAllCategories(): Promise<string[]> {

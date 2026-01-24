@@ -1,12 +1,15 @@
 import { test } from '@japa/runner'
 import CacheService from '#core/services/cache_service'
 import { sleep } from '#core/helpers/sleep'
+import LogService from '#core/services/log_service'
 
 test.group('CacheService', (group) => {
   let cacheService: CacheService
+  let logService: LogService
 
   group.setup(() => {
-    cacheService = new CacheService()
+    logService = new LogService()
+    cacheService = new CacheService(logService)
   })
 
   group.each.teardown(async () => {

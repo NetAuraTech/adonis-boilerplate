@@ -3,13 +3,16 @@ import ThrottleMiddleware from '#core/middleware/throttle_middleware'
 import RateLimitService from '#core/services/rate_limit_service'
 import sinon from 'sinon'
 import type { HttpContext } from '@adonisjs/core/http'
+import LogService from '#core/services/log_service'
 
 test.group('ThrottleMiddleware', (group) => {
   let middleware: ThrottleMiddleware
   let rateLimitService: RateLimitService
+  let logService: LogService
 
   group.setup(() => {
-    rateLimitService = new RateLimitService()
+    logService = new LogService()
+    rateLimitService = new RateLimitService(logService)
     middleware = new ThrottleMiddleware(rateLimitService)
   })
 

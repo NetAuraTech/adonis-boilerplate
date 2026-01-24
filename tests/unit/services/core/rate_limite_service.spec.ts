@@ -1,12 +1,15 @@
 import { test } from '@japa/runner'
 import RateLimitService from '#core/services/rate_limit_service'
 import { DateTime } from 'luxon'
+import LogService from '#core/services/log_service'
 
 test.group('RateLimitService', (group) => {
   let rateLimitService: RateLimitService
+  let logService: LogService
 
   group.setup(() => {
-    rateLimitService = new RateLimitService()
+    logService = new LogService()
+    rateLimitService = new RateLimitService(logService)
   })
 
   group.each.teardown(async () => {

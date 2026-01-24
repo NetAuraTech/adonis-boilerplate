@@ -4,19 +4,22 @@ import { generateSplitToken } from '#core/helpers/crypto'
 import env from '#start/env'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
-import logger from '@adonisjs/core/services/logger'
 import ChangeEmailNotificationMail from '#auth/mails/change_email_notification_mail'
 import ChangeEmailConfirmationMail from '#auth/mails/change_email_confirmation_mail'
 import { I18n } from '@adonisjs/i18n'
 import { inject } from '@adonisjs/core'
 import NotificationService from '#notification/services/notification_service'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 /**
  * Service for handling email change workflows
  */
 @inject()
 export default class EmailChangeService {
-  constructor(protected notificationService: NotificationService) {}
+  constructor(
+    protected notificationService: NotificationService,
+    protected logService: LogService
+  ) {}
 
   /**
    * Initiate email change process
@@ -70,17 +73,19 @@ export default class EmailChangeService {
         data: { oldEmail, newEmail, confirmationLink },
       })
 
-      logger.info('Email change initiated', {
+      this.logService.logAuth('email_change.initiated', {
         userId: user.id,
-        oldEmail,
-        newEmail,
+        userEmail: oldEmail,
       })
     } catch (error) {
-      logger.error('Failed to send email change emails', {
-        userId: user.id,
-        oldEmail,
-        newEmail,
-        error: error.message,
+      this.logService.error({
+        message: 'Failed to send email change emails',
+        category: LogCategory.AUTH,
+        error,
+        context: {
+          userId: user.id,
+          userEmail: oldEmail,
+        },
       })
       throw error
     }
@@ -102,6 +107,7 @@ export default class EmailChangeService {
     const user = await Token.getEmailChangeUser(fullToken)
 
     if (!user || !user.pendingEmail) {
+      this.logService.logAuth('email_change.failed.invalid_token', {})
       return null
     }
 
@@ -115,10 +121,9 @@ export default class EmailChangeService {
 
     await Token.expireEmailChangeTokens(user)
 
-    logger.info('Email changed successfully', {
+    this.logService.logAuth('email_change.confirmed', {
       userId: user.id,
-      oldEmail,
-      newEmail,
+      userEmail: newEmail,
     })
 
     await this.notificationService.notify({
@@ -152,9 +157,9 @@ export default class EmailChangeService {
 
     await Token.expireEmailChangeTokens(user)
 
-    logger.info('Email change cancelled', {
+    this.logService.logAuth('email_change.cancelled', {
       userId: user.id,
-      email: user.email,
+      userEmail: user.email,
       pendingEmail,
     })
   }

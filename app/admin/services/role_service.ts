@@ -5,6 +5,8 @@ import { DEFAULT_PAGINATION } from '#core/helpers/pagination'
 import BaseAdminService from '#core/services/base_admin_service'
 import { Exception } from '@adonisjs/core/exceptions'
 import RoleHasUsersException from '#core/exceptions/role_has_users_exception'
+import { inject } from '@adonisjs/core'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 export interface CreateRoleData {
   name: string
@@ -44,6 +46,7 @@ export interface RoleListFilters {
   perPage?: number
 }
 
+@inject()
 export default class RoleService extends BaseAdminService<
   typeof Role,
   RoleListFilters,
@@ -52,6 +55,10 @@ export default class RoleService extends BaseAdminService<
   RoleWithPermissions
 > {
   protected model = Role
+
+  constructor(protected logService: LogService) {
+    super()
+  }
 
   async list(filters: RoleListFilters) {
     const page = filters.page || DEFAULT_PAGINATION.page
@@ -99,6 +106,17 @@ export default class RoleService extends BaseAdminService<
 
     await role.syncPermissions(data.permission_ids)
 
+    this.logService.logBusiness(
+      'role.created',
+      {},
+      {
+        roleId: role.id,
+        name: role.name,
+        slug: role.slug,
+        permissionsCount: data.permission_ids.length,
+      }
+    )
+
     return role
   }
 
@@ -106,10 +124,19 @@ export default class RoleService extends BaseAdminService<
     const role = await Role.findOrFail(roleId)
 
     if (!role.canBeModified) {
+      this.logService.logSecurity('Attempt to modify system role', {
+        roleId,
+      })
+
       throw new Exception('Cannot modify system role', {
         status: 403,
         code: 'CANNOT_MODIFY_SYSTEM_ROLE',
       })
+    }
+
+    const oldData = {
+      name: role.name,
+      slug: role.slug,
     }
 
     role.merge({
@@ -121,6 +148,20 @@ export default class RoleService extends BaseAdminService<
     await role.save()
     await role.syncPermissions(data.permission_ids)
 
+    this.logService.logBusiness(
+      'role.updated',
+      {},
+      {
+        roleId: role.id,
+        oldData,
+        newData: {
+          name: role.name,
+          slug: role.slug,
+        },
+        permissionsCount: data.permission_ids.length,
+      }
+    )
+
     return role
   }
 
@@ -128,6 +169,10 @@ export default class RoleService extends BaseAdminService<
     const role = await Role.query().where('id', roleId).withCount('users').firstOrFail()
 
     if (!role.canBeDeleted) {
+      this.logService.logSecurity('Attempt to delete system role', {
+        roleId,
+      })
+
       throw new Exception('Cannot delete system role', {
         status: 403,
         code: 'CANNOT_DELETE_SYSTEM_ROLE',
@@ -135,10 +180,29 @@ export default class RoleService extends BaseAdminService<
     }
 
     if (role.$extras.users_count > 0) {
+      this.logService.warn({
+        message: 'Cannot delete role with users',
+        category: LogCategory.BUSINESS,
+        context: {
+          roleId,
+          usersCount: role.$extras.users_count,
+        },
+      })
+
       throw new RoleHasUsersException(role.$extras.users_count)
     }
 
     await role.delete()
+
+    this.logService.logBusiness(
+      'role.deleted',
+      {},
+      {
+        roleId,
+        name: role.name,
+        slug: role.slug,
+      }
+    )
   }
 
   async getPermissionsByCategory(roleId?: number): Promise<Record<string, any[]>> {

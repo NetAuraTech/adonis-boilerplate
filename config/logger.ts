@@ -18,6 +18,22 @@ const loggerConfig = defineConfig({
         targets: targets()
           .pushIf(!app.inProduction, targets.pretty())
           .pushIf(app.inProduction, targets.file({ destination: 1 }))
+          .push({
+            target: 'pino/file',
+            level: 'info',
+            options: {
+              destination: app.makePath('storage/logs/app.log'),
+              mkdir: true,
+            },
+          })
+          .push({
+            target: 'pino/file',
+            level: 'error',
+            options: {
+              destination: app.makePath('storage/logs/errors.log'),
+              mkdir: true,
+            },
+          })
           .toArray(),
       },
     },

@@ -3,6 +3,7 @@ import type { CommandOptions } from '@adonisjs/core/types/ace'
 import BackupService from '#backup/services/backup_service'
 import NotificationService from '#notification/services/notification_service'
 import { DateTime } from 'luxon'
+import LogService from '#core/services/log_service'
 
 /**
  * Command to check backup system health
@@ -21,7 +22,8 @@ export default class BackupHealthCheck extends BaseCommand {
 
   async run() {
     const notificationService = await this.app.container.make(NotificationService)
-    const backupService = new BackupService(notificationService)
+    const logService = new LogService()
+    const backupService = new BackupService(notificationService, logService)
 
     this.logger.info('Running backup health check...')
 

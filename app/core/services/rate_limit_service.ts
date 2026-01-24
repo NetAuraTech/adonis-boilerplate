@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
 import { isRedisAvailable, getRedisConnection } from '#core/helpers/redis'
 import RateLimit from '#core/models/rate_limit'
-import logger from '@adonisjs/core/services/logger'
+import { inject } from '@adonisjs/core'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 export interface RateLimitResult {
   allowed: boolean
@@ -10,8 +11,11 @@ export interface RateLimitResult {
   retryAfter?: number
 }
 
+@inject()
 export default class RateLimitService {
   private useRedis: boolean | null = null
+
+  constructor(protected logService: LogService) {}
 
   /**
    * Initialize rate limiter (check Redis availability)
@@ -20,9 +24,15 @@ export default class RateLimitService {
     if (this.useRedis === null) {
       this.useRedis = await isRedisAvailable()
       if (this.useRedis) {
-        logger.info('RateLimitService: Using Redis')
+        this.logService.info({
+          message: 'RateLimitService: Using Redis',
+          category: LogCategory.SYSTEM,
+        })
       } else {
-        logger.info('RateLimitService: Using Database fallback')
+        this.logService.info({
+          message: 'RateLimitService: Using Database fallback',
+          category: LogCategory.SYSTEM,
+        })
       }
     }
   }
@@ -37,7 +47,12 @@ export default class RateLimitService {
       try {
         return await this.attemptRedis(key, maxAttempts, decaySeconds)
       } catch (error) {
-        logger.error('RateLimitService: Redis error, using database fallback', { error })
+        this.logService.error({
+          message: 'RateLimitService: Redis error, using database fallback',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { key },
+        })
         this.useRedis = false
       }
     }
@@ -57,16 +72,13 @@ export default class RateLimitService {
     const now = DateTime.now()
     const redisKey = `rate_limit:${key}`
 
-    // Get current hits
     let hits = await redis.get(redisKey)
     let current = hits ? Number.parseInt(hits, 10) : 0
 
     if (current === 0) {
-      // First hit, set expiration
       await redis.setex(redisKey, decaySeconds, '1')
       current = 1
     } else {
-      // Increment hits
       current = await redis.incr(redisKey)
     }
 
@@ -74,12 +86,23 @@ export default class RateLimitService {
     const resetAt = now.plus({ seconds: ttl > 0 ? ttl : decaySeconds })
     const remaining = Math.max(0, maxAttempts - current)
 
-    return {
+    const result: RateLimitResult = {
       allowed: current <= maxAttempts,
       remaining,
       resetAt,
       retryAfter: current > maxAttempts ? ttl : undefined,
     }
+
+    if (!result.allowed) {
+      this.logService.logSecurity('Rate limit exceeded', {
+        key,
+        current,
+        maxAttempts,
+        retryAfter: result.retryAfter,
+      })
+    }
+
+    return result
   }
 
   /**
@@ -92,11 +115,9 @@ export default class RateLimitService {
   ): Promise<RateLimitResult> {
     const now = DateTime.now()
 
-    // Find or create rate limit entry
     let rateLimit = await RateLimit.query().where('key', key).first()
 
     if (!rateLimit) {
-      // Create new entry
       rateLimit = await RateLimit.create({
         key,
         hits: 1,
@@ -110,9 +131,7 @@ export default class RateLimitService {
       }
     }
 
-    // Check if expired
     if (rateLimit.resetAt < now) {
-      // Reset counter
       rateLimit.hits = 1
       rateLimit.resetAt = now.plus({ seconds: decaySeconds })
       await rateLimit.save()
@@ -124,7 +143,6 @@ export default class RateLimitService {
       }
     }
 
-    // Increment hits
     rateLimit.hits += 1
     await rateLimit.save()
 
@@ -134,12 +152,23 @@ export default class RateLimitService {
         ? Math.ceil(rateLimit.resetAt.diff(now, 'seconds').seconds)
         : undefined
 
-    return {
+    const result: RateLimitResult = {
       allowed: rateLimit.hits <= maxAttempts,
       remaining,
       resetAt: rateLimit.resetAt,
       retryAfter,
     }
+
+    if (!result.allowed) {
+      this.logService.logSecurity('Rate limit exceeded', {
+        key,
+        current: rateLimit.hits,
+        maxAttempts,
+        retryAfter: result.retryAfter,
+      })
+    }
+
+    return result
   }
 
   /**
@@ -152,15 +181,31 @@ export default class RateLimitService {
       try {
         const redis = await getRedisConnection()
         await redis.del(`rate_limit:${key}`)
+
+        this.logService.debug({
+          message: 'Rate limit reset',
+          category: LogCategory.SYSTEM,
+          metadata: { key },
+        })
         return
       } catch (error) {
-        logger.error('RateLimitService: Redis reset error, using database fallback', { error })
+        this.logService.error({
+          message: 'RateLimitService: Redis reset error, using database fallback',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { key },
+        })
         this.useRedis = false
       }
     }
 
-    // Database fallback
     await RateLimit.query().where('key', key).delete()
+
+    this.logService.debug({
+      message: 'Rate limit reset',
+      category: LogCategory.SYSTEM,
+      metadata: { key },
+    })
   }
 
   /**
@@ -176,12 +221,16 @@ export default class RateLimitService {
         const current = hits ? Number.parseInt(hits, 10) : 0
         return Math.max(0, maxAttempts - current)
       } catch (error) {
-        logger.error('RateLimitService: Redis remaining error, using database fallback', { error })
+        this.logService.error({
+          message: 'RateLimitService: Redis remaining error, using database fallback',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { key },
+        })
         this.useRedis = false
       }
     }
 
-    // Database fallback
     const rateLimit = await RateLimit.query().where('key', key).first()
     if (!rateLimit) return maxAttempts
 
@@ -204,14 +253,29 @@ export default class RateLimitService {
         if (keys.length > 0) {
           await redis.del(...keys)
         }
+
+        this.logService.info({
+          message: 'All rate limits cleared (Redis)',
+          category: LogCategory.SYSTEM,
+          metadata: { count: keys.length },
+        })
         return
       } catch (error) {
-        logger.error('RateLimitService: Redis clear error, using database fallback', { error })
+        this.logService.error({
+          message: 'RateLimitService: Redis clear error, using database fallback',
+          category: LogCategory.SYSTEM,
+          error,
+        })
         this.useRedis = false
       }
     }
 
-    // Database fallback
-    await RateLimit.query().delete()
+    const count = await RateLimit.query().delete()
+
+    this.logService.info({
+      message: 'All rate limits cleared (Database)',
+      category: LogCategory.SYSTEM,
+      metadata: { count },
+    })
   }
 }

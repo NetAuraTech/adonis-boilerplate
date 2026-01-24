@@ -4,12 +4,12 @@ import { generateSplitToken } from '#core/helpers/crypto'
 import env from '#start/env'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
-import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
 import InvitationMail from '#auth/mails/invitation_mail'
 import { I18n } from '@adonisjs/i18n'
 import { inject } from '@adonisjs/core'
 import NotificationService from '#notification/services/notification_service'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 export interface CreateInvitationData {
   email: string
@@ -22,7 +22,10 @@ export interface CreateInvitationData {
  */
 @inject()
 export default class InvitationService {
-  constructor(protected notificationService: NotificationService) {}
+  constructor(
+    protected notificationService: NotificationService,
+    protected logService: LogService
+  ) {}
 
   /**
    * Create and send user invitation
@@ -41,6 +44,10 @@ export default class InvitationService {
   async sendInvitation(data: CreateInvitationData, translator: I18n): Promise<User> {
     const existingUser = await User.findBy('email', data.email)
     if (existingUser && existingUser.isEmailVerified) {
+      this.logService.logAuth('invitation.failed.user_exists', {
+        userEmail: data.email,
+      })
+
       throw new Exception('User already exists', {
         status: 409,
         code: 'USER_ALREADY_EXISTS',
@@ -86,18 +93,21 @@ export default class InvitationService {
     try {
       await this.notificationService.notify(new InvitationMail(user, invitationLink, translator))
 
-      logger.info('User invitation sent', {
+      this.logService.logAuth('invitation.sent', {
         userId: user.id,
-        email: data.email,
-        roleId: data.roleId,
+        userEmail: data.email,
       })
 
       return user
     } catch (error) {
-      logger.error('Failed to send user invitation', {
-        userId: user.id,
-        email: data.email,
-        error: error.message,
+      this.logService.error({
+        message: 'Failed to send user invitation',
+        category: LogCategory.AUTH,
+        error,
+        context: {
+          userId: user.id,
+          userEmail: data.email,
+        },
       })
       throw error
     }
@@ -118,6 +128,7 @@ export default class InvitationService {
     const token = await Token.getUserInvitationToken(fullToken)
 
     if (!token || !token.userId) {
+      this.logService.logAuth('invitation.details.invalid_token', {})
       return null
     }
 
@@ -167,10 +178,9 @@ export default class InvitationService {
 
     await Token.expireInviteTokens(user)
 
-    logger.info('User invitation accepted', {
+    this.logService.logAuth('invitation.accepted', {
       userId: user.id,
-      email: user.email,
-      roleId: user.roleId,
+      userEmail: user.email,
     })
 
     return user

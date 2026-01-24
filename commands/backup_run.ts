@@ -2,6 +2,7 @@ import { BaseCommand, flags } from '@adonisjs/core/ace'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
 import BackupService from '#backup/services/backup_service'
 import NotificationService from '#notification/services/notification_service'
+import LogService from '#core/services/log_service'
 
 /**
  * Command to run database backup
@@ -27,7 +28,8 @@ export default class BackupRun extends BaseCommand {
 
   async run() {
     const notificationService = await this.app.container.make(NotificationService)
-    const backupService = new BackupService(notificationService)
+    const logService = new LogService()
+    const backupService = new BackupService(notificationService, logService)
 
     this.logger.info('Starting database backup...')
 

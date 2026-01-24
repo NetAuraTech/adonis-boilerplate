@@ -3,12 +3,15 @@ import AuthService from '#auth/services/auth_service'
 import { UserFactory } from '#tests/helpers/factories'
 import User from '#auth/models/user'
 import Role from '#core/models/role'
+import LogService from '#core/services/log_service'
 
 test.group('AuthService', (group) => {
   let authService: AuthService
+  let logService: LogService
 
   group.setup(() => {
-    authService = new AuthService()
+    logService = new LogService()
+    authService = new AuthService(logService)
   })
 
   test('login: should authenticate user with valid credentials', async ({ assert }) => {

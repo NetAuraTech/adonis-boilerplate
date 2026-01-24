@@ -1,7 +1,11 @@
 import UserPreference, { type UserPreferencesData } from '#core/models/user_preference'
-import logger from '@adonisjs/core/services/logger'
+import { inject } from '@adonisjs/core'
+import LogService, { LogCategory } from '#core/services/log_service'
 
+@inject()
 export default class UserPreferenceService {
+  constructor(protected logService: LogService) {}
+
   /**
    * Get or create user preferences
    * Creates default preferences if none exist
@@ -18,7 +22,11 @@ export default class UserPreferenceService {
         preferences: this.getDefaultPreferences(),
       })
 
-      logger.info('User preferences created with defaults', { userId })
+      this.logService.debug({
+        message: 'User preferences created with defaults',
+        category: LogCategory.BUSINESS,
+        context: { userId },
+      })
     }
 
     return preferences
@@ -38,10 +46,15 @@ export default class UserPreferenceService {
     preferences.preferences = this.deepMerge(preferences.preferences, updates)
     await preferences.save()
 
-    logger.info('User preferences updated', {
-      userId,
-      updatedKeys: Object.keys(updates),
-    })
+    this.logService.logBusiness(
+      'preferences.updated',
+      {
+        userId,
+      },
+      {
+        updatedKeys: Object.keys(updates),
+      }
+    )
 
     return preferences
   }
@@ -60,7 +73,12 @@ export default class UserPreferenceService {
     preferences.set(path, value)
     await preferences.save()
 
-    logger.info('User preference set', { userId, path, value })
+    this.logService.debug({
+      message: 'User preference set',
+      category: LogCategory.BUSINESS,
+      context: { userId },
+      metadata: { path, value },
+    })
 
     return preferences
   }
@@ -95,7 +113,9 @@ export default class UserPreferenceService {
     preferences.preferences = this.getDefaultPreferences()
     await preferences.save()
 
-    logger.info('User preferences reset to defaults', { userId })
+    this.logService.logBusiness('preferences.reset', {
+      userId,
+    })
 
     return preferences
   }
@@ -119,7 +139,15 @@ export default class UserPreferenceService {
       preferences.preferences[category] = defaults[category]
       await preferences.save()
 
-      logger.info('User preference category reset', { userId, category })
+      this.logService.logBusiness(
+        'preferences.category_reset',
+        {
+          userId,
+        },
+        {
+          category,
+        }
+      )
     }
 
     return preferences

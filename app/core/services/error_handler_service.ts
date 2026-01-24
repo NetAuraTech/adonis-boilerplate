@@ -1,6 +1,7 @@
 import { HttpContext } from '@adonisjs/core/http'
 import { Sentry } from '@rlanz/sentry'
-import logger from '@adonisjs/core/services/logger'
+import { inject } from '@adonisjs/core'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 interface CustomErrorHandler {
   code?: string
@@ -15,7 +16,10 @@ interface CustomErrorHandler {
  * - handle(): Handles errors for Web requests (redirects + flash messages)
  * - handleApi(): Handles errors for API requests (JSON responses)
  */
+@inject()
 export default class ErrorHandlerService {
+  constructor(protected logService: LogService) {}
+
   /**
    * Handles an error for a WEB request
    * Redirects with flash messages
@@ -327,15 +331,18 @@ export default class ErrorHandlerService {
    * Log an error with context
    */
   private logError(ctx: HttpContext, error: any): void {
-    logger.error('Error occurred', {
-      error: error.message,
-      stack: error.stack,
-      code: error.code,
-      status: error.status,
-      url: ctx.request.url(),
-      method: ctx.request.method(),
-      userId: ctx.auth.user?.id,
-      ip: ctx.request.ip(),
+    this.logService.error({
+      message: 'Error occurred',
+      category: LogCategory.API,
+      error,
+      context: {
+        url: ctx.request.url(),
+        method: ctx.request.method(),
+        userId: ctx.auth.user?.id,
+        userEmail: ctx.auth.user?.email,
+        ip: ctx.request.ip(),
+        statusCode: error.status,
+      },
     })
   }
 

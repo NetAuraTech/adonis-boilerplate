@@ -4,19 +4,22 @@ import { generateSplitToken } from '#core/helpers/crypto'
 import env from '#start/env'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
-import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
 import VerifyEmailMail from '#auth/mails/verify_email_mail'
 import { I18n } from '@adonisjs/i18n'
 import { inject } from '@adonisjs/core'
 import NotificationService from '#notification/services/notification_service'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 /**
  * Service for handling email verification workflows
  */
 @inject()
 export default class EmailVerificationService {
-  constructor(protected notificationService: NotificationService) {}
+  constructor(
+    protected notificationService: NotificationService,
+    protected logService: LogService
+  ) {}
 
   /**
    * Generate and send email verification link
@@ -55,16 +58,21 @@ export default class EmailVerificationService {
         data: { verificationLink },
       })
 
-      logger.info('Email verification sent', {
+      this.logService.logAuth('email_verification.sent', {
         userId: user.id,
-        email: user.email,
+        userEmail: user.email,
       })
     } catch (error) {
-      logger.error('Failed to send verification email', {
-        userId: user.id,
-        email: user.email,
-        error: error.message,
+      this.logService.error({
+        message: 'Failed to send verification email',
+        category: LogCategory.AUTH,
+        error,
+        context: {
+          userId: user.id,
+          userEmail: user.email,
+        },
       })
+
       throw new Exception('Failed to send verification email', {
         status: 500,
         code: 'E_EMAIL_SEND_FAILED',
@@ -84,6 +92,7 @@ export default class EmailVerificationService {
     const user = await Token.getEmailVerificationUser(fullToken)
 
     if (!user) {
+      this.logService.logAuth('email_verification.failed.invalid_token', {})
       return null
     }
 
@@ -92,9 +101,9 @@ export default class EmailVerificationService {
 
     await Token.expireEmailVerificationTokens(user)
 
-    logger.info('Email verified successfully', {
+    this.logService.logAuth('email_verification.confirmed', {
       userId: user.id,
-      email: user.email,
+      userEmail: user.email,
     })
 
     return user
@@ -115,9 +124,9 @@ export default class EmailVerificationService {
     user.emailVerifiedAt = DateTime.now()
     await user.save()
 
-    logger.info('Email marked as verified (OAuth)', {
+    this.logService.logAuth('email_verification.oauth', {
       userId: user.id,
-      email: user.email,
+      userEmail: user.email,
     })
   }
 }

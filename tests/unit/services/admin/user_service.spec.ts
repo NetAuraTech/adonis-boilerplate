@@ -7,16 +7,19 @@ import { DateTime } from 'luxon'
 import mail from '@adonisjs/mail/services/main'
 import User from '#auth/models/user'
 import NotificationService from '#notification/services/notification_service'
+import LogService from '#core/services/log_service'
 
 test.group('UserService', (group) => {
   let service: UserService
   let invitationService: InvitationService
   let notificationService: NotificationService
+  let logService: LogService
 
   group.setup(async () => {
-    notificationService = new NotificationService()
-    invitationService = new InvitationService(notificationService)
-    service = new UserService(invitationService)
+    logService = new LogService()
+    notificationService = new NotificationService(logService)
+    invitationService = new InvitationService(notificationService, logService)
+    service = new UserService(invitationService, logService)
     await User.query().delete()
   })
 

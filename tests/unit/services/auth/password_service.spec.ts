@@ -8,14 +8,17 @@ import mail from '@adonisjs/mail/services/main'
 import i18n from 'i18next'
 import { I18n } from '@adonisjs/i18n'
 import NotificationService from '#notification/services/notification_service'
+import LogService from '#core/services/log_service'
 
 test.group('PasswordService', (group) => {
   let passwordService: PasswordService
   let notificationService: NotificationService
+  let logService: LogService
 
   group.setup(() => {
-    notificationService = new NotificationService()
-    passwordService = new PasswordService(notificationService)
+    logService = new LogService()
+    notificationService = new NotificationService(logService)
+    passwordService = new PasswordService(notificationService, logService)
   })
 
   test('sendResetPasswordLink: should create password reset token', async ({ assert, cleanup }) => {

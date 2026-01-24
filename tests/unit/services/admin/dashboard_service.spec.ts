@@ -4,12 +4,15 @@ import { UserFactory, RoleFactory, PermissionFactory } from '#tests/helpers/fact
 import { DateTime } from 'luxon'
 import Role from '#core/models/role'
 import Permission from '#core/models/permission'
+import LogService from '#core/services/log_service'
 
 test.group('DashboardService', (group) => {
   let dashboardService: DashboardService
+  let logService: LogService
 
   group.setup(() => {
-    dashboardService = new DashboardService()
+    logService = new LogService()
+    dashboardService = new DashboardService(logService)
   })
 
   test('getStatistics: should return all statistics', async ({ assert }) => {

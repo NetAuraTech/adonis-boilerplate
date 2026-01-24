@@ -1,12 +1,12 @@
 import { inject } from '@adonisjs/core'
 import Notification from '#notification/models/notification'
 import UserPreference from '#core/models/user_preference'
-import logger from '@adonisjs/core/services/logger'
 import transmit from '@adonisjs/transmit/services/main'
 import { DateTime } from 'luxon'
 import type { ModelPaginatorContract } from '@adonisjs/lucid/types/model'
 import { BaseMail } from '@adonisjs/mail'
 import mail from '@adonisjs/mail/services/main'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 export interface CreateNotificationData {
   userId: number
@@ -25,6 +25,8 @@ export interface GetNotificationsOptions {
 
 @inject()
 export default class NotificationService {
+  constructor(protected logService: LogService) {}
+
   async notify(data: CreateNotificationData | BaseMail) {
     if (data instanceof BaseMail) {
       await mail.send(data)
@@ -47,19 +49,31 @@ export default class NotificationService {
     const inAppEnabled = userPrefs?.get(`notifications.inApp.${data.type}`, true)
 
     if (!inAppEnabled) {
-      logger.info('In-app notification skipped due to user preferences', {
-        userId: data.userId,
-        type: data.type,
+      this.logService.debug({
+        message: 'In-app notification skipped due to user preferences',
+        category: LogCategory.BUSINESS,
+        context: {
+          userId: data.userId,
+        },
+        metadata: {
+          type: data.type,
+        },
       })
       return null
     }
 
     const notification = await Notification.create(data)
 
-    logger.info('Notification created', {
-      notificationId: notification.id,
-      userId: data.userId,
-      type: data.type,
+    this.logService.info({
+      message: 'Notification created',
+      category: LogCategory.BUSINESS,
+      context: {
+        userId: data.userId,
+      },
+      metadata: {
+        notificationId: notification.id,
+        type: data.type,
+      },
     })
 
     // Broadcast via SSE
@@ -129,9 +143,15 @@ export default class NotificationService {
 
     await notification.markAsRead()
 
-    logger.info('Notification marked as read', {
-      notificationId,
-      userId,
+    this.logService.debug({
+      message: 'Notification marked as read',
+      category: LogCategory.BUSINESS,
+      context: {
+        userId,
+      },
+      metadata: {
+        notificationId,
+      },
     })
 
     return notification
@@ -151,9 +171,15 @@ export default class NotificationService {
 
     const count = Array.isArray(updated) ? updated.length : updated
 
-    logger.info('All notifications marked as read', {
-      userId,
-      count,
+    this.logService.info({
+      message: 'All notifications marked as read',
+      category: LogCategory.BUSINESS,
+      context: {
+        userId,
+      },
+      metadata: {
+        count,
+      },
     })
 
     return count
@@ -178,9 +204,15 @@ export default class NotificationService {
 
     await notification.delete()
 
-    logger.info('Notification deleted', {
-      notificationId,
-      userId,
+    this.logService.debug({
+      message: 'Notification deleted',
+      category: LogCategory.BUSINESS,
+      context: {
+        userId,
+      },
+      metadata: {
+        notificationId,
+      },
     })
 
     return true
@@ -198,9 +230,15 @@ export default class NotificationService {
 
     const count = Array.isArray(deleted) ? deleted.length : deleted
 
-    logger.info('All notifications deleted for user', {
-      userId,
-      count,
+    this.logService.info({
+      message: 'All notifications deleted for user',
+      category: LogCategory.BUSINESS,
+      context: {
+        userId,
+      },
+      metadata: {
+        count,
+      },
     })
 
     return count
@@ -232,15 +270,27 @@ export default class NotificationService {
         notification: notification.serialize(),
       })
 
-      logger.debug('Notification broadcasted via SSE', {
-        notificationId: notification.id,
-        userId: notification.userId,
+      this.logService.debug({
+        message: 'Notification broadcasted via SSE',
+        category: LogCategory.SYSTEM,
+        context: {
+          userId: notification.userId,
+        },
+        metadata: {
+          notificationId: notification.id,
+        },
       })
     } catch (error) {
-      logger.error('Failed to broadcast notification via SSE', {
-        notificationId: notification.id,
-        userId: notification.userId,
-        error: error.message,
+      this.logService.error({
+        message: 'Failed to broadcast notification via SSE',
+        category: LogCategory.SYSTEM,
+        error,
+        context: {
+          userId: notification.userId,
+        },
+        metadata: {
+          notificationId: notification.id,
+        },
       })
 
       throw error

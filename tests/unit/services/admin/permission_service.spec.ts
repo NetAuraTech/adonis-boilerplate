@@ -2,12 +2,15 @@ import { test } from '@japa/runner'
 import PermissionService from '#admin/services/permission_service'
 import { PermissionFactory, RoleFactory } from '#tests/helpers/factories'
 import Permission from '#core/models/permission'
+import LogService from '#core/services/log_service'
 
 test.group('PermissionService', (group) => {
   let service: PermissionService
+  let logService: LogService
 
-  group.setup(async () => {
-    service = new PermissionService()
+  group.setup(() => {
+    logService = new LogService()
+    service = new PermissionService(logService)
   })
 
   test('list: should return paginated permissions', async ({ assert }) => {

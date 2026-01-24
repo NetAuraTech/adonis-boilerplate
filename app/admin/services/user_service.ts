@@ -8,6 +8,7 @@ import InvitationService from '#auth/services/invitation_service'
 import { inject } from '@adonisjs/core'
 import { I18n } from '@adonisjs/i18n'
 import i18n from 'i18next'
+import LogService from '#core/services/log_service'
 
 export interface UserListFilters {
   search?: string
@@ -63,9 +64,13 @@ export default class UserService extends BaseAdminService<
 > {
   protected model = User
 
-  constructor(protected invitationService: InvitationService) {
+  constructor(
+    protected invitationService: InvitationService,
+    protected logService: LogService
+  ) {
     super()
   }
+
   async list(filters: UserListFilters) {
     const page = filters.page || DEFAULT_PAGINATION.page
     const perPage = filters.perPage || DEFAULT_PAGINATION.perPage
@@ -140,7 +145,7 @@ export default class UserService extends BaseAdminService<
   }
 
   async create(data: CreateUserData) {
-    return await this.invitationService.sendInvitation(
+    const user = await this.invitationService.sendInvitation(
       {
         email: data.email,
         fullName: data.fullName,
@@ -148,9 +153,28 @@ export default class UserService extends BaseAdminService<
       },
       i18n as unknown as I18n
     )
+
+    this.logService.logBusiness(
+      'user.invited',
+      {},
+      {
+        userId: user.id,
+        email: data.email,
+        roleId: data.role_id,
+      }
+    )
+
+    return user
   }
+
   async update(userId: number, data: UpdateUserData) {
     const user = await User.findOrFail(userId)
+
+    const oldData = {
+      email: user.email,
+      fullName: user.fullName,
+      roleId: user.roleId,
+    }
 
     user.merge({
       fullName: data.fullName || user.fullName,
@@ -160,11 +184,36 @@ export default class UserService extends BaseAdminService<
 
     await user.save()
 
+    this.logService.logBusiness(
+      'user.updated',
+      {},
+      {
+        userId: user.id,
+        oldData,
+        newData: {
+          email: user.email,
+          fullName: user.fullName,
+          roleId: user.roleId,
+        },
+      }
+    )
+
     return user
   }
 
   async delete(userId: number) {
     const user = await User.findOrFail(userId)
+
+    this.logService.logBusiness(
+      'user.deleted',
+      {},
+      {
+        userId: user.id,
+        email: user.email,
+        roleId: user.roleId,
+      }
+    )
+
     await user.delete()
   }
 

@@ -2,6 +2,7 @@ import { BaseCommand, args, flags } from '@adonisjs/core/ace'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
 import BackupService from '#backup/services/backup_service'
 import NotificationService from '#notification/services/notification_service'
+import LogService from '#core/services/log_service'
 
 /**
  * Command to restore a backup
@@ -31,7 +32,8 @@ export default class BackupRestore extends BaseCommand {
 
   async run() {
     const notificationService = await this.app.container.make(NotificationService)
-    const backupService = new BackupService(notificationService)
+    const logService = new LogService()
+    const backupService = new BackupService(notificationService, logService)
 
     if (!this.force) {
       this.logger.warning('⚠️  WARNING: This will REPLACE all current database data!')

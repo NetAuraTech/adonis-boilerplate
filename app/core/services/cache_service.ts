@@ -1,5 +1,6 @@
 import { isRedisAvailable, getRedisConnection } from '#core/helpers/redis'
-import logger from '@adonisjs/core/services/logger'
+import { inject } from '@adonisjs/core'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 /**
  * In-memory cache fallback
@@ -11,7 +12,6 @@ class MemoryCache {
     const item = this.cache.get(key)
     if (!item) return null
 
-    // Check expiration
     if (item.expiresAt && Date.now() > item.expiresAt) {
       this.cache.delete(key)
       return null
@@ -33,7 +33,6 @@ class MemoryCache {
     const item = this.cache.get(key)
     if (!item) return false
 
-    // Check expiration
     if (item.expiresAt && Date.now() > item.expiresAt) {
       this.cache.delete(key)
       return false
@@ -61,9 +60,12 @@ class MemoryCache {
 /**
  * Cache service with automatic Redis → Memory fallback
  */
+@inject()
 export default class CacheService {
   private memoryCache = new MemoryCache()
   private useRedis: boolean | null = null
+
+  constructor(protected logService: LogService) {}
 
   /**
    * Initialize cache (check Redis availability)
@@ -72,9 +74,15 @@ export default class CacheService {
     if (this.useRedis === null) {
       this.useRedis = await isRedisAvailable()
       if (this.useRedis) {
-        logger.info('CacheService: Using Redis')
+        this.logService.info({
+          message: 'CacheService: Using Redis',
+          category: LogCategory.SYSTEM,
+        })
       } else {
-        logger.info('CacheService: Using Memory fallback')
+        this.logService.info({
+          message: 'CacheService: Using Memory fallback',
+          category: LogCategory.SYSTEM,
+        })
       }
     }
   }
@@ -91,7 +99,12 @@ export default class CacheService {
         const value = await redis.get(key)
         return value ? JSON.parse(value) : null
       } catch (error) {
-        logger.error('CacheService: Redis get error, using memory fallback', { error })
+        this.logService.error({
+          message: 'CacheService: Redis get error, using memory fallback',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { key },
+        })
         this.useRedis = false
       }
     }
@@ -116,7 +129,12 @@ export default class CacheService {
         }
         return
       } catch (error) {
-        logger.error('CacheService: Redis set error, using memory fallback', { error })
+        this.logService.error({
+          message: 'CacheService: Redis set error, using memory fallback',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { key },
+        })
         this.useRedis = false
       }
     }
@@ -136,7 +154,12 @@ export default class CacheService {
         await redis.del(key)
         return
       } catch (error) {
-        logger.error('CacheService: Redis delete error, using memory fallback', { error })
+        this.logService.error({
+          message: 'CacheService: Redis delete error, using memory fallback',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { key },
+        })
         this.useRedis = false
       }
     }
@@ -156,7 +179,12 @@ export default class CacheService {
         const exists = await redis.exists(key)
         return exists === 1
       } catch (error) {
-        logger.error('CacheService: Redis exists error, using memory fallback', { error })
+        this.logService.error({
+          message: 'CacheService: Redis exists error, using memory fallback',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { key },
+        })
         this.useRedis = false
       }
     }
@@ -174,14 +202,28 @@ export default class CacheService {
       try {
         const redis = await getRedisConnection()
         await redis.flushdb()
+
+        this.logService.info({
+          message: 'Cache flushed (Redis)',
+          category: LogCategory.SYSTEM,
+        })
         return
       } catch (error) {
-        logger.error('CacheService: Redis flush error, using memory fallback', { error })
+        this.logService.error({
+          message: 'CacheService: Redis flush error, using memory fallback',
+          category: LogCategory.SYSTEM,
+          error,
+        })
         this.useRedis = false
       }
     }
 
     await this.memoryCache.flush()
+
+    this.logService.info({
+      message: 'Cache flushed (Memory)',
+      category: LogCategory.SYSTEM,
+    })
   }
 
   /**
@@ -199,7 +241,12 @@ export default class CacheService {
         }
         return newValue
       } catch (error) {
-        logger.error('CacheService: Redis increment error, using memory fallback', { error })
+        this.logService.error({
+          message: 'CacheService: Redis increment error, using memory fallback',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { key },
+        })
         this.useRedis = false
       }
     }
@@ -231,12 +278,16 @@ export default class CacheService {
         })
         return result
       } catch (error) {
-        logger.error('CacheService: Redis mget error, using memory fallback', { error })
+        this.logService.error({
+          message: 'CacheService: Redis mget error, using memory fallback',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { keysCount: keys.length },
+        })
         this.useRedis = false
       }
     }
 
-    // Memory fallback
     for (const key of keys) {
       result.set(key, await this.memoryCache.get<T>(key))
     }
@@ -267,12 +318,16 @@ export default class CacheService {
         await pipeline.exec()
         return
       } catch (error) {
-        logger.error('CacheService: Redis mset error, using memory fallback', { error })
+        this.logService.error({
+          message: 'CacheService: Redis mset error, using memory fallback',
+          category: LogCategory.SYSTEM,
+          error,
+          metadata: { entriesCount: entries.size },
+        })
         this.useRedis = false
       }
     }
 
-    // Memory fallback
     for (const [key, value] of entries) {
       await this.memoryCache.set(key, value, ttlSeconds)
     }

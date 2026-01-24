@@ -1,11 +1,15 @@
 import User from '#auth/models/user'
 import type { AllyUserContract } from '@adonisjs/ally/types'
 import { DateTime } from 'luxon'
-import logger from '@adonisjs/core/services/logger'
 import Role from '#core/models/role'
 import ProviderAlreadyLinkedException from '#core/exceptions/provider_already_linked_exception'
+import { inject } from '@adonisjs/core'
+import LogService from '#core/services/log_service'
 
+@inject()
 export default class SocialService {
+  constructor(protected logService: LogService) {}
+
   async findOrCreateUser(
     allyUser: AllyUserContract<any>,
     provider: 'github' | 'google' | 'facebook'
@@ -15,10 +19,9 @@ export default class SocialService {
     let user = await User.findBy(providerIdColumn, allyUser.id)
 
     if (user) {
-      logger.info('User found by OAuth provider ID', {
+      this.logService.logAuth('social.login', {
         userId: user.id,
-        provider,
-        providerId: allyUser.id,
+        userEmail: user.email,
       })
       return user
     }
@@ -35,10 +38,9 @@ export default class SocialService {
 
         await user.save()
 
-        logger.info('Existing user linked to OAuth provider', {
+        this.logService.logAuth('social.linked', {
           userId: user.id,
-          provider,
-          providerId: allyUser.id,
+          userEmail: user.email,
         })
 
         return user
@@ -55,11 +57,9 @@ export default class SocialService {
       roleId: userRole?.id || null,
     })
 
-    logger.info('New user created via OAuth', {
+    this.logService.logAuth('social.registered', {
       userId: user.id,
-      provider,
-      providerId: allyUser.id,
-      roleId: user.roleId,
+      userEmail: user.email,
     })
 
     return user
@@ -83,11 +83,21 @@ export default class SocialService {
       .first()
 
     if (existingUser) {
+      this.logService.logSecurity('Attempt to link already linked provider', {
+        userId: user.id,
+        userEmail: user.email,
+      })
+
       throw new ProviderAlreadyLinkedException(provider)
     }
 
     user[providerIdColumn] = allyUser.id
     await user.save()
+
+    this.logService.logAuth('social.provider_linked', {
+      userId: user.id,
+      userEmail: user.email,
+    })
   }
 
   async unlinkProvider(user: User, provider: 'github' | 'google' | 'facebook'): Promise<void> {
@@ -95,6 +105,11 @@ export default class SocialService {
 
     user[providerIdColumn] = null
     await user.save()
+
+    this.logService.logAuth('social.provider_unlinked', {
+      userId: user.id,
+      userEmail: user.email,
+    })
   }
 
   needsPasswordSetup(user: User): boolean {

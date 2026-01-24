@@ -3,6 +3,8 @@ import Role from '#core/models/role'
 import Permission from '#core/models/permission'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
+import { inject } from '@adonisjs/core'
+import LogService, { LogCategory } from '#core/services/log_service'
 
 export interface DashboardStatistics {
   totalUsers: number
@@ -22,28 +24,53 @@ export interface DashboardStatistics {
   }>
 }
 
+@inject()
 export default class DashboardService {
+  constructor(protected logService: LogService) {}
+
   /**
    * Get dashboard statistics
    */
   async getStatistics(): Promise<DashboardStatistics> {
-    const [totalUsers, totalRoles, totalPermissions, usersThisMonth, recentUsers, usersByRole] =
-      await Promise.all([
-        this.getTotalUsers(),
-        this.getTotalRoles(),
-        this.getTotalPermissions(),
-        this.getUsersThisMonth(),
-        this.getRecentUsers(),
-        this.getUsersByRole(),
-      ])
+    const startTime = Date.now()
 
-    return {
-      totalUsers,
-      totalRoles,
-      totalPermissions,
-      usersThisMonth,
-      recentUsers,
-      usersByRole,
+    try {
+      const [totalUsers, totalRoles, totalPermissions, usersThisMonth, recentUsers, usersByRole] =
+        await Promise.all([
+          this.getTotalUsers(),
+          this.getTotalRoles(),
+          this.getTotalPermissions(),
+          this.getUsersThisMonth(),
+          this.getRecentUsers(),
+          this.getUsersByRole(),
+        ])
+
+      const duration = Date.now() - startTime
+
+      this.logService.logPerformance('dashboard.getStatistics', duration, {
+        totalUsers,
+        totalRoles,
+        totalPermissions,
+      })
+
+      return {
+        totalUsers,
+        totalRoles,
+        totalPermissions,
+        usersThisMonth,
+        recentUsers,
+        usersByRole,
+      }
+    } catch (error) {
+      this.logService.error({
+        message: 'Failed to get dashboard statistics',
+        category: LogCategory.BUSINESS,
+        error,
+        context: {
+          duration: Date.now() - startTime,
+        },
+      })
+      throw error
     }
   }
 

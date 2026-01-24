@@ -1,13 +1,17 @@
 import User from '#auth/models/user'
 import Role from '#core/models/role'
-import logger from '@adonisjs/core/services/logger'
 import { Exception } from '@adonisjs/core/exceptions'
+import { inject } from '@adonisjs/core'
+import LogService from '#core/services/log_service'
 
 /**
  * Centralized service for authentication logic
  * Throws typed exceptions that controllers only need to catch
  */
+@inject()
 export default class AuthService {
+  constructor(protected logService: LogService) {}
+
   /**
    * Authenticates a user with email and password
    *
@@ -17,16 +21,15 @@ export default class AuthService {
     try {
       const user = await User.verifyCredentials(email, password)
 
-      logger.info('User logged in successfully', {
+      this.logService.logAuth('login.success', {
         userId: user.id,
-        email: user.email,
+        userEmail: user.email,
       })
 
       return user
     } catch (error) {
-      logger.warn('Failed login attempt', {
-        email,
-        error: error.message,
+      this.logService.logAuth('login.failed', {
+        userEmail: email,
       })
 
       throw new Exception('Invalid credentials', {
@@ -45,6 +48,10 @@ export default class AuthService {
     const existingUser = await User.findBy('email', data.email)
 
     if (existingUser) {
+      this.logService.logAuth('register.failed.email_exists', {
+        userEmail: data.email,
+      })
+
       throw new Exception('Email already exists', {
         status: 409,
         code: 'E_EMAIL_EXISTS',
@@ -59,10 +66,9 @@ export default class AuthService {
       roleId: userRole?.id || null,
     })
 
-    logger.info('User registered successfully', {
+    this.logService.logAuth('register.success', {
       userId: user.id,
-      email: user.email,
-      roleId: user.roleId,
+      userEmail: user.email,
     })
 
     return user
@@ -73,6 +79,6 @@ export default class AuthService {
    * Can be extended with additional logic (logs, etc.)
    */
   async logout(userId: number): Promise<void> {
-    logger.info('User logged out', { userId })
+    this.logService.logAuth('logout', { userId })
   }
 }

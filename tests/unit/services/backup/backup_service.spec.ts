@@ -5,19 +5,22 @@ import { mkdir, rm, readFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import backupConfig from '#config/backup'
+import LogService from '#core/services/log_service'
 
 test.group('BackupService', (group) => {
   let backupService: BackupService
   let notificationService: NotificationService
   const testBackupDir = join(process.cwd(), 'storage/test-backups')
   let originalLocalPath: string
+  let logService: LogService
 
   group.setup(async () => {
     originalLocalPath = backupConfig.storages.local.path
     backupConfig.storages.local.path = testBackupDir
 
-    notificationService = new NotificationService()
-    backupService = new BackupService(notificationService)
+    logService = new LogService()
+    notificationService = new NotificationService(logService)
+    backupService = new BackupService(notificationService, logService)
   })
 
   group.teardown(async () => {
@@ -85,7 +88,7 @@ test.group('BackupService', (group) => {
     backupConfig.storages.local.path =
       process.platform === 'win32' ? 'Z:/invalid/path' : '/root/invalid_path'
 
-    const backupServiceWithInvalidPath = new BackupService(notificationService)
+    const backupServiceWithInvalidPath = new BackupService(notificationService, logService)
 
     const result = await backupServiceWithInvalidPath.runFullBackup()
 
@@ -208,7 +211,7 @@ test.group('BackupService', (group) => {
     backupConfig.storages.local.path =
       process.platform === 'win32' ? 'Z:/invalid/path' : '/root/invalid_path'
 
-    const backupServiceWithInvalidPath = new BackupService(notificationService)
+    const backupServiceWithInvalidPath = new BackupService(notificationService, logService)
 
     const result = await backupServiceWithInvalidPath.runFullBackup()
 

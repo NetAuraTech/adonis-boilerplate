@@ -2,12 +2,15 @@ import { test } from '@japa/runner'
 import SocialService from '#auth/services/social_service'
 import { UserFactory, RoleFactory } from '#tests/helpers/factories'
 import type { AllyUserContract } from '@adonisjs/ally/types'
+import LogService from '#core/services/log_service'
 
 test.group('SocialService', (group) => {
   let socialService: SocialService
+  let logService: LogService
 
   group.setup(() => {
-    socialService = new SocialService()
+    logService = new LogService()
+    socialService = new SocialService(logService)
   })
 
   test('findOrCreateUser: should find existing user by provider ID', async ({ assert }) => {
