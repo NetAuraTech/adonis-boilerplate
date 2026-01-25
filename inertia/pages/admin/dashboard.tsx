@@ -153,7 +153,7 @@ export default function AdminDashboardPage(props: AdminDashboardPageProps) {
                         ) : (
                           <span className="padding-1 padding-inline-2 bg-neutral-100 clr-neutral-800 border-1 border-solid border-neutral-800 border-radius-1 fs-300 text-center">{t('users.empty.no_role_assigned')}</span>
                         )}
-                        <p className="fs-200 clr-neutral-500">{i18n.format(new Date(user.createdAt!), 'long')}</p>
+                        <p className="fs-200 clr-neutral-500">{i18n.format(new Date(user.createdAt!), 'long', i18n.language)}</p>
                       </div>
                     </div>
                   ))

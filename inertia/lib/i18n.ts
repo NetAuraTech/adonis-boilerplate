@@ -48,10 +48,13 @@ i18n.use(initReactI18next).init({
     escapeValue: false,
     prefix: '{',
     suffix: '}',
-    format: (value, format: 'long' | 'full' | 'medium' | 'short' | undefined, lng) => {
+    format: (value, format, lng, options) => {
       if (value instanceof Date) {
+        const dateStyle = (format || 'long') as 'long' | 'full' | 'medium' | 'short'
+
         return new Intl.DateTimeFormat(lng, {
-          dateStyle: format || 'long',
+          dateStyle: dateStyle,
+          ...(options?.withTime && { timeStyle: 'short' }),
         }).format(value)
       }
       return value

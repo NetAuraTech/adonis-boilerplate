@@ -53,7 +53,7 @@ export function AdminNav(props: AdminNavProps) {
             <ThemeSwitcher initialTheme={pageProps.theme} />
           </div>
           <span className="uppercase">
-            {i18n.format(new Date())}
+            {i18n.format(new Date(), 'long', i18n.language)}
           </span>
           <strong className="fs-700">{t('welcome', {name: pageProps.currentUser!.fullName})}</strong>
         </div>

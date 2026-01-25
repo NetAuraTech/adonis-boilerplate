@@ -65,7 +65,7 @@ export function NotificationItem(props: NotificationItemProps) {
     const diffInWeeks = Math.floor(diffInDays / 7)
     if (diffInWeeks < 4) return t('time.weeks_ago', { count: diffInWeeks })
 
-    return i18n.format(notifDate, 'short')
+    return i18n.format(notifDate, 'short', i18n.language)
   }
 
   const handleClick = () => {

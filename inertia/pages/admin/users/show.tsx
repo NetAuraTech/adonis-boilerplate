@@ -41,21 +41,10 @@ interface AdminUsersShowProps {
 
 export default function AdminUsersShowPage(props: AdminUsersShowProps) {
   const { user } = props
-  const { t } = useTranslation('admin')
+  const { t, i18n } = useTranslation('admin')
 
   const resource = getAdminResource('users')
   const rolesResource = getAdminResource('roles')
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return t('users.empty.never')
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
 
   const permissionsByCategory = user.role?.permissions?.reduce((acc, permission) => {
     if (!acc[permission.category]) {
@@ -124,14 +113,14 @@ export default function AdminUsersShowPage(props: AdminUsersShowProps) {
                   <p className="fs-300 fw-semi-bold clr-neutral-600 margin-block-end-1">
                     {t('users.fields.created_at')}
                   </p>
-                  <p className="fs-400 clr-neutral-900">{formatDate(user.createdAt)}</p>
+                  <p className="fs-400 clr-neutral-900">{i18n.format(new Date(user.createdAt!), 'full', i18n.language, { withTime: true})}</p>
                 </div>
 
                 <div className="padding-4 bg-neutral-050 border-radius-2">
                   <p className="fs-300 fw-semi-bold clr-neutral-600 margin-block-end-1">
                     {t('users.fields.last_updated')}
                   </p>
-                  <p className="fs-400 clr-neutral-900">{formatDate(user.updatedAt)}</p>
+                  <p className="fs-400 clr-neutral-900">{i18n.format(new Date(user.updatedAt!), 'full', i18n.language, { withTime: true})}</p>
                 </div>
 
                 {user.emailVerifiedAt && (
@@ -139,7 +128,7 @@ export default function AdminUsersShowPage(props: AdminUsersShowProps) {
                     <p className="fs-300 fw-semi-bold clr-neutral-600 margin-block-end-1">
                       {t('users.fields.email_verified_at')}
                     </p>
-                    <p className="fs-400 clr-neutral-900">{formatDate(user.emailVerifiedAt)}</p>
+                    <p className="fs-400 clr-neutral-900">{i18n.format(new Date(user.emailVerifiedAt!), 'full', i18n.language)}</p>
                   </div>
                 )}
               </div>

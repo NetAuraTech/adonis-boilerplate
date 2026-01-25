@@ -45,7 +45,7 @@ interface AdminUsersIndexProps {
 
 export default function AdminUsersIndexPage(props: AdminUsersIndexProps) {
   const { users, roles, filters } = props
-  const { t } = useTranslation('admin')
+  const { t, i18n } = useTranslation('admin')
 
   const resource = getAdminResource('users')
 
@@ -59,14 +59,6 @@ export default function AdminUsersIndexPage(props: AdminUsersIndexProps) {
   })
 
   const { handleSearch, handleClearForm } = useSearch({ form, validation, resource})
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
 
   return (
     <>
@@ -188,7 +180,7 @@ export default function AdminUsersIndexPage(props: AdminUsersIndexProps) {
                         </div>
                       </Table.Cell>
                       <Table.Cell data-label={t('users.fields.joined')}>
-                        {formatDate(user.createdAt)}
+                        {i18n.format(new Date(user.createdAt), 'medium', i18n.language)}
                       </Table.Cell>
                       <Table.Cell data-label={t('users.fields.actions')}>
                         <Table.Actions
