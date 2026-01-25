@@ -158,7 +158,6 @@ test.group('ProfileService', (group) => {
       user,
       {
         email: user.email,
-        fullName: undefined,
         locale: 'en',
       },
       i18n as unknown as I18n
