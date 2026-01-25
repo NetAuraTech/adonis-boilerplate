@@ -156,12 +156,12 @@ router
     router.get('/', [ProfileShowController, 'render']).as('profile.show')
 
     router
-      .patch('/', [ProfileUpdateController, 'execute'])
+      .put('/', [ProfileUpdateController, 'execute'])
       .as('profile.update')
       .use(middleware.verified())
 
     router
-      .patch('/password', [ProfileUpdatePasswordController, 'execute'])
+      .put('/password', [ProfileUpdatePasswordController, 'execute'])
       .as('profile.password.update')
       .use(middleware.verified())
 
@@ -176,7 +176,7 @@ router
       .use(middleware.verified())
 
     router
-      .patch('/preferences', [UserPreferenceUpdateController, 'execute'])
+      .put('/preferences', [UserPreferenceUpdateController, 'execute'])
       .as('preferences.update')
       .use(middleware.verified())
   })

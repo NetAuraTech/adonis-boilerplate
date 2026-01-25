@@ -68,7 +68,7 @@ export function useNotifications(userId?: number): UseNotificationsReturn {
   const markAsRead = useCallback(
     async (id: number) => {
       try {
-        await axios.patch(`/api/notifications/${id}/read`)
+        await axios.put(`/api/notifications/${id}/read`)
 
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n))
@@ -86,7 +86,7 @@ export function useNotifications(userId?: number): UseNotificationsReturn {
    */
   const markAllAsRead = useCallback(async () => {
     try {
-      await axios.patch('/api/notifications/mark-all-read')
+      await axios.put('/api/notifications/mark-all-read')
 
       setNotifications((prev) => prev.map((n) => ({ ...n, readAt: new Date().toISOString() })))
       setUnreadCount(0)

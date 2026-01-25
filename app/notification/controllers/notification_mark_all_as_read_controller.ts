@@ -5,7 +5,7 @@ import ErrorHandlerService from '#core/services/error_handler_service'
 
 /**
  * Controller for marking all notifications as read
- * PATCH /api/notifications/mark-all-read
+ * PUT /api/notifications/mark-all-read
  */
 @inject()
 export default class NotificationMarkAllAsReadController {

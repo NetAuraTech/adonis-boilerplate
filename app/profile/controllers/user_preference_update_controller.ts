@@ -6,7 +6,7 @@ import UserPreferenceValidators from '#profile/validators/user_preference_valida
 
 /**
  * Controller for updating user preferences
- * PATCH /preferences
+ * PUT /preferences
  */
 @inject()
 export default class UserPreferenceUpdateController {

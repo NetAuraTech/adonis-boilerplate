@@ -87,7 +87,7 @@ export default function ProfilePage(props: ProfilePageProps) {
 
     const localeChanged = profileForm.data.locale !== pageProps.currentUser?.locale
 
-    profileForm.patch('/profile', {
+    profileForm.put('/profile', {
       onSuccess: () => {
         if (localeChanged) {
           i18n.changeLanguage(profileForm.data.locale)
@@ -102,7 +102,7 @@ export default function ProfilePage(props: ProfilePageProps) {
     const isValid = passwordValidation.validateAll(passwordForm.data)
     if (!isValid) return
 
-    passwordForm.patch('/profile/password', {
+    passwordForm.put('/profile/password', {
       onSuccess: () => {
         passwordForm.reset()
         passwordValidation.reset()
@@ -124,13 +124,7 @@ export default function ProfilePage(props: ProfilePageProps) {
   function handlePreferencesUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    preferencesForm.patch('/profile/preferences', {
-      onSuccess: () => {
-        if (preferencesForm.data.interface?.language) {
-          i18n.changeLanguage(preferencesForm.data.interface.language)
-        }
-      },
-    })
+    preferencesForm.put('/profile/preferences')
   }
 
   function handleUnlinkProvider(provider: string) {

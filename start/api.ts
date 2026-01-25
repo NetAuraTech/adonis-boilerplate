@@ -33,10 +33,10 @@ router
           .get('/unread-count', [NotificationUnreadCountController, 'execute'])
           .as('notifications.unread_count')
         router
-          .patch('/:id/read', [NotificationMarkAsReadController, 'execute'])
+          .put('/:id/read', [NotificationMarkAsReadController, 'execute'])
           .as('notifications.mark_as_read')
         router
-          .patch('/mark-all-read', [NotificationMarkAllAsReadController, 'execute'])
+          .put('/mark-all-read', [NotificationMarkAllAsReadController, 'execute'])
           .as('notifications.mark_all_as_read')
         router.delete('/:id', [NotificationDeleteController, 'execute']).as('notifications.destroy')
       })
