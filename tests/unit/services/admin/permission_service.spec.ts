@@ -303,9 +303,9 @@ test.group('PermissionService', (group) => {
   })
 
   test('getAllCategories: should order categories alphabetically', async ({ assert }) => {
-    await PermissionFactory.create({ category: 'zebra', slug: 'z1' })
-    await PermissionFactory.create({ category: 'apple', slug: 'a1' })
-    await PermissionFactory.create({ category: 'middle', slug: 'm1' })
+    await PermissionFactory.create({ category: 'zebra', name: 'z1', slug: 'z1' })
+    await PermissionFactory.create({ category: 'apple', name: 'a1', slug: 'a1' })
+    await PermissionFactory.create({ category: 'middle', name: 'm1', slug: 'm1' })
 
     const categories = await service.getAllCategories()
 

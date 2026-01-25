@@ -58,11 +58,13 @@ test.group('UserPresenter', () => {
 
     const result = await UserPresenter.toJSON(user)
 
+    const sortedPermissions = result!.role!.permissions.sort((a, b) => a.slug.localeCompare(b.slug))
+
     assert.exists(result!.role)
     assert.equal(result!.role!.name, 'Admin')
     assert.lengthOf(result!.role!.permissions, 2)
-    assert.equal(result!.role!.permissions[0].slug, 'users.create')
-    assert.equal(result!.role!.permissions[1].slug, 'users.delete')
+    assert.equal(sortedPermissions[0].slug, 'users.create')
+    assert.equal(sortedPermissions[1].slug, 'users.delete')
   })
 
   test('toJSON: should handle user without role', async ({ assert }) => {
