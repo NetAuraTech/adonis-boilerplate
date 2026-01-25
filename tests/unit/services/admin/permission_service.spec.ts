@@ -286,10 +286,10 @@ test.group('PermissionService', (group) => {
   })
 
   test('getAllCategories: should return unique categories', async ({ assert }) => {
-    await PermissionFactory.create({ category: 'users', slug: 'u1' })
-    await PermissionFactory.create({ category: 'posts', slug: 'p1' })
-    await PermissionFactory.create({ category: 'users', slug: 'u2' })
-    await PermissionFactory.create({ category: 'comments', slug: 'c1' })
+    await PermissionFactory.create({ category: 'users', name: 'U1', slug: 'u1' })
+    await PermissionFactory.create({ category: 'posts', name: 'P1', slug: 'p1' })
+    await PermissionFactory.create({ category: 'users', name: 'U2', slug: 'u2' })
+    await PermissionFactory.create({ category: 'comments', name: 'C1', slug: 'c1' })
 
     const categories = await service.getAllCategories()
 
