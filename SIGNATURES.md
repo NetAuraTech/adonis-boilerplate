@@ -131,6 +131,16 @@ export default class EmailChangeCancelController {
   constructor(protected emailChangeService: EmailChangeService)
   async execute({ auth, response, session, i18n }: HttpContext)
 }
+```
+
+### app/auth/controllers/accept_invitation_controller.ts
+```typescript
+@inject()
+export default class AcceptInvitationController {
+  constructor(protected invitationService: InvitationService)
+  async render({ inertia, params, session, response, i18n }: HttpContext)
+  async execute({ request, response, session, auth, i18n }: HttpContext)
+}
 
 ---
 
@@ -553,6 +563,15 @@ export default class ProfileDeleteController {
 ```typescript
 export default class ProfileCleanNotificationsController {
   async execute({ auth, response, session, i18n }: HttpContext)
+}
+```
+
+### app/profile/controllers/user_preference_update_controller.ts
+```typescript
+@inject()
+export default class UserPreferenceUpdateController {
+  constructor(protected preferenceService: UserPreferenceService)
+  async execute({ auth, request, response, session, i18n }: HttpContext)
 }
 ```
 
@@ -1932,6 +1951,82 @@ router
   })
   .prefix('profile')
   .use(middleware.auth())
+```
+
+---
+
+## 🛡️ ADMIN - Controllers
+
+### app/admin/controllers/users/admin_users_index_controller.ts
+```typescript
+@inject()
+export default class AdminUsersIndexController {
+  constructor(protected userManagementService: UserService)
+  async render({ inertia, request }: HttpContext)
+}
+```
+
+### app/admin/controllers/users/admin_users_create_controller.ts
+```typescript
+@inject()
+export default class AdminUsersCreateController {
+  constructor(protected userManagementService: UserService)
+  async render({ inertia }: HttpContext)
+  async execute({ request, response, session, i18n }: HttpContext)
+}
+```
+
+*(Similar pattern for other Admin Controllers: Roles, Permissions, Dashboard)*
+
+---
+
+## 🛡️ ADMIN - Services
+
+### app/admin/services/user_service.ts
+```typescript
+@inject()
+export default class UserService extends BaseAdminService {
+  async list(filters: UserListFilters)
+  async detail(userId: number)
+  async create(data: CreateUserData)
+  async update(userId: number, data: UpdateUserData)
+  async delete(userId: number)
+  async getAllRoles(): Promise<Role[]>
+}
+```
+
+---
+
+## 💾 BACKUP - Services
+
+### app/backup/services/backup_service.ts
+```typescript
+@inject()
+export default class BackupService {
+  async run(): Promise<BackupResult>
+  async runFullBackup(): Promise<BackupResult>
+  async runDifferentialBackup(): Promise<BackupResult>
+  async cleanup(): Promise<{ deleted: number, kept: number, errors: number }>
+  async healthCheck(): Promise<any>
+}
+```
+
+---
+
+## 🔔 NOTIFICATION - Services
+
+### app/notification/services/notification_service.ts
+```typescript
+@inject()
+export default class NotificationService {
+  async notify(data: CreateNotificationData | BaseMail)
+  async create(data: CreateNotificationData): Promise<Notification | null>
+  async getUserNotifications(userId: number, options: GetNotificationsOptions): Promise<ModelPaginatorContract<Notification>>
+  async getUnreadCount(userId: number): Promise<number>
+  async markAsRead(notificationId: number, userId: number): Promise<Notification | null>
+  async markAllAsRead(userId: number): Promise<number>
+  async delete(notificationId: number, userId: number): Promise<boolean>
+}
 ```
 
 ---

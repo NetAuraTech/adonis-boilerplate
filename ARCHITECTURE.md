@@ -12,12 +12,14 @@
 - Email: AdonisJS Mail (SMTP)
 - Tests: Japa (backend) + Jest (frontend) + Playwright (E2E)
 - Build: Vite
+- Real-time: AdonisJS Transmit (SSE)
+- Storage: AdonisJS Drive (Local, S3, WebDAV)
 
 **Environment Constraints:**
 - Hosting: o2Switch (shared)
 - Redis: Available with fallback required
 - Cron jobs: Available
-- WebSockets: Not available (use SSE with Transmit)
+- WebSockets: Not available (using SSE with Transmit)
 - SSH: Access available
 
 ---
@@ -36,6 +38,34 @@ app/
 ├── profile/                       # User profile domain
 │   └── controllers/               # ProfileShowController, ProfileUpdateController, etc.
 │
+├── admin/                         # Admin domain
+│   ├── controllers/               # Dashboard, Users, Roles, Permissions
+│   ├── services/                  # UserService, RoleService, PermissionService
+│   └── validators/                # AdminUserValidators, etc.
+│
+├── notification/                  # Notification domain
+│   ├── controllers/               # NotificationListController, etc.
+│   ├── services/                  # NotificationService
+│   └── models/                    # Notification
+│
+├── backup/                        # Backup domain
+│   ├── services/                  # BackupService
+│   └── storage/                   # Storage adapters (S3, Local, Nextcloud)
+│
+├── admin/                         # Admin domain
+│   ├── controllers/               # Dashboard, Users, Roles, Permissions
+│   ├── services/                  # UserService, RoleService, PermissionService
+│   └── validators/                # AdminUserValidators, etc.
+│
+├── notification/                  # Notification domain
+│   ├── controllers/               # NotificationListController, etc.
+│   ├── services/                  # NotificationService
+│   └── models/                    # Notification
+│
+├── backup/                        # Backup domain
+│   ├── services/                  # BackupService
+│   └── storage/                   # Storage adapters (S3, Local, Nextcloud)
+│
 ├── core/                          # Cross-cutting domain
 │   ├── exceptions/               # HttpExceptionHandler, CsrfTokenMismatchException
 │   ├── helpers/                  # validator.ts, sleep.ts, csrf.ts
@@ -46,8 +76,11 @@ config/                            # AdonisJS configuration
 ├── auth.ts                       # Session guard, remember me
 ├── ally.ts                       # OAuth providers
 ├── database.ts                   # PostgreSQL
+├── drive.ts                      # File storage (Local, S3)
 ├── mail.ts                       # SMTP
 ├── session.ts                    # Session cookie
+├── transmit.ts                   # Server-Sent Events
+├── lock.ts                       # Atomic locks
 ├── inertia.ts                    # Inertia SSR + shared data
 ├── shield.ts                     # CSRF, XFrame, HSTS
 ├── hash.ts                       # Scrypt
@@ -184,6 +217,148 @@ export default class SomeController {
 - Always use `session.flash()` for user feedback
 - Use `response.redirect().toRoute()` for redirects
 - Inject services via constructor with `@inject()`
+
+---
+
+### 14. **Backup System**
+
+**Location:** `app/backup/`
+
+**Features:**
+- **Types**: Full (pg_dump) & Differential (modified tables check)
+- **Storage**: Multi-destination via adapters (Local, S3, Nextcloud)
+- **Security**: AES-256 encryptions via `createEncryptionHelper`
+- **Compression**: Gzip streams
+
+**Backup Service Flow:**
+1. **Schedule**: Cron triggers `BackupService`
+2. **Type Determination**: Full on specific day, Differential otherwise
+3. **Execution**:
+   - `pg_dump` streams to temp file
+   - `gzip` compression
+   - `AES-256` encryption (optional)
+   - Upload to active storage providers (parallel)
+4. **Cleanup**:
+   - Local temp files deleted
+   - Remote retention policy applied (Daily/Weekly/Monthly/Yearly)
+
+**Storage Adapter Interface:**
+```typescript
+interface StorageAdapter {
+  upload(path: string, filename: string): Promise<boolean>
+  delete(filename: string): Promise<boolean>
+  list(): Promise<BackupMetadata[]>
+  getFreeSpace(): Promise<number | null>
+}
+```
+
+---
+
+### 13. **Notifications**
+
+**Location:** `app/notification/`
+
+**Architecture:**
+- **Database**: Stores notification history (`notifications` table)
+- **Real-time**: SSE via `@adonisjs/transmit`
+- **Email**: Optional email dispatch based on user preferences
+
+**Workflow:**
+1. **Trigger**: Event occurs (e.g., "User Invited")
+2. **Service Call**: `NotificationService.notify()`
+3. **Preference Check**: Checks `UserPreference` model (in-app vs email)
+4. **Persistence**: Creates DB record
+5. **Broadcast**: Sends via Transmit (channel: `user:{id}:notifications`)
+6. **Frontend**: `useEventSource` hook receives event -> updates UI toast/badge
+
+**Notification Model:**
+```typescript
+export default class Notification extends BaseModel {
+  @column() declare userId: number
+  @column() declare type: string      // e.g. 'user.invited'
+  @column() declare title: string
+  @column() declare message: string
+  @column() declare data: Record<string, any>
+  @column.dateTime() declare readAt: DateTime | null
+  
+  // Scopes: unread(), read(), byType()
+}
+```
+
+**Frontend Integration:**
+```typescript
+// use_notifications.ts
+const { event } = useEventSource(`user:${user.id}:notifications`)
+
+useEffect(() => {
+  if (event) {
+    // Add new notification to list
+    // Show toast
+  }
+}, [event])
+```
+
+---
+
+### 12. **Admin / RBAC**
+
+**Location:** `app/admin/`
+
+**Structure:**
+- **Controllers**: Grouped by feature (`users`, `roles`, `permissions`)
+- **Services**: Handle business logic (`UserService`, `RoleService`)
+- **Validators**: Input validation
+- **Permissions**: Defined in database (`permissions` table)
+
+**RBAC Model:**
+- User -> Role (1:1)
+- Role -> Permissions (M:N)
+
+**Middleware:**
+```typescript
+// Check for specific permission
+router.get('/users', [AdminUsersIndexController, 'render'])
+  .use(middleware.permission({ permissions: ['users.view'] }))
+```
+
+**Admin Controller Pattern:**
+```typescript
+@inject()
+export default class AdminUsersIndexController {
+  constructor(protected userService: UserService) {}
+
+  async render({ inertia, request }: HttpContext) {
+    const pagination = await extractPagination(request)
+    const filters = await request.validateUsing(AdminUserValidators.list())
+    
+    // Service handles filtering & pagination
+    const users = await this.userService.list({ 
+      ...pagination, 
+      ...filters 
+    })
+
+    return inertia.render('admin/users/index', { users })
+  }
+}
+```
+
+**Admin Service Pattern:**
+```typescript
+// Extends BaseAdminService for common CRUD operations
+export default class UserService extends BaseAdminService<User, Filters, CreateData, UpdateData, Details> {
+  protected model = User
+  
+  async list(filters: Filters) {
+    // Custom query logic with filters
+    return query.paginate(filters.page, filters.perPage)
+  }
+  
+  // Custom business logic (e.g., sending invitation on create)
+  async create(data: CreateData) {
+    // ...
+  }
+}
+```
 
 ---
 
@@ -706,9 +881,32 @@ id, tokenable_id, hash, expires_at,
 created_at, updated_at
 ```
 
+**Role (roles)**
+```
+id, name, slug, description, is_system,
+created_at, updated_at
+```
+
+**Permission (permissions)**
+```
+id, name, slug, category, description, is_system,
+created_at, updated_at
+```
+
+**Notification (notifications)**
+```
+id, user_id, type, title, message, data (json), read_at,
+created_at, updated_at
+```
+
 ### Relations
 - User `hasMany` Token
 - User `hasMany` passwordResetTokens (filtered by type)
+- User `belongsTo` Role
+- User `hasMany` Notification
+- Role `hasMany` User
+- Role `manyToMany` Permission
+- Permission `manyToMany` Role
 - Token `belongsTo` User
 
 ---
