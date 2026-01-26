@@ -1,25 +1,17 @@
 import { test } from '@japa/runner'
 import UserService from '#admin/services/user_service'
-import InvitationService from '#auth/services/invitation_service'
 import { UserFactory, RoleFactory, PermissionFactory } from '#tests/helpers/factories'
 import Token, { TOKEN_TYPES } from '#core/models/token'
 import { DateTime } from 'luxon'
 import mail from '@adonisjs/mail/services/main'
 import User from '#auth/models/user'
-import NotificationService from '#notification/services/notification_service'
-import LogService from '#core/services/log_service'
+import app from '@adonisjs/core/services/app'
 
 test.group('UserService', (group) => {
   let service: UserService
-  let invitationService: InvitationService
-  let notificationService: NotificationService
-  let logService: LogService
 
   group.setup(async () => {
-    logService = new LogService()
-    notificationService = new NotificationService(logService)
-    invitationService = new InvitationService(notificationService, logService)
-    service = new UserService(invitationService, logService)
+    service = await app.container.make(UserService)
     await User.query().delete()
   })
 

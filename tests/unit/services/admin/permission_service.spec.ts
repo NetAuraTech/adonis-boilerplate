@@ -2,15 +2,13 @@ import { test } from '@japa/runner'
 import PermissionService from '#admin/services/permission_service'
 import { PermissionFactory, RoleFactory } from '#tests/helpers/factories'
 import Permission from '#core/models/permission'
-import LogService from '#core/services/log_service'
+import app from '@adonisjs/core/services/app'
 
 test.group('PermissionService', (group) => {
   let service: PermissionService
-  let logService: LogService
 
-  group.setup(() => {
-    logService = new LogService()
-    service = new PermissionService(logService)
+  group.setup(async () => {
+    service = await app.container.make(PermissionService)
   })
 
   test('list: should return paginated permissions', async ({ assert }) => {

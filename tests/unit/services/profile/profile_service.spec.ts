@@ -1,26 +1,18 @@
 import { test } from '@japa/runner'
 import ProfileService from '#profile/services/profile_service'
-import EmailChangeService from '#auth/services/email_change_service'
 import { UserFactory } from '#tests/helpers/factories'
 import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import User from '#auth/models/user'
 import i18n from 'i18next'
 import { I18n } from '@adonisjs/i18n'
-import NotificationService from '#notification/services/notification_service'
-import LogService from '#core/services/log_service'
+import app from '@adonisjs/core/services/app'
 
 test.group('ProfileService', (group) => {
   let profileService: ProfileService
-  let emailChangeService: EmailChangeService
-  let notificationService: NotificationService
-  let logService: LogService
 
-  group.setup(() => {
-    logService = new LogService()
-    notificationService = new NotificationService(logService)
-    emailChangeService = new EmailChangeService(notificationService, logService)
-    profileService = new ProfileService(emailChangeService, notificationService, logService)
+  group.setup(async () => {
+    profileService = await app.container.make(ProfileService)
   })
 
   test('update: should update fullName and locale', async ({ assert }) => {

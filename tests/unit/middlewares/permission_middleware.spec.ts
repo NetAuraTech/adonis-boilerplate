@@ -3,12 +3,13 @@ import PermissionMiddleware from '#core/middleware/permission_middleware'
 import { UserFactory, RoleFactory, PermissionFactory } from '#tests/helpers/factories'
 import sinon from 'sinon'
 import type { HttpContext } from '@adonisjs/core/http'
+import app from '@adonisjs/core/services/app'
 
 test.group('PermissionMiddleware', (group) => {
   let middleware: PermissionMiddleware
 
-  group.setup(() => {
-    middleware = new PermissionMiddleware()
+  group.setup(async () => {
+    middleware = await app.container.make(PermissionMiddleware)
   })
 
   test('handle: should call next when user has required permission', async ({ assert }) => {

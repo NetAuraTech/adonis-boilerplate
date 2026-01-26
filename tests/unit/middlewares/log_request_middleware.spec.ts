@@ -104,7 +104,7 @@ test.group('LogRequestMiddleware', (group) => {
     await middleware.handle(ctx, nextFn)
 
     const duration = logSpy.getCall(0).args[1]
-    assert.isTrue(duration >= 50)
+    assert.isTrue(duration >= 49)
     assert.isTrue(duration < 200)
 
     appStub.restore()

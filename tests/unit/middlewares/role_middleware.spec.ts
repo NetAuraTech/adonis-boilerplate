@@ -3,12 +3,13 @@ import RoleMiddleware from '#core/middleware/role_middleware'
 import { UserFactory, RoleFactory } from '#tests/helpers/factories'
 import sinon from 'sinon'
 import type { HttpContext } from '@adonisjs/core/http'
+import app from '@adonisjs/core/services/app'
 
 test.group('RoleMiddleware', (group) => {
   let middleware: RoleMiddleware
 
-  group.setup(() => {
-    middleware = new RoleMiddleware()
+  group.setup(async () => {
+    middleware = await app.container.make(RoleMiddleware)
   })
 
   test('handle: should call next when user has required role', async ({ assert }) => {

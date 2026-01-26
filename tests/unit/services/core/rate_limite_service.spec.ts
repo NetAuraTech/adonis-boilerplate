@@ -1,15 +1,13 @@
 import { test } from '@japa/runner'
 import RateLimitService from '#core/services/rate_limit_service'
 import { DateTime } from 'luxon'
-import LogService from '#core/services/log_service'
+import app from '@adonisjs/core/services/app'
 
 test.group('RateLimitService', (group) => {
   let rateLimitService: RateLimitService
-  let logService: LogService
 
-  group.setup(() => {
-    logService = new LogService()
-    rateLimitService = new RateLimitService(logService)
+  group.setup(async () => {
+    rateLimitService = await app.container.make(RateLimitService)
   })
 
   group.each.teardown(async () => {

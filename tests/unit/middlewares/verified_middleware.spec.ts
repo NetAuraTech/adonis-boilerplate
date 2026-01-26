@@ -4,12 +4,13 @@ import { UserFactory } from '#tests/helpers/factories'
 import sinon from 'sinon'
 import type { HttpContext } from '@adonisjs/core/http'
 import { DateTime } from 'luxon'
+import app from '@adonisjs/core/services/app'
 
 test.group('VerifiedMiddleware', (group) => {
   let middleware: VerifiedMiddleware
 
-  group.setup(() => {
-    middleware = new VerifiedMiddleware()
+  group.setup(async () => {
+    middleware = await app.container.make(VerifiedMiddleware)
   })
 
   test('handle: should call next when user email is verified', async ({ assert }) => {

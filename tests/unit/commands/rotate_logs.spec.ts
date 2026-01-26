@@ -46,7 +46,6 @@ test.group('RotateLogs Command', (group) => {
   })
 
   test('should complete in reasonable time', async ({ assert }) => {
-    // Create a few small log files
     for (let i = 0; i < 3; i++) {
       const logPath = join(testLogsDir, `log${i}.log`)
       await writeFile(logPath, 'test content')
@@ -57,7 +56,7 @@ test.group('RotateLogs Command', (group) => {
     const duration = Date.now() - startTime
 
     assert.oneOf(command.exitCode, [0, 1])
-    assert.isTrue(duration < 30000) // Should complete in under 30 seconds
+    assert.isTrue(duration < 30000)
   })
 
   test('should display progress information', async ({ assert }) => {
@@ -71,7 +70,7 @@ test.group('RotateLogs Command', (group) => {
 
   test('edge case: should handle very small log files', async ({ assert }) => {
     const logPath = join(testLogsDir, 'tiny.log')
-    await writeFile(logPath, 'x') // 1 byte
+    await writeFile(logPath, 'x')
 
     const command = await ace.exec('logs:rotate', [])
 
@@ -90,11 +89,9 @@ test.group('RotateLogs Command', (group) => {
   test('consistency: multiple rotations should work', async ({ assert }) => {
     const logPath = join(testLogsDir, 'app.log')
 
-    // First rotation
     await writeFile(logPath, 'content 1')
     await ace.exec('logs:rotate', [])
 
-    // Second rotation
     await writeFile(logPath, 'content 2')
     const command = await ace.exec('logs:rotate', [])
 
@@ -102,7 +99,6 @@ test.group('RotateLogs Command', (group) => {
   })
 
   test('real-world: should handle typical log directory', async ({ assert }) => {
-    // Create some typical log files
     await writeFile(join(testLogsDir, 'app.log'), 'application logs')
     await writeFile(join(testLogsDir, 'errors.log'), 'error logs')
     await writeFile(join(testLogsDir, 'access.log'), 'access logs')
@@ -113,10 +109,8 @@ test.group('RotateLogs Command', (group) => {
   })
 
   test('real-world: should work with existing rotated files', async ({ assert }) => {
-    // Create current logs
     await writeFile(join(testLogsDir, 'app.log'), 'current logs')
 
-    // Create some old rotated files
     const oldDate1 = DateTime.now().minus({ days: 1 }).toFormat('yyyy-MM-dd-HHmmss')
     const oldDate2 = DateTime.now().minus({ days: 2 }).toFormat('yyyy-MM-dd-HHmmss')
     await writeFile(join(testLogsDir, `app.log.${oldDate1}`), 'old logs 1')
@@ -137,7 +131,6 @@ test.group('RotateLogs Command', (group) => {
   test('should handle concurrent execution gracefully', async ({ assert }) => {
     await writeFile(join(testLogsDir, 'app.log'), 'test content')
 
-    // Execute command twice in parallel
     const [result1, result2] = await Promise.all([
       ace.exec('logs:rotate', []),
       ace.exec('logs:rotate', []),

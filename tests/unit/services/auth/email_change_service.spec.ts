@@ -7,18 +7,13 @@ import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import i18n from 'i18next'
 import { I18n } from '@adonisjs/i18n'
-import NotificationService from '#notification/services/notification_service'
-import LogService from '#core/services/log_service'
+import app from '@adonisjs/core/services/app'
 
 test.group('EmailChangeService', (group) => {
   let emailChangeService: EmailChangeService
-  let notificationService: NotificationService
-  let logService: LogService
 
-  group.setup(() => {
-    logService = new LogService()
-    notificationService = new NotificationService(logService)
-    emailChangeService = new EmailChangeService(notificationService, logService)
+  group.setup(async () => {
+    emailChangeService = await app.container.make(EmailChangeService)
   })
 
   test('initiateEmailChange: should set pending email and create token', async ({

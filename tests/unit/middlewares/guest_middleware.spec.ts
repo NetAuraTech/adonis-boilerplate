@@ -3,12 +3,13 @@ import GuestMiddleware from '#core/middleware/guest_middleware'
 import { UserFactory } from '#tests/helpers/factories'
 import sinon from 'sinon'
 import type { HttpContext } from '@adonisjs/core/http'
+import app from '@adonisjs/core/services/app'
 
 test.group('GuestMiddleware', (group) => {
   let middleware: GuestMiddleware
 
-  group.setup(() => {
-    middleware = new GuestMiddleware()
+  group.setup(async () => {
+    middleware = await app.container.make(GuestMiddleware)
   })
 
   test('handle: should call next when user is not authenticated', async ({ assert }) => {

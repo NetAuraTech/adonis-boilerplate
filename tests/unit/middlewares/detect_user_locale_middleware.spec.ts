@@ -3,12 +3,13 @@ import DetectUserLocaleMiddleware from '#core/middleware/detect_user_locale_midd
 import { UserFactory } from '#tests/helpers/factories'
 import sinon from 'sinon'
 import type { HttpContext } from '@adonisjs/core/http'
+import app from '@adonisjs/core/services/app'
 
 test.group('DetectUserLocaleMiddleware', (group) => {
   let middleware: DetectUserLocaleMiddleware
 
-  group.setup(() => {
-    middleware = new DetectUserLocaleMiddleware()
+  group.setup(async () => {
+    middleware = await app.container.make(DetectUserLocaleMiddleware)
   })
 
   test('handle: should use user locale when authenticated', async ({ assert }) => {

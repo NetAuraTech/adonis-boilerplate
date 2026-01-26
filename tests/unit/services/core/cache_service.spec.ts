@@ -1,15 +1,13 @@
 import { test } from '@japa/runner'
 import CacheService from '#core/services/cache_service'
 import { sleep } from '#core/helpers/sleep'
-import LogService from '#core/services/log_service'
+import app from '@adonisjs/core/services/app'
 
 test.group('CacheService', (group) => {
   let cacheService: CacheService
-  let logService: LogService
 
-  group.setup(() => {
-    logService = new LogService()
-    cacheService = new CacheService(logService)
+  group.setup(async () => {
+    cacheService = await app.container.make(CacheService)
   })
 
   group.each.teardown(async () => {

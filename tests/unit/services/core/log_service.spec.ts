@@ -4,6 +4,7 @@ import { UserFactory } from '#tests/helpers/factories'
 import logger from '@adonisjs/core/services/logger'
 import sinon from 'sinon'
 import type { HttpContext } from '@adonisjs/core/http'
+import app from '@adonisjs/core/services/app'
 
 test.group('LogService', (group) => {
   let logService: LogService
@@ -13,8 +14,8 @@ test.group('LogService', (group) => {
   let loggerErrorSpy: sinon.SinonSpy
   let loggerFatalSpy: sinon.SinonSpy
 
-  group.setup(() => {
-    logService = new LogService()
+  group.setup(async () => {
+    logService = await app.container.make(LogService)
     loggerDebugSpy = sinon.spy(logger, 'debug')
     loggerInfoSpy = sinon.spy(logger, 'info')
     loggerWarnSpy = sinon.spy(logger, 'warn')

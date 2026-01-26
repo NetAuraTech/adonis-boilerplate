@@ -102,6 +102,35 @@ export class PermissionFactory {
   }
 }
 
+import UserPreference from '#core/models/user_preference'
+
+export class UserPreferenceFactory {
+  static async create(override: Partial<UserPreference> = {}): Promise<UserPreference> {
+    const user = override.userId ? { id: override.userId } : await UserFactory.create()
+    return UserPreference.create({
+      userId: user.id,
+      preferences: override.preferences || {},
+      ...override,
+    })
+  }
+}
+
+import Notification from '#notification/models/notification'
+
+export class NotificationFactory {
+  static async create(override: Partial<Notification> = {}): Promise<Notification> {
+    const user = override.userId ? { id: override.userId } : await UserFactory.create()
+    return Notification.create({
+      userId: user.id,
+      type: override.type || 'test_notification',
+      title: override.title || 'Test Title',
+      message: override.message || 'Test Message',
+      data: override.data || null,
+      ...override,
+    })
+  }
+}
+
 export class AuthHelper {
   static async loginAs(user: User): Promise<string> {
     // Return a mock session or token

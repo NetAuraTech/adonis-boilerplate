@@ -3,12 +3,13 @@ import AuthMiddleware from '#core/middleware/auth_middleware'
 import { UserFactory } from '#tests/helpers/factories'
 import sinon from 'sinon'
 import type { HttpContext } from '@adonisjs/core/http'
+import app from '@adonisjs/core/services/app'
 
 test.group('AuthMiddleware', (group) => {
   let middleware: AuthMiddleware
 
-  group.setup(() => {
-    middleware = new AuthMiddleware()
+  group.setup(async () => {
+    middleware = await app.container.make(AuthMiddleware)
   })
 
   test('handle: should call next when user is authenticated', async ({ assert }) => {

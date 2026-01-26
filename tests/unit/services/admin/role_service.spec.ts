@@ -2,15 +2,13 @@ import { test } from '@japa/runner'
 import RoleService from '#admin/services/role_service'
 import { RoleFactory, PermissionFactory, UserFactory } from '#tests/helpers/factories'
 import Role from '#core/models/role'
-import LogService from '#core/services/log_service'
+import app from '@adonisjs/core/services/app'
 
 test.group('RoleService', (group) => {
   let service: RoleService
-  let logService: LogService
 
   group.setup(async () => {
-    logService = new LogService()
-    service = new RoleService(logService)
+    service = await app.container.make(RoleService)
   })
 
   test('list: should return paginated roles', async ({ assert }) => {

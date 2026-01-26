@@ -2,12 +2,13 @@ import { test } from '@japa/runner'
 import ContainerBindingsMiddleware from '#core/middleware/container_bindings_middleware'
 import sinon from 'sinon'
 import type { HttpContext } from '@adonisjs/core/http'
+import app from '@adonisjs/core/services/app'
 
 test.group('ContainerBindingsMiddleware', (group) => {
   let middleware: ContainerBindingsMiddleware
 
-  group.setup(() => {
-    middleware = new ContainerBindingsMiddleware()
+  group.setup(async () => {
+    middleware = await app.container.make(ContainerBindingsMiddleware)
   })
 
   test('handle: should call next', async ({ assert }) => {

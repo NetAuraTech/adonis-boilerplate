@@ -3,12 +3,13 @@ import SilentAuthMiddleware from '#core/middleware/silent_auth_middleware'
 import { UserFactory } from '#tests/helpers/factories'
 import sinon from 'sinon'
 import type { HttpContext } from '@adonisjs/core/http'
+import app from '@adonisjs/core/services/app'
 
 test.group('SilentAuthMiddleware', (group) => {
   let middleware: SilentAuthMiddleware
 
-  group.setup(() => {
-    middleware = new SilentAuthMiddleware()
+  group.setup(async () => {
+    middleware = await app.container.make(SilentAuthMiddleware)
   })
 
   test('handle: should call next when user is authenticated', async ({ assert }) => {

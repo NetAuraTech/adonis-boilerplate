@@ -9,15 +9,13 @@ import TooManyRequestsException from '#core/exceptions/too_many_requests_excepti
 import ActionForbiddenException from '#core/exceptions/action_forbidden_exception'
 import ProviderNotConfiguredException from '#core/exceptions/provider_not_configured_exception'
 import ProviderAlreadyLinkedException from '#core/exceptions/provider_already_linked_exception'
-import LogService from '#core/services/log_service'
+import app from '@adonisjs/core/services/app'
 
 test.group('ErrorHandlerService', (group) => {
   let errorHandler: ErrorHandlerService
-  let logService: LogService
 
-  group.setup(() => {
-    logService = new LogService()
-    errorHandler = new ErrorHandlerService(logService)
+  group.setup(async () => {
+    errorHandler = await app.container.make(ErrorHandlerService)
   })
 
   group.teardown(() => {

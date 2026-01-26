@@ -7,18 +7,13 @@ import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import i18n from 'i18next'
 import { I18n } from '@adonisjs/i18n'
-import NotificationService from '#notification/services/notification_service'
-import LogService from '#core/services/log_service'
+import app from '@adonisjs/core/services/app'
 
 test.group('InvitationService', (group) => {
   let invitationService: InvitationService
-  let notificationService: NotificationService
-  let logService: LogService
 
-  group.setup(() => {
-    logService = new LogService()
-    notificationService = new NotificationService(logService)
-    invitationService = new InvitationService(notificationService, logService)
+  group.setup(async () => {
+    invitationService = await app.container.make(InvitationService)
   })
 
   test('sendInvitation: should create new user and send invitation', async ({
